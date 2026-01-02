@@ -1,0 +1,2617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Training Progress Tracker v3.0 Enhanced - SharePoint Edition</title>
+
+    <!-- Microsoft Authentication Library -->
+    <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js"></script>
+
+    <!-- Other Libraries -->
+    <script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        input[type="text"]:not([disabled]),
+        select:not([disabled]),
+        textarea {
+            text-transform: uppercase;
+        }
+
+        input[type="date"], input[type="password"] {
+            text-transform: none;
+        }
+
+        /* Exempt SharePoint configuration fields from uppercase */
+        #siteUrl, #listName {
+            text-transform: none !important;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        * {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .data-table {
+            border-spacing: 0;
+            table-layout: auto;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th.sticky,
+        .data-table td.sticky {
+            position: sticky;
+            right: 0;
+            z-index: 10;
+        }
+
+        .data-table th.sticky {
+            z-index: 11;
+        }
+
+        .data-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .data-table thead th.sticky {
+            z-index: 21;
+        }
+
+        .data-table tbody tr.bg-blue-50 td.sticky {
+            background-color: #eff6ff;
+        }
+
+        .data-table tbody tr.bg-green-50 td.sticky {
+            background-color: #f0fdf4;
+        }
+
+        .data-table tbody tr.bg-red-50 td.sticky {
+            background-color: #fef2f2;
+        }
+
+        .data-table tbody tr:not([class*="bg-"]) td.sticky {
+            background-color: white;
+        }
+
+        .data-table tbody tr:hover td.sticky {
+            box-shadow: -4px 0 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
+        }
+
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+        }
+
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px !important;
+        }
+
+        .sortable-header:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .sortable-header::after {
+            content: '⇅';
+            position: absolute;
+            right: 5px;
+            opacity: 0.3;
+            font-size: 12px;
+        }
+
+        .sortable-header.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+            color: #0078D4;
+        }
+
+        .sortable-header.sort-desc::after {
+            content: '↓';
+            opacity: 1;
+            color: #0078D4;
+        }
+
+        .config-panel {
+            background: #f8f9fa;
+            border: 2px solid #0078D4;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Configuration Panel -->
+    <div id="configPanel" class="config-panel mx-4 mt-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-800">📋 Configuration</h3>
+            <div class="flex items-center space-x-3">
+                <label class="text-sm font-medium text-gray-700">Mode:</label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="testModeToggle" class="sr-only peer">
+                    <div class="relative w-14 h-7 bg-blue-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
+                    <span id="testModeLabel" class="ml-3 text-sm font-medium text-blue-700">🌐 SharePoint</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- SharePoint Config (hidden in test mode) -->
+        <div id="sharepointConfig">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">SharePoint Site URL:</label>
+                    <input type="text" id="siteUrl" placeholder="https://yourtenant.sharepoint.com/sites/yoursite"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">List Name:</label>
+                    <input type="text" id="listName" placeholder="Training_Progress" value="Training_Progress"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="flex items-center justify-between">
+                <div>
+                    <button id="saveConfigBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
+                        💾 Save Configuration
+                    </button>
+                    <button id="testConnectionBtn" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium ml-2">
+                        🔌 Test Connection
+                    </button>
+                </div>
+                <div id="connectionStatus" class="status-badge status-disconnected">
+                    ⚠️ Not Connected
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Mode Info (shown in test mode) -->
+        <div id="testModeConfig" class="hidden">
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                <h4 class="font-bold text-orange-800 mb-2">🧪 Test Mode Active</h4>
+                <p class="text-sm text-orange-700 mb-2">No Azure AD or SharePoint required! All data stored in browser localStorage.</p>
+                <ul class="text-sm text-orange-600 list-disc list-inside space-y-1">
+                    <li>Mock authentication (no real login needed)</li>
+                    <li>Sample data preloaded</li>
+                    <li>All features fully functional</li>
+                    <li>Data persists in browser until cleared</li>
+                </ul>
+            </div>
+            <div class="flex items-center justify-between">
+                <div>
+                    <button id="loadSampleDataBtn" class="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 font-medium">
+                        📊 Load Sample Data
+                    </button>
+                    <button id="clearTestDataBtn" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium ml-2">
+                        🗑️ Clear All Data
+                    </button>
+                </div>
+                <div class="status-badge status-connected">
+                    ✅ Test Mode Ready
+                </div>
+            </div>
+        </div>
+        <div class="mt-3 text-sm text-gray-600">
+            <strong>Required columns:</strong> Batch, Staff_ID, Rank, Name, First_IOE_Date, Functional_Date, LRC_Date, Interview_Date, Sectors_Flown, Status, Remarks, Last_Updated, Manual_Highlight, Sector_History
+        </div>
+        <div class="mt-2 text-sm text-gray-600">
+            <strong>Admin authentication:</strong> Create separate "AdminUsers" list with Email and Password columns
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="gradient-bg rounded-2xl shadow-2xl p-8 mb-8 animate-slide-in">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-2">🎓 Training Progress Tracker</h1>
+                    <p class="text-blue-100 text-lg">SharePoint Edition v3.0 Enhanced - Full Feature Set</p>
+                </div>
+                <div id="authContainer">
+                    <button id="signInBtn" class="bg-white text-blue-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition shadow-lg">
+                        🔐 Sign in with Microsoft
+                    </button>
+                    <div id="userInfo" class="hidden text-white text-right">
+                        <p class="font-semibold" id="userName"></p>
+                        <p class="text-sm" id="userEmail"></p>
+                        <button id="signOutBtn" class="text-sm text-blue-100 hover:text-white underline mt-1">Sign out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Toggle -->
+        <div id="mainApp" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg p-2 mb-6 animate-fade-in">
+                <div class="flex gap-2">
+                    <button id="cadetViewBtn" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg">
+                        User Portal
+                    </button>
+                    <button id="adminViewBtn" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        Admin Panel
+                    </button>
+                </div>
+            </div>
+
+            <!-- USER PORTAL (Cadet View) -->
+            <div id="cadetView" class="bg-white rounded-2xl shadow-xl p-6 md:p-8 animate-fade-in">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-400 rounded-full"></div>
+                    <h2 class="text-3xl font-bold text-gray-800">Self-Service Portal</h2>
+                </div>
+
+                <div class="max-w-2xl">
+                    <div class="mb-8">
+                        <label class="block text-gray-700 font-semibold mb-3 text-lg">Staff ID</label>
+                        <div class="flex gap-3">
+                            <input type="text" id="cadetStaffId" class="flex-1 px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg" placeholder="Enter your Staff ID">
+                            <button id="loadCadetBtn" class="btn-primary px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all">
+                                Load Info
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="cadetFormSection" class="hidden">
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-5 rounded-xl mb-8 shadow-sm">
+                            <div class="flex items-start gap-3">
+                                <div class="text-2xl">ℹ️</div>
+                                <div>
+                                    <p class="text-sm text-blue-900 font-medium mb-1">Important Notes</p>
+                                    <p class="text-sm text-blue-800">• Rank field locks after first selection</p>
+                                    <p class="text-sm text-blue-800">• Date fields use calendar picker</p>
+                                    <p class="text-sm text-blue-800">• All fields can be updated anytime</p>
+                                    <p class="text-sm text-blue-800">• Sectors field is optional</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-5 mb-8">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Rank</label>
+                                <select id="cadetRank" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                    <option value="">Select your rank...</option>
+                                    <option value="CAPT">CAPT</option>
+                                    <option value="FO">FO</option>
+                                    <option value="SO">SO</option>
+                                    <option value="CDT">CDT</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Name</label>
+                                <input type="text" id="cadetNameDisplay" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl bg-gray-50" disabled>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Batch</label>
+                                <input type="text" id="cadetBatchDisplay" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl bg-gray-50" disabled>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">First IOE Date</label>
+                                    <input type="date" id="cadetFirstIOE" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Functional Date</label>
+                                    <input type="date" id="cadetFunctional" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">LRC Date</label>
+                                    <input type="date" id="cadetLRC" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Interview Date</label>
+                                    <input type="date" id="cadetInterview" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Total Sectors Flown (Optional)</label>
+                                <input type="number" id="newSectorCount" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg font-bold" placeholder="Enter total sector count" min="0">
+                                <div id="currentSectorsDisplay" class="hidden mt-2 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+                                    <p class="text-sm text-blue-900">
+                                        <span class="font-bold">Current sectors:</span>
+                                        <span id="currentSectorsValue" class="text-lg font-black text-blue-700"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="updateCadetBtn" class="btn-primary w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all">
+                            💾 Save All Updates
+                        </button>
+
+                        <div id="updateMessage" class="mt-4 p-4 rounded-xl hidden shadow-sm"></div>
+
+                        <!-- Advanced Analytics Section -->
+                        <div id="analyticsSection" class="mt-10 hidden">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-1 h-8 bg-gradient-to-b from-purple-600 to-purple-400 rounded-full"></div>
+                                <h3 class="text-2xl font-bold text-gray-800">📊 Advanced Analytics</h3>
+                            </div>
+
+                            <!-- Quick Stats -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200 shadow-sm">
+                                    <div class="text-sm text-blue-700 opacity-80 mb-1">Total Sectors</div>
+                                    <div class="text-3xl font-bold text-blue-900" id="userTotalSectors">0</div>
+                                </div>
+                                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200 shadow-sm">
+                                    <div class="text-sm text-green-700 opacity-80 mb-1">30-Day Average</div>
+                                    <div class="text-3xl font-bold text-green-900" id="user30DayAvg">0</div>
+                                </div>
+                                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200 shadow-sm">
+                                    <div class="text-sm text-purple-700 opacity-80 mb-1">Weekly Rate</div>
+                                    <div class="text-3xl font-bold text-purple-900" id="userWeeklyRate">0</div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Chart -->
+                            <div class="mb-6">
+                                <h4 class="text-lg font-bold text-gray-800 mb-3">📈 30-Day Progress</h4>
+                                <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm" style="height: 300px;">
+                                    <canvas id="userProgressChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Batch Comparison -->
+                            <div class="mb-6">
+                                <h4 class="text-lg font-bold text-gray-800 mb-3">🎯 Batch Comparison</h4>
+                                <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm" style="height: 350px;">
+                                    <canvas id="userBatchChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Metrics -->
+                            <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
+                                <h4 class="text-lg font-bold text-gray-800 mb-4">📊 Detailed Metrics</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <div class="text-sm text-gray-600 mb-1">Last 7 Days</div>
+                                        <div class="text-2xl font-bold text-blue-700" id="userLast7Days">0</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-600 mb-1">Last 30 Days</div>
+                                        <div class="text-2xl font-bold text-blue-700" id="userLast30Days">0</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-600 mb-1">Batch Average</div>
+                                        <div class="text-2xl font-bold text-purple-700" id="userBatchAverage">0</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-600 mb-1">Difference</div>
+                                        <div class="text-2xl font-bold" id="userDifference">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN PANEL -->
+            <div id="adminView" class="hidden">
+                <!-- Admin Login -->
+                <div id="adminLogin" class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto animate-slide-in">
+                    <div class="text-center mb-8">
+                        <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <span class="text-4xl text-white">🔓</span>
+                        </div>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">Admin Access</h2>
+                        <p class="text-gray-600">Two ways to authenticate:</p>
+                    </div>
+
+                    <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+                        <p class="text-sm text-blue-900 font-semibold mb-2">🔹 Email-based (Recommended)</p>
+                        <p class="text-xs text-blue-800">Your email (<span id="adminCheckEmail">loading...</span>) will be checked against admin list</p>
+                    </div>
+
+                    <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded">
+                        <p class="text-sm text-green-900 font-semibold mb-2">🔹 Password-based (Optional)</p>
+                        <p class="text-xs text-green-800">Enter password if set in AdminUsers list (Password column, first item)</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-semibold mb-3">Password (optional)</label>
+                        <input type="password" id="adminPassword" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all" placeholder="Leave blank for email auth">
+                    </div>
+                    <button id="adminLoginBtn" class="btn-primary w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all">
+                        Verify Access
+                    </button>
+
+                    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <p class="text-xs text-gray-600 font-semibold mb-2">📋 Setup:</p>
+                        <ol class="text-xs text-gray-600 space-y-1 list-decimal list-inside">
+                            <li>Create SharePoint list "AdminUsers"</li>
+                            <li>Add columns: Email (text), Password (text)</li>
+                            <li>Add admin emails in Email column</li>
+                            <li>Optional: add password in Password column (first item)</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Admin Dashboard -->
+                <div id="adminDashboard" class="hidden animate-fade-in">
+                    <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
+                        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
+                            <div class="flex flex-wrap gap-3">
+                                <button id="refreshDataBtn" class="btn-primary bg-cyan-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-cyan-700 shadow-md">
+                                    🔄 Refresh
+                                </button>
+                                <button id="viewAnalyticsBtn" class="btn-primary bg-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-purple-700 shadow-md">
+                                    📊 Analytics
+                                </button>
+                                <button id="viewHistoryBtn" class="btn-primary bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 shadow-md">
+                                    📝 History
+                                </button>
+                                <button id="exportExcelBtn" class="btn-primary bg-green-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-green-700 shadow-md">
+                                    📥 Export Excel
+                                </button>
+                                <button id="exportPowerBIBtn" class="btn-primary bg-orange-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-orange-700 shadow-md">
+                                    📊 Power BI
+                                </button>
+                                <button id="addTraineeBtn" class="btn-primary bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-700 shadow-md">
+                                    ➕ Add Trainee
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Cards -->
+                        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-gray-600 text-sm font-medium">TOTAL TRAINEES</p>
+                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="totalCount">0</p>
+                                    </div>
+                                    <div class="bg-blue-100 p-3 rounded-full">
+                                        <span class="text-2xl">👥</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-gray-600 text-sm font-medium">IN PROGRESS</p>
+                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="inProgressCount">0</p>
+                                    </div>
+                                    <div class="bg-yellow-100 p-3 rounded-full">
+                                        <span class="text-2xl">⏳</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-400">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-gray-600 text-sm font-medium">FUNCTIONAL</p>
+                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="functionalCount">0</p>
+                                    </div>
+                                    <div class="bg-blue-100 p-3 rounded-full">
+                                        <span class="text-2xl">✈️</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-gray-600 text-sm font-medium">COMPLETED</p>
+                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="completedCount">0</p>
+                                    </div>
+                                    <div class="bg-green-100 p-3 rounded-full">
+                                        <span class="text-2xl">✅</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="mb-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">🔍 Filters</h3>
+
+                            <div class="mb-4">
+                                <input type="text" id="searchInput" placeholder="Search by name or staff ID..." class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div>
+                                    <select id="yearFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Years</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="batchFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Batches</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="rankFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Ranks</option>
+                                        <option value="CAPT">CAPT</option>
+                                        <option value="FO">FO</option>
+                                        <option value="SO">SO</option>
+                                        <option value="CDT">CDT</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="statusFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Status</option>
+                                        <option value="completed">✅ Completed</option>
+                                        <option value="functional">🔵 Functional</option>
+                                        <option value="special">🔴 Special</option>
+                                        <option value="inprogress">⏳ In Progress</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-3 mt-4">
+                                <button id="clearFiltersBtn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold shadow-sm hover:shadow transition-all">
+                                    🔄 Clear All
+                                </button>
+                                <button id="toggleCompletedBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold shadow-sm hover:shadow transition-all" title="Hide/Show completed trainees">
+                                    👁️ Hide Completed
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                            <div class="overflow-x-auto" style="max-height: 600px; overflow-y: auto;">
+                                <table class="data-table w-full" style="position: relative;">
+                                    <thead class="bg-gradient-to-r from-blue-600 to-blue-700 text-white" style="position: sticky; top: 0; z-index: 20;">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="batch">BATCH</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="staffId">STAFF ID</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="rank">RANK</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="name">NAME</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">FIRST IOE</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">FUNCTIONAL</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">LRC</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">INTERVIEW</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="sectorsFlown">SECTORS</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">REMARKS</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold sticky right-0 bg-blue-700 shadow-md">ACTIONS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dataTableBody">
+                                        <tr>
+                                            <td colspan="11" class="px-4 py-8 text-center text-gray-500">
+                                                <p class="text-lg">📋 Sign in and configure SharePoint to load data</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Dashboard -->
+                    <div id="analyticsDashboard" class="hidden bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">📊 Analytics Dashboard</h2>
+                            <button id="backToAdminBtn" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                                ← Back to Admin
+                            </button>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-semibold mb-2">Filter by Batch:</label>
+                            <select id="analyticsBatchFilter" class="w-full md:w-64 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-semibold">
+                                <option value="all">All Batches</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Status Distribution</h3>
+                                <div class="chart-container">
+                                    <canvas id="adminDistributionChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Top 10 Trainees by Sectors</h3>
+                                <div class="chart-container">
+                                    <canvas id="adminTop10Chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Change History -->
+                    <div id="historyDashboard" class="hidden bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">📝 Change History</h2>
+                            <button id="backToAdminBtn2" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                                ← Back to Admin
+                            </button>
+                        </div>
+
+                        <div id="historyTableContainer" class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Timestamp</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">User</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Trainee</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Field</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Old Value</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">New Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">No changes recorded yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="traineeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slide-in">
+            <div class="gradient-bg p-6 rounded-t-2xl">
+                <h2 id="modalTitle" class="text-2xl font-bold text-white">Add New Trainee</h2>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Batch *</label>
+                        <input type="text" id="modalBatch" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Staff ID *</label>
+                        <input type="text" id="modalStaffId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rank</label>
+                        <select id="modalRank" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Rank</option>
+                            <option value="FO">FO</option>
+                            <option value="SFO">SFO</option>
+                            <option value="SO">SO</option>
+                            <option value="CAPT">CAPT</option>
+                            <option value="CDT">CDT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                        <input type="text" id="modalName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First IOE Date</label>
+                        <input type="date" id="modalFirstIOE" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Functional Date</label>
+                        <input type="date" id="modalFunctional" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">LRC Date</label>
+                        <input type="date" id="modalLRC" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Interview Date</label>
+                        <input type="date" id="modalInterview" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sectors Flown</label>
+                        <input type="number" id="modalSectors" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" min="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Manual Highlight</label>
+                        <select id="modalHighlight" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">None (Auto)</option>
+                            <option value="blue">🔵 Functional</option>
+                            <option value="green">🟢 Completed</option>
+                            <option value="red">🔴 Special Case</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+                        <textarea id="modalRemarks" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button id="cancelModalBtn" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                        Cancel
+                    </button>
+                    <button id="saveModalBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
+                        💾 Save to SharePoint
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        let testMode = false; // Toggle between Test Mode (localStorage) and SharePoint Mode
+
+        let msalInstance;
+        let msalConfig = {
+            auth: {
+                clientId: 'bd7182f4-5e68-4147-b953-2138298e19fc',
+                authority: 'https://login.microsoftonline.com/8fc3a567-1ee8-4994-809c-49f50cdb6d48',
+                redirectUri: window.location.origin
+            },
+            cache: {
+                cacheLocation: 'localStorage',
+                storeAuthStateInCookie: false
+            }
+        };
+
+        const loginRequest = {
+            scopes: ['User.Read', 'Sites.Selected']
+        };
+
+        let sharePointConfig = {
+            siteUrl: '',
+            listName: 'Training_Progress',
+            adminListName: 'AdminUsers',
+            accessToken: null
+        };
+
+        // ==================== STATE ====================
+        let cadets = [];
+        let changeHistory = [];
+        let editingIndex = null;
+        let currentSort = { column: null, direction: 'asc' };
+        let selectedYearFilter = 'all';
+        let selectedBatchFilter = 'all';
+        let selectedRankFilter = 'all';
+        let selectedStatusFilter = 'all';
+        let searchQuery = '';
+        let hideCompleted = false;
+        let currentView = 'cadet';
+        let isAdminAuth = false;
+        let currentUserStaffId = null;
+        let currentUserRecord = null;
+        let adminDistributionChart = null;
+        let adminTop10Chart = null;
+        let userProgressChart = null;
+        let userBatchChart = null;
+        let currentUser = null;
+
+        // ==================== INITIALIZE MSAL ====================
+        function initializeMSAL() {
+            try {
+                msalInstance = new msal.PublicClientApplication(msalConfig);
+                console.log('✅ MSAL initialized');
+
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length > 0) {
+                    msalInstance.setActiveAccount(accounts[0]);
+                    currentUser = {
+                        name: accounts[0].name,
+                        email: accounts[0].username
+                    };
+                    updateUIForSignedInUser(accounts[0]);
+                    acquireTokenAndShowApp();
+                }
+            } catch (error) {
+                console.error('❌ MSAL initialization failed:', error);
+                alert('⚠️ Authentication setup incomplete. Please configure your Azure AD App Registration.');
+            }
+        }
+
+        // ==================== AUTHENTICATION ====================
+        async function signIn() {
+            if (testMode) {
+                mockSignIn();
+                return;
+            }
+
+            try {
+                const loginResponse = await msalInstance.loginPopup(loginRequest);
+                msalInstance.setActiveAccount(loginResponse.account);
+                currentUser = {
+                    name: loginResponse.account.name,
+                    email: loginResponse.account.username
+                };
+                updateUIForSignedInUser(loginResponse.account);
+                sharePointConfig.accessToken = loginResponse.accessToken;
+                showMainApp();
+            } catch (error) {
+                console.error('❌ Sign in failed:', error);
+                alert('Failed to sign in. Please try again.');
+            }
+        }
+
+        async function signOut() {
+            try {
+                await msalInstance.logoutPopup();
+                updateUIForSignedOutUser();
+                sharePointConfig.accessToken = null;
+                currentUser = null;
+                isAdminAuth = false;
+                cadets = [];
+                document.getElementById('mainApp').classList.add('hidden');
+            } catch (error) {
+                console.error('❌ Sign out failed:', error);
+            }
+        }
+
+        async function acquireTokenAndShowApp() {
+            try {
+                const account = msalInstance.getActiveAccount();
+                if (!account) throw new Error('No active account');
+
+                const tokenResponse = await msalInstance.acquireTokenSilent({
+                    ...loginRequest,
+                    account: account
+                });
+
+                sharePointConfig.accessToken = tokenResponse.accessToken;
+                showMainApp();
+            } catch (error) {
+                console.error('❌ Token acquisition failed:', error);
+                if (error instanceof msal.InteractionRequiredAuthError) {
+                    await msalInstance.acquireTokenPopup(loginRequest);
+                    await acquireTokenAndShowApp();
+                }
+            }
+        }
+
+        function updateUIForSignedInUser(account) {
+            document.getElementById('signInBtn').classList.add('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('userName').textContent = account.name || account.username;
+            document.getElementById('userEmail').textContent = account.username;
+            document.getElementById('adminCheckEmail').textContent = account.username;
+        }
+
+        function updateUIForSignedOutUser() {
+            document.getElementById('signInBtn').classList.remove('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('mainApp').classList.remove('hidden');
+        }
+
+        // ==================== TEST MODE FUNCTIONS ====================
+        function toggleTestMode() {
+            testMode = !testMode;
+            const label = document.getElementById('testModeLabel');
+            const sharepointConfig = document.getElementById('sharepointConfig');
+            const testModeConfig = document.getElementById('testModeConfig');
+            const signInBtn = document.getElementById('signInBtn');
+
+            if (testMode) {
+                label.textContent = '🧪 Test Mode';
+                label.classList.remove('text-blue-700');
+                label.classList.add('text-orange-700');
+                sharepointConfig.classList.add('hidden');
+                testModeConfig.classList.remove('hidden');
+                signInBtn.textContent = '🧪 Test Sign In';
+                signInBtn.classList.remove('bg-white', 'text-blue-700', 'hover:bg-blue-50');
+                signInBtn.classList.add('bg-orange-500', 'text-white', 'hover:bg-orange-600');
+            } else {
+                label.textContent = '🌐 SharePoint';
+                label.classList.remove('text-orange-700');
+                label.classList.add('text-blue-700');
+                sharepointConfig.classList.remove('hidden');
+                testModeConfig.classList.add('hidden');
+                signInBtn.textContent = '🔐 Sign in with Microsoft';
+                signInBtn.classList.remove('bg-orange-500', 'text-white', 'hover:bg-orange-600');
+                signInBtn.classList.add('bg-white', 'text-blue-700', 'hover:bg-blue-50');
+            }
+
+            localStorage.setItem('testMode', testMode);
+        }
+
+        function mockSignIn() {
+            const userName = prompt('Enter your name for testing:', 'Test User');
+            if (!userName) return;
+
+            currentUser = {
+                name: userName,
+                email: 'testuser@testmode.local'
+            };
+
+            const mockAccount = {
+                name: userName,
+                username: 'testuser@testmode.local'
+            };
+
+            updateUIForSignedInUser(mockAccount);
+            sharePointConfig.accessToken = 'test-mode-token';
+            showMainApp();
+        }
+
+        function generateSampleData() {
+            const batches = ['2024-01', '2024-02', '2024-03', '2023-12'];
+            const ranks = ['FO', 'SFO', 'CAPT', 'SO', 'CDT'];
+            const names = [
+                'AHMAD RIZAL', 'SITI NURHALIZA', 'CHEN WEI', 'KUMAR RAJAN', 'DAVID TAN',
+                'FARAH AINA', 'LIM KAR MENG', 'NURUL IMAN', 'WONG KAI MING', 'AZIZAH BINTI',
+                'MICHAEL LEE', 'PRIYA SHARMA', 'JOHN SMITH', 'EMILY WONG', 'HASSAN ALI',
+                'LISA TAN', 'RAVI KUMAR', 'SARAH ABDULLAH', 'KEVIN NG', 'ZAINAB MOHD'
+            ];
+
+            const sampleData = [];
+
+            for (let i = 0; i < 20; i++) {
+                const batch = batches[i % batches.length];
+                const hasIOE = Math.random() > 0.2;
+                const hasFunctional = hasIOE && Math.random() > 0.3;
+                const hasLRC = hasFunctional && Math.random() > 0.4;
+                const hasInterview = hasLRC && Math.random() > 0.5;
+
+                const baseDate = new Date('2024-01-01');
+                const ioeDate = hasIOE ? new Date(baseDate.getTime() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+                const functionalDate = hasFunctional ? new Date(new Date(ioeDate).getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+                const lrcDate = hasLRC ? new Date(new Date(functionalDate).getTime() + Math.random() * 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+                const interviewDate = hasInterview ? new Date(new Date(lrcDate).getTime() + Math.random() * 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+
+                const sectors = hasIOE ? Math.floor(Math.random() * 100) : 0;
+
+                sampleData.push({
+                    id: i + 1,
+                    batch: batch,
+                    staffId: `STF${String(10000 + i).padStart(5, '0')}`,
+                    rank: ranks[i % ranks.length],
+                    name: names[i % names.length],
+                    firstIOEDate: ioeDate,
+                    functionalDate: functionalDate,
+                    lrcDate: lrcDate,
+                    interviewDate: interviewDate,
+                    sectorsFlown: sectors,
+                    remarks: Math.random() > 0.7 ? 'PROGRESSING WELL' : '',
+                    lastUpdated: new Date().toISOString(),
+                    manualHighlight: '',
+                    sectorHistory: []
+                });
+            }
+
+            return sampleData;
+        }
+
+        function loadSampleData() {
+            cadets = generateSampleData();
+            saveToLocalStorage();
+            populateFilters();
+            if (isAdminAuth) {
+                renderTable();
+                updateStatistics();
+            }
+            alert(`✅ Loaded ${cadets.length} sample trainees!`);
+        }
+
+        function clearTestData() {
+            if (!confirm('⚠️ This will delete ALL test data. Continue?')) return;
+
+            localStorage.removeItem('test_cadets');
+            localStorage.removeItem('test_changeHistory');
+            cadets = [];
+            changeHistory = [];
+
+            if (isAdminAuth) {
+                renderTable();
+                updateStatistics();
+            }
+
+            alert('✅ All test data cleared!');
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('test_cadets', JSON.stringify(cadets));
+            localStorage.setItem('test_changeHistory', JSON.stringify(changeHistory));
+        }
+
+        function loadFromLocalStorage() {
+            const savedCadets = localStorage.getItem('test_cadets');
+            const savedHistory = localStorage.getItem('test_changeHistory');
+
+            if (savedCadets) {
+                cadets = JSON.parse(savedCadets);
+            } else {
+                // Load sample data if no data exists
+                cadets = generateSampleData();
+                saveToLocalStorage();
+            }
+
+            if (savedHistory) {
+                changeHistory = JSON.parse(savedHistory);
+            }
+
+            populateFilters();
+            if (isAdminAuth) {
+                renderTable();
+                updateStatistics();
+            }
+
+            alert(`✅ Loaded ${cadets.length} trainees from test storage!`);
+        }
+
+        async function saveTraineeToLocalStorage(traineeData, isEdit = false) {
+            try {
+                if (isEdit) {
+                    const index = cadets.findIndex(c => c.id === traineeData.id);
+                    if (index !== -1) {
+                        const oldData = {...cadets[index]};
+                        cadets[index] = traineeData;
+
+                        // Track change
+                        changeHistory.push({
+                            date: new Date().toISOString(),
+                            user: currentUser?.name || 'Test User',
+                            action: 'UPDATE',
+                            trainee: traineeData.name,
+                            staffId: traineeData.staffId,
+                            changes: `Updated trainee information`
+                        });
+                    }
+                } else {
+                    // New trainee - assign ID
+                    traineeData.id = cadets.length > 0 ? Math.max(...cadets.map(c => c.id)) + 1 : 1;
+                    cadets.push(traineeData);
+
+                    // Track change
+                    changeHistory.push({
+                        date: new Date().toISOString(),
+                        user: currentUser?.name || 'Test User',
+                        action: 'CREATE',
+                        trainee: traineeData.name,
+                        staffId: traineeData.staffId,
+                        changes: `Added new trainee`
+                    });
+                }
+
+                saveToLocalStorage();
+                return true;
+            } catch (error) {
+                console.error('❌ Failed to save to localStorage:', error);
+                return false;
+            }
+        }
+
+        async function deleteTraineeFromLocalStorage(traineeId) {
+            try {
+                const index = cadets.findIndex(c => c.id === traineeId);
+                if (index !== -1) {
+                    const deletedTrainee = cadets[index];
+                    cadets.splice(index, 1);
+
+                    // Track change
+                    changeHistory.push({
+                        date: new Date().toISOString(),
+                        user: currentUser?.name || 'Test User',
+                        action: 'DELETE',
+                        trainee: deletedTrainee.name,
+                        staffId: deletedTrainee.staffId,
+                        changes: `Deleted trainee`
+                    });
+
+                    saveToLocalStorage();
+                }
+                return true;
+            } catch (error) {
+                console.error('❌ Failed to delete from localStorage:', error);
+                return false;
+            }
+        }
+
+        async function checkAdminAuthTestMode(password) {
+            // In test mode, accept any password or the default "admin"
+            return password === 'admin' || password.length > 0;
+        }
+
+        // ==================== SHAREPOINT API ====================
+        async function testSharePointConnection() {
+            const siteUrl = document.getElementById('siteUrl').value.trim();
+            const listName = document.getElementById('listName').value.trim();
+
+            if (!siteUrl || !listName) {
+                alert('⚠️ Please enter both Site URL and List Name');
+                return;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('⚠️ Please sign in first');
+                return;
+            }
+
+            try {
+                const apiUrl = `${siteUrl}/_api/web/lists/getbytitle('${listName}')/items?$top=1`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose'
+                    }
+                });
+
+                if (response.ok) {
+                    document.getElementById('connectionStatus').className = 'status-badge status-connected';
+                    document.getElementById('connectionStatus').textContent = '✅ Connected';
+                    alert('✅ Connection successful!');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('❌ Connection test failed:', error);
+                document.getElementById('connectionStatus').className = 'status-badge status-disconnected';
+                document.getElementById('connectionStatus').textContent = '❌ Failed';
+                alert('❌ Connection failed: ' + error.message);
+            }
+        }
+
+        async function loadDataFromSharePoint() {
+            if (testMode) {
+                loadFromLocalStorage();
+                return;
+            }
+
+            if (!sharePointConfig.siteUrl || !sharePointConfig.listName) {
+                alert('⚠️ Please configure SharePoint settings first');
+                return;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('⚠️ Please sign in first');
+                return;
+            }
+
+            try {
+                const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items?$top=5000`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const items = data.d.results;
+
+                cadets = items.map(item => ({
+                    id: item.Id,
+                    batch: item.Batch || '',
+                    staffId: item.Staff_ID || '',
+                    rank: item.Rank || '',
+                    name: item.Name || '',
+                    firstIOEDate: item.First_IOE_Date || '',
+                    functionalDate: item.Functional_Date || '',
+                    lrcDate: item.LRC_Date || '',
+                    interviewDate: item.Interview_Date || '',
+                    sectorsFlown: item.Sectors_Flown || 0,
+                    remarks: item.Remarks || '',
+                    lastUpdated: item.Last_Updated || new Date().toISOString(),
+                    manualHighlight: item.Manual_Highlight || '',
+                    sectorHistory: JSON.parse(item.Sector_History || '[]')
+                }));
+
+                populateFilters();
+                if (isAdminAuth) {
+                    renderTable();
+                    updateStatistics();
+                }
+
+                alert(`✅ Loaded ${cadets.length} trainees from SharePoint!`);
+            } catch (error) {
+                console.error('❌ Failed to load data:', error);
+                alert('❌ Failed to load data from SharePoint: ' + error.message);
+            }
+        }
+
+        async function saveTraineeToSharePoint(traineeData, isEdit = false) {
+            if (testMode) {
+                const result = await saveTraineeToLocalStorage(traineeData, isEdit);
+                if (result && isAdminAuth) {
+                    populateFilters();
+                    renderTable();
+                    updateStatistics();
+                }
+                return result;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('⚠️ Please sign in first');
+                return false;
+            }
+
+            try {
+                const listItemEntityType = await getListItemEntityType();
+                const itemData = {
+                    __metadata: { type: listItemEntityType },
+                    Batch: traineeData.batch,
+                    Staff_ID: traineeData.staffId,
+                    Rank: traineeData.rank,
+                    Title: traineeData.name,
+                    Name: traineeData.name,
+                    First_IOE_Date: traineeData.firstIOEDate || null,
+                    Functional_Date: traineeData.functionalDate || null,
+                    LRC_Date: traineeData.lrcDate || null,
+                    Interview_Date: traineeData.interviewDate || null,
+                    Sectors_Flown: parseInt(traineeData.sectorsFlown) || 0,
+                    Remarks: traineeData.remarks,
+                    Last_Updated: new Date().toISOString(),
+                    Manual_Highlight: traineeData.manualHighlight,
+                    Sector_History: JSON.stringify(traineeData.sectorHistory || [])
+                };
+
+                let apiUrl, method;
+                if (isEdit && traineeData.id) {
+                    apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items(${traineeData.id})`;
+                    method = 'POST';
+                } else {
+                    apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items`;
+                    method = 'POST';
+                }
+
+                const headers = {
+                    'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                    'Accept': 'application/json;odata=verbose',
+                    'Content-Type': 'application/json;odata=verbose'
+                };
+
+                if (isEdit) {
+                    headers['X-HTTP-Method'] = 'MERGE';
+                    headers['IF-MATCH'] = '*';
+                }
+
+                const response = await fetch(apiUrl, {
+                    method: method,
+                    headers: headers,
+                    body: JSON.stringify(itemData)
+                });
+
+                if (response.ok || response.status === 204) {
+                    // Log change to history
+                    logChange(traineeData.staffId, traineeData.name, isEdit ? 'update' : 'create');
+                    await loadDataFromSharePoint();
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('❌ Failed to save trainee:', error);
+                alert('❌ Failed to save to SharePoint: ' + error.message);
+                return false;
+            }
+        }
+
+        async function deleteTraineeFromSharePoint(itemId) {
+            if (testMode) {
+                const result = await deleteTraineeFromLocalStorage(itemId);
+                if (result && isAdminAuth) {
+                    populateFilters();
+                    renderTable();
+                    updateStatistics();
+                }
+                return result;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('⚠️ Please sign in first');
+                return false;
+            }
+
+            try {
+                const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items(${itemId})`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose',
+                        'X-HTTP-Method': 'DELETE',
+                        'IF-MATCH': '*'
+                    }
+                });
+
+                if (response.ok || response.status === 204) {
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('❌ Failed to delete trainee:', error);
+                alert('❌ Failed to delete from SharePoint: ' + error.message);
+                return false;
+            }
+        }
+
+        async function getListItemEntityType() {
+            const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')`;
+
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                    'Accept': 'application/json;odata=verbose'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data.d.ListItemEntityTypeFullName;
+            }
+            return 'SP.Data.Training_ProgressListItem';
+        }
+
+        // ==================== ADMIN AUTHENTICATION ====================
+        async function checkAdminAuth() {
+            const password = document.getElementById('adminPassword').value.trim();
+
+            if (testMode) {
+                const isAuth = await checkAdminAuthTestMode(password);
+                if (!isAuth) {
+                    alert('❌ Test mode password required. Use "admin" or any non-empty password.');
+                }
+                return isAuth;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('⚠️ Please sign in first');
+                return false;
+            }
+
+            try {
+                // Try to get AdminUsers list
+                const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.adminListName}')/items?$top=1000`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('AdminUsers list not found. Please create it first.');
+                }
+
+                const data = await response.json();
+                const adminItems = data.d.results;
+
+                // Check password if provided and exists in first item
+                if (password && adminItems.length > 0 && adminItems[0].Password) {
+                    if (password === adminItems[0].Password) {
+                        return true;
+                    } else {
+                        alert('❌ Incorrect password');
+                        return false;
+                    }
+                }
+
+                // Check email
+                const userEmail = currentUser.email.toLowerCase();
+                const isAdmin = adminItems.some(item =>
+                    item.Email && item.Email.toLowerCase() === userEmail
+                );
+
+                if (isAdmin) {
+                    return true;
+                } else {
+                    alert('❌ Access Denied!\n\nYour email is not in the admin list.');
+                    return false;
+                }
+
+            } catch (error) {
+                console.error('❌ Admin auth failed:', error);
+                alert('❌ Admin authentication failed: ' + error.message);
+                return false;
+            }
+        }
+
+        // ==================== CHANGE HISTORY ====================
+        function logChange(staffId, name, action, field = '', oldValue = '', newValue = '') {
+            const change = {
+                timestamp: new Date().toISOString(),
+                user: currentUser ? currentUser.name : 'Unknown',
+                staffId: staffId,
+                name: name,
+                action: action,
+                field: field,
+                oldValue: oldValue,
+                newValue: newValue
+            };
+            changeHistory.unshift(change);
+            // Keep only last 100 changes
+            if (changeHistory.length > 100) {
+                changeHistory = changeHistory.slice(0, 100);
+            }
+        }
+
+        function renderChangeHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            if (changeHistory.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No changes recorded yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = changeHistory.slice(0, 50).map(change => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm">${new Date(change.timestamp).toLocaleString()}</td>
+                    <td class="px-4 py-3 text-sm">${change.user}</td>
+                    <td class="px-4 py-3 text-sm">${change.name} (${change.staffId})</td>
+                    <td class="px-4 py-3 text-sm">${change.field || change.action}</td>
+                    <td class="px-4 py-3 text-sm">${change.oldValue || '-'}</td>
+                    <td class="px-4 py-3 text-sm">${change.newValue || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // ==================== USER PORTAL ====================
+        async function loadCadetInfo() {
+            const staffId = document.getElementById('cadetStaffId').value.toUpperCase().trim();
+            if (!staffId) {
+                alert('⚠️ Please enter your Staff ID');
+                return;
+            }
+
+            if (cadets.length === 0) {
+                await loadDataFromSharePoint();
+            }
+
+            const cadet = cadets.find(c => c.staffId === staffId);
+
+            if (!cadet) {
+                alert('❌ Staff ID not found. Please check and try again.');
+                return;
+            }
+
+            currentUserStaffId = staffId;
+            currentUserRecord = cadet;
+
+            // Populate form
+            document.getElementById('cadetNameDisplay').value = cadet.name;
+            document.getElementById('cadetBatchDisplay').value = cadet.batch;
+            document.getElementById('cadetRank').value = cadet.rank;
+            document.getElementById('cadetFirstIOE').value = cadet.firstIOEDate;
+            document.getElementById('cadetFunctional').value = cadet.functionalDate;
+            document.getElementById('cadetLRC').value = cadet.lrcDate;
+            document.getElementById('cadetInterview').value = cadet.interviewDate;
+            document.getElementById('newSectorCount').value = '';
+
+            // Show current sectors
+            if (cadet.sectorsFlown > 0) {
+                document.getElementById('currentSectorsDisplay').classList.remove('hidden');
+                document.getElementById('currentSectorsValue').textContent = cadet.sectorsFlown;
+            }
+
+            // Lock rank if already set
+            if (cadet.rank) {
+                document.getElementById('cadetRank').disabled = true;
+            }
+
+            document.getElementById('cadetFormSection').classList.remove('hidden');
+
+            // Update analytics
+            updateUserAnalytics(cadet);
+        }
+
+        async function updateCadetInfo() {
+            if (!currentUserRecord) {
+                alert('⚠️ Please load your information first');
+                return;
+            }
+
+            const rank = document.getElementById('cadetRank').value;
+            if (!rank) {
+                alert('⚠️ Please select your rank');
+                return;
+            }
+
+            // Prepare updated data
+            const oldSectors = currentUserRecord.sectorsFlown;
+            const newSectorsInput = document.getElementById('newSectorCount').value;
+            const newSectors = newSectorsInput ? parseInt(newSectorsInput) : oldSectors;
+
+            // Update sector history if changed
+            let sectorHistory = currentUserRecord.sectorHistory || [];
+            if (newSectors !== oldSectors) {
+                sectorHistory.push({
+                    date: new Date().toISOString(),
+                    count: newSectors,
+                    change: newSectors - oldSectors,
+                    user: currentUser.name
+                });
+            }
+
+            const updatedData = {
+                ...currentUserRecord,
+                rank: rank,
+                firstIOEDate: document.getElementById('cadetFirstIOE').value,
+                functionalDate: document.getElementById('cadetFunctional').value,
+                lrcDate: document.getElementById('cadetLRC').value,
+                interviewDate: document.getElementById('cadetInterview').value,
+                sectorsFlown: newSectors,
+                sectorHistory: sectorHistory
+            };
+
+            const success = await saveTraineeToSharePoint(updatedData, true);
+
+            if (success) {
+                const msg = document.getElementById('updateMessage');
+                msg.textContent = '✅ Successfully updated!';
+                msg.className = 'mt-4 p-4 rounded-xl bg-green-100 text-green-800 font-semibold';
+                msg.classList.remove('hidden');
+
+                setTimeout(() => {
+                    msg.classList.add('hidden');
+                }, 3000);
+
+                // Reload data
+                await loadCadetInfo();
+            }
+        }
+
+        // ==================== USER ANALYTICS ====================
+        function calculateAnalytics(cadet, allCadets) {
+            const total = cadet.sectorsFlown || 0;
+
+            // Calculate from sector history if available
+            const sectorHistory = cadet.sectorHistory || [];
+            let last30Days = 0;
+            let last7Days = 0;
+
+            if (sectorHistory.length > 0) {
+                const now = new Date();
+                const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+                sectorHistory.forEach(entry => {
+                    const entryDate = new Date(entry.date);
+                    if (entryDate >= thirtyDaysAgo) {
+                        last30Days += entry.change || 0;
+                    }
+                    if (entryDate >= sevenDaysAgo) {
+                        last7Days += entry.change || 0;
+                    }
+                });
+            } else {
+                // Fallback: Use mock data for demo if no history
+                last30Days = Math.floor(total * 0.3);
+                last7Days = Math.floor(total * 0.1);
+            }
+
+            const avg30Day = last30Days / 30;
+            const weeklyRate = (last7Days / 7) * 7;
+
+            // Batch stats
+            const batchCadets = allCadets.filter(c => c.batch === cadet.batch);
+            const batchTotal = batchCadets.reduce((sum, c) => sum + (c.sectorsFlown || 0), 0);
+            const batchAvg = batchCadets.length > 0 ? Math.round(batchTotal / batchCadets.length) : 0;
+
+            return {
+                total,
+                last30Days,
+                last7Days,
+                avg30Day: Math.round(avg30Day * 10) / 10,
+                weeklyRate: Math.round(weeklyRate),
+                batchAvg,
+                difference: total - batchAvg
+            };
+        }
+
+        function updateUserAnalytics(cadet) {
+            const analytics = calculateAnalytics(cadet, cadets);
+
+            // Update stats
+            document.getElementById('userTotalSectors').textContent = analytics.total;
+            document.getElementById('user30DayAvg').textContent = analytics.avg30Day;
+            document.getElementById('userWeeklyRate').textContent = analytics.weeklyRate;
+            document.getElementById('userLast7Days').textContent = analytics.last7Days;
+            document.getElementById('userLast30Days').textContent = analytics.last30Days;
+            document.getElementById('userBatchAverage').textContent = analytics.batchAvg;
+
+            const diffEl = document.getElementById('userDifference');
+            const diff = analytics.difference;
+            diffEl.textContent = (diff >= 0 ? '+' : '') + diff;
+            diffEl.className = 'text-2xl font-bold ' + (diff >= 0 ? 'text-green-700' : 'text-red-700');
+
+            // Create progress chart
+            if (userProgressChart) userProgressChart.destroy();
+            const ctx1 = document.getElementById('userProgressChart').getContext('2d');
+
+            // Generate 30 days of data from sector history or mock
+            const days = [];
+            const sectors = [];
+            const sectorHistory = cadet.sectorHistory || [];
+
+            if (sectorHistory.length > 1) {
+                // Use actual history
+                const sortedHistory = [...sectorHistory].sort((a, b) =>
+                    new Date(a.date) - new Date(b.date)
+                );
+
+                sortedHistory.slice(-30).forEach(entry => {
+                    const date = new Date(entry.date);
+                    days.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+                    sectors.push(entry.count);
+                });
+            } else {
+                // Generate mock 30-day data
+                let cumulative = 0;
+                for (let i = 29; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    days.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+                    const dailySectors = Math.floor(Math.random() * 3);
+                    cumulative += dailySectors;
+                    sectors.push(cumulative);
+                }
+            }
+
+            userProgressChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Cumulative Sectors',
+                        data: sectors,
+                        borderColor: 'rgb(99, 102, 241)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Create batch comparison chart
+            if (userBatchChart) userBatchChart.destroy();
+            const ctx2 = document.getElementById('userBatchChart').getContext('2d');
+
+            const batchCadets = cadets.filter(c => c.batch === cadet.batch);
+            const topPerformers = batchCadets
+                .sort((a, b) => (b.sectorsFlown || 0) - (a.sectorsFlown || 0))
+                .slice(0, 10);
+
+            userBatchChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: topPerformers.map((c, i) =>
+                        c.staffId === cadet.staffId ? `YOU (${c.name.split(' ')[0]})` : c.name.split(' ')[0]
+                    ),
+                    datasets: [{
+                        label: 'Sectors Flown',
+                        data: topPerformers.map(c => c.sectorsFlown || 0),
+                        backgroundColor: topPerformers.map(c =>
+                            c.staffId === cadet.staffId ? 'rgba(99, 102, 241, 0.8)' : 'rgba(156, 163, 175, 0.6)'
+                        ),
+                        borderColor: topPerformers.map(c =>
+                            c.staffId === cadet.staffId ? 'rgb(99, 102, 241)' : 'rgb(156, 163, 175)'
+                        ),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Show analytics section
+            document.getElementById('analyticsSection').classList.remove('hidden');
+        }
+
+        // ==================== ADMIN PANEL ====================
+        function populateFilters() {
+            const years = new Set();
+            const batches = new Set();
+
+            cadets.forEach(cadet => {
+                const year = getYearFromBatch(cadet.batch);
+                if (year) years.add(year);
+                if (cadet.batch) batches.add(cadet.batch);
+            });
+
+            // Year filter
+            const yearFilter = document.getElementById('yearFilter');
+            const currentYear = yearFilter.value;
+            yearFilter.innerHTML = '<option value="all">All Years</option>';
+            Array.from(years).sort((a, b) => b - a).forEach(year => {
+                yearFilter.innerHTML += `<option value="${year}">${year}</option>`;
+            });
+            if (currentYear) yearFilter.value = currentYear;
+
+            // Batch filter
+            const batchFilter = document.getElementById('batchFilter');
+            const analyticsBatchFilter = document.getElementById('analyticsBatchFilter');
+            const currentBatch = batchFilter.value;
+            batchFilter.innerHTML = '<option value="all">All Batches</option>';
+            analyticsBatchFilter.innerHTML = '<option value="all">All Batches</option>';
+            Array.from(batches).sort().forEach(batch => {
+                batchFilter.innerHTML += `<option value="${batch}">${batch}</option>`;
+                analyticsBatchFilter.innerHTML += `<option value="${batch}">${batch}</option>`;
+            });
+            if (currentBatch) batchFilter.value = currentBatch;
+        }
+
+        function getYearFromBatch(batch) {
+            if (!batch) return null;
+            const match = batch.match(/(\d{4})/);
+            return match ? parseInt(match[1]) : null;
+        }
+
+        function filterCadets() {
+            return cadets.filter(cadet => {
+                // Hide completed trainees if toggle is active
+                if (hideCompleted) {
+                    const status = getTraineeStatus(cadet);
+                    if (status === 'completed') return false;
+                }
+
+                if (selectedYearFilter !== 'all') {
+                    const cadetYear = getYearFromBatch(cadet.batch);
+                    if (cadetYear !== parseInt(selectedYearFilter)) return false;
+                }
+                if (selectedBatchFilter !== 'all' && cadet.batch.trim().toLowerCase() !== selectedBatchFilter.trim().toLowerCase()) return false;
+                if (selectedRankFilter !== 'all' && cadet.rank.toUpperCase() !== selectedRankFilter) return false;
+                if (selectedStatusFilter !== 'all') {
+                    const status = getTraineeStatus(cadet);
+                    if (status !== selectedStatusFilter) return false;
+                }
+                if (searchQuery && !cadet.name.toUpperCase().includes(searchQuery) && !cadet.staffId.toUpperCase().includes(searchQuery)) return false;
+                return true;
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            let filteredCadets = filterCadets();
+
+            if (currentSort.column) {
+                filteredCadets.sort((a, b) => {
+                    let aVal = a[currentSort.column];
+                    let bVal = b[currentSort.column];
+
+                    if (currentSort.column === 'sectorsFlown') {
+                        aVal = parseInt(aVal) || 0;
+                        bVal = parseInt(bVal) || 0;
+                    } else {
+                        aVal = String(aVal || '').toLowerCase();
+                        bVal = String(bVal || '').toLowerCase();
+                    }
+
+                    if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            if (filteredCadets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="11" class="px-4 py-8 text-center text-gray-500">
+                            <p class="text-lg">No trainees found matching your filters</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredCadets.map((cadet, index) => {
+                const status = getTraineeStatus(cadet);
+                let rowClass = '';
+                if (status === 'functional') rowClass = 'bg-blue-50';
+                else if (status === 'completed') rowClass = 'bg-green-50';
+                else if (status === 'special') rowClass = 'bg-red-50';
+
+                return `
+                    <tr class="${rowClass}">
+                        <td class="px-4 py-3 text-sm">${cadet.batch}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.staffId}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.rank || '-'}</td>
+                        <td class="px-4 py-3 text-sm font-medium">${cadet.name}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.firstIOEDate || '-'}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.functionalDate || '-'}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.lrcDate || '-'}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.interviewDate || '-'}</td>
+                        <td class="px-4 py-3 text-sm text-center">${cadet.sectorsFlown || 0}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.remarks || '-'}</td>
+                        <td class="px-4 py-3 text-center sticky right-0 ${rowClass || 'bg-white'} shadow-md">
+                            <button onclick="editTrainee(${index})" class="text-blue-600 hover:text-blue-800 mx-1" title="Edit">
+                                ✏️
+                            </button>
+                            <button onclick="deleteTrainee(${index})" class="text-red-600 hover:text-red-800 mx-1" title="Delete">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStatistics() {
+            const total = cadets.length;
+            let inProgress = 0, functional = 0, completed = 0;
+
+            cadets.forEach(cadet => {
+                const status = getTraineeStatus(cadet);
+                if (status === 'inprogress') inProgress++;
+                else if (status === 'functional') functional++;
+                else if (status === 'completed' || status === 'special') completed++;
+            });
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('inProgressCount').textContent = inProgress;
+            document.getElementById('functionalCount').textContent = functional;
+            document.getElementById('completedCount').textContent = completed;
+        }
+
+        function getTraineeStatus(cadet) {
+            if (cadet.manualHighlight === 'blue') return 'functional';
+            if (cadet.manualHighlight === 'green') return 'completed';
+            if (cadet.manualHighlight === 'red') return 'special';
+
+            const hasFirstIOE = cadet.firstIOEDate && cadet.firstIOEDate.trim() !== '';
+            const hasFunctional = cadet.functionalDate && cadet.functionalDate.trim() !== '';
+            const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
+            const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
+
+            if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) return 'completed';
+            if (hasFirstIOE && hasFunctional) return 'functional';
+            return 'inprogress';
+        }
+
+        function getTraineeStatusLabel(cadet) {
+            const status = getTraineeStatus(cadet);
+            if (status === 'functional') return 'FUNCTIONAL';
+            if (status === 'completed') return 'COMPLETED';
+            if (status === 'special') return 'SPECIAL CASE';
+            return 'IN PROGRESS';
+        }
+
+        // ==================== ANALYTICS ====================
+        function updateAdminAnalytics(selectedBatch = 'all') {
+            let filteredCadets = cadets;
+            if (selectedBatch !== 'all') {
+                filteredCadets = cadets.filter(c => c.batch === selectedBatch);
+            }
+
+            // Distribution Chart
+            const statusCounts = {
+                'In Progress': 0,
+                'Functional': 0,
+                'Completed': 0,
+                'Special': 0
+            };
+
+            filteredCadets.forEach(cadet => {
+                const status = getTraineeStatus(cadet);
+                if (status === 'inprogress') statusCounts['In Progress']++;
+                else if (status === 'functional') statusCounts['Functional']++;
+                else if (status === 'completed') statusCounts['Completed']++;
+                else if (status === 'special') statusCounts['Special']++;
+            });
+
+            if (adminDistributionChart) adminDistributionChart.destroy();
+            const ctx1 = document.getElementById('adminDistributionChart').getContext('2d');
+            adminDistributionChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: ['#FCD34D', '#60A5FA', '#34D399', '#F87171']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Top 10 Chart
+            const sortedBySectors = [...filteredCadets]
+                .sort((a, b) => (b.sectorsFlown || 0) - (a.sectorsFlown || 0))
+                .slice(0, 10);
+
+            if (adminTop10Chart) adminTop10Chart.destroy();
+            const ctx2 = document.getElementById('adminTop10Chart').getContext('2d');
+            adminTop10Chart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: sortedBySectors.map(c => c.name),
+                    datasets: [{
+                        label: 'Sectors Flown',
+                        data: sortedBySectors.map(c => c.sectorsFlown || 0),
+                        backgroundColor: '#3B82F6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==================== MODAL ====================
+        function openAddModal() {
+            editingIndex = null;
+            document.getElementById('modalTitle').textContent = 'Add New Trainee';
+            document.getElementById('modalBatch').value = '';
+            document.getElementById('modalStaffId').value = '';
+            document.getElementById('modalRank').value = '';
+            document.getElementById('modalName').value = '';
+            document.getElementById('modalFirstIOE').value = '';
+            document.getElementById('modalFunctional').value = '';
+            document.getElementById('modalLRC').value = '';
+            document.getElementById('modalInterview').value = '';
+            document.getElementById('modalSectors').value = '';
+            document.getElementById('modalHighlight').value = '';
+            document.getElementById('modalRemarks').value = '';
+            document.getElementById('traineeModal').classList.remove('hidden');
+        }
+
+        function editTrainee(index) {
+            const filteredCadets = filterCadets();
+            const cadet = filteredCadets[index];
+            const originalIndex = cadets.findIndex(c => c.id === cadet.id);
+
+            editingIndex = originalIndex;
+            document.getElementById('modalTitle').textContent = 'Edit Trainee';
+            document.getElementById('modalBatch').value = cadet.batch;
+            document.getElementById('modalStaffId').value = cadet.staffId;
+            document.getElementById('modalRank').value = cadet.rank;
+            document.getElementById('modalName').value = cadet.name;
+            document.getElementById('modalFirstIOE').value = cadet.firstIOEDate;
+            document.getElementById('modalFunctional').value = cadet.functionalDate;
+            document.getElementById('modalLRC').value = cadet.lrcDate;
+            document.getElementById('modalInterview').value = cadet.interviewDate;
+            document.getElementById('modalSectors').value = cadet.sectorsFlown;
+            document.getElementById('modalHighlight').value = cadet.manualHighlight || '';
+            document.getElementById('modalRemarks').value = cadet.remarks;
+            document.getElementById('traineeModal').classList.remove('hidden');
+        }
+
+        async function deleteTrainee(index) {
+            const filteredCadets = filterCadets();
+            const cadet = filteredCadets[index];
+
+            if (confirm(`Are you sure you want to delete ${cadet.name}?`)) {
+                const success = await deleteTraineeFromSharePoint(cadet.id);
+                if (success) {
+                    logChange(cadet.staffId, cadet.name, 'delete');
+                    await loadDataFromSharePoint();
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('traineeModal').classList.add('hidden');
+        }
+
+        async function saveModal() {
+            const traineeData = {
+                batch: document.getElementById('modalBatch').value.toUpperCase().trim(),
+                staffId: document.getElementById('modalStaffId').value.toUpperCase().trim(),
+                rank: document.getElementById('modalRank').value.toUpperCase().trim(),
+                name: document.getElementById('modalName').value.toUpperCase().trim(),
+                firstIOEDate: document.getElementById('modalFirstIOE').value,
+                functionalDate: document.getElementById('modalFunctional').value,
+                lrcDate: document.getElementById('modalLRC').value,
+                interviewDate: document.getElementById('modalInterview').value,
+                sectorsFlown: parseInt(document.getElementById('modalSectors').value) || 0,
+                remarks: document.getElementById('modalRemarks').value.toUpperCase().trim(),
+                manualHighlight: document.getElementById('modalHighlight').value,
+                sectorHistory: []
+            };
+
+            if (!traineeData.batch || !traineeData.staffId || !traineeData.name) {
+                alert('⚠️ Please fill in all required fields (Batch, Staff ID, Name)');
+                return;
+            }
+
+            const isEdit = editingIndex !== null;
+            if (isEdit) {
+                traineeData.id = cadets[editingIndex].id;
+                traineeData.sectorHistory = cadets[editingIndex].sectorHistory || [];
+            }
+
+            const success = await saveTraineeToSharePoint(traineeData, isEdit);
+            if (success) {
+                closeModal();
+            }
+        }
+
+        // ==================== EXPORT ====================
+        function exportToExcel() {
+            if (cadets.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+
+            const filteredCadets = cadets.filter(cadet => {
+                if (selectedYearFilter !== 'all') {
+                    const cadetYear = getYearFromBatch(cadet.batch);
+                    if (cadetYear !== parseInt(selectedYearFilter)) return false;
+                }
+                if (selectedBatchFilter !== 'all' && cadet.batch.trim().toLowerCase() !== selectedBatchFilter.trim().toLowerCase()) return false;
+                if (selectedRankFilter !== 'all' && cadet.rank.toUpperCase() !== selectedRankFilter) return false;
+                if (selectedStatusFilter !== 'all') {
+                    let cadetStatus = getTraineeStatus(cadet);
+                    if (cadetStatus !== selectedStatusFilter) return false;
+                }
+                if (searchQuery && !cadet.name.toUpperCase().includes(searchQuery) && !cadet.staffId.toUpperCase().includes(searchQuery)) return false;
+                return true;
+            });
+
+            if (filteredCadets.length === 0) {
+                alert('No trainees match current filters!');
+                return;
+            }
+
+            const sortedCadets = [...filteredCadets].sort((a, b) => {
+                const batchCompare = a.batch.localeCompare(b.batch);
+                if (batchCompare !== 0) return batchCompare;
+                return a.name.localeCompare(b.name);
+            });
+
+            const formattedData = [];
+            const rowMetadata = [];
+            let currentBatch = '';
+
+            sortedCadets.forEach((cadet) => {
+                if (cadet.batch !== currentBatch) {
+                    currentBatch = cadet.batch;
+
+                    if (formattedData.length > 0) {
+                        formattedData.push({});
+                        rowMetadata.push({ type: 'empty' });
+                    }
+
+                    formattedData.push({
+                        'Batch': `BATCH: ${cadet.batch}`,
+                        'Staff ID': '', 'Rank': '', 'Name': '',
+                        'First IOE': '', 'Functional': '', 'LRC': '', 'Interview': '',
+                        'Sectors': '', 'Status': '', 'Last Updated': '', 'Remarks': ''
+                    });
+                    rowMetadata.push({ type: 'batch' });
+                }
+
+                let status = getTraineeStatusLabel(cadet);
+
+                formattedData.push({
+                    'Batch': cadet.batch,
+                    'Staff ID': cadet.staffId,
+                    'Rank': cadet.rank || '',
+                    'Name': cadet.name,
+                    'First IOE': cadet.firstIOEDate || '',
+                    'Functional': cadet.functionalDate || '',
+                    'LRC': cadet.lrcDate || '',
+                    'Interview': cadet.interviewDate || '',
+                    'Sectors': cadet.sectorsFlown,
+                    'Status': status,
+                    'Last Updated': cadet.lastUpdated || '',
+                    'Remarks': cadet.remarks || ''
+                });
+                rowMetadata.push({ type: 'data', cadet: cadet });
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(formattedData);
+            worksheet['!cols'] = [
+                { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 25 },
+                { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 },
+                { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 30 }
+            ];
+
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+            for (let col = range.s.c; col <= range.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                if (!worksheet[cellAddress]) continue;
+
+                worksheet[cellAddress].s = {
+                    font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "2563EB" } },
+                    alignment: { horizontal: "center", vertical: "center" },
+                    border: {
+                        top: { style: "thin", color: { rgb: "000000" } },
+                        bottom: { style: "thin", color: { rgb: "000000" } },
+                        left: { style: "thin", color: { rgb: "000000" } },
+                        right: { style: "thin", color: { rgb: "000000" } }
+                    }
+                };
+            }
+
+            let coloredRows = 0;
+            for (let row = 1; row <= range.e.r; row++) {
+                const metadata = rowMetadata[row - 1];
+                if (!metadata) continue;
+
+                if (metadata.type === 'batch') {
+                    for (let col = range.s.c; col <= range.e.c; col++) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                        if (!worksheet[cellAddress]) worksheet[cellAddress] = { t: 's', v: '' };
+
+                        worksheet[cellAddress].s = {
+                            font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+                            fill: { fgColor: { rgb: "6366F1" } },
+                            alignment: { horizontal: "left", vertical: "center" },
+                            border: {
+                                top: { style: "thin", color: { rgb: "000000" } },
+                                bottom: { style: "thin", color: { rgb: "000000" } },
+                                left: { style: "thin", color: { rgb: "000000" } },
+                                right: { style: "thin", color: { rgb: "000000" } }
+                            }
+                        };
+                    }
+                } else if (metadata.type === 'data') {
+                    const cadet = metadata.cadet;
+                    let bgColor = "FFFFFF";
+
+                    if (cadet.manualHighlight === 'blue') {
+                        bgColor = "DBEAFE";
+                        coloredRows++;
+                    } else if (cadet.manualHighlight === 'green') {
+                        bgColor = "D1FAE5";
+                        coloredRows++;
+                    } else if (cadet.manualHighlight === 'red') {
+                        bgColor = "FEE2E2";
+                        coloredRows++;
+                    } else if (!cadet.manualHighlight) {
+                        const hasFirstIOE = cadet.firstIOEDate && cadet.firstIOEDate.trim() !== '';
+                        const hasFunctional = cadet.functionalDate && cadet.functionalDate.trim() !== '';
+                        const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
+                        const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
+
+                        if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) {
+                            bgColor = "D1FAE5";
+                            coloredRows++;
+                        } else if (hasFirstIOE && hasFunctional && !hasLRC && !hasInterview) {
+                            bgColor = "DBEAFE";
+                            coloredRows++;
+                        }
+                    }
+
+                    for (let col = range.s.c; col <= range.e.c; col++) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                        if (!worksheet[cellAddress]) worksheet[cellAddress] = { t: 's', v: '' };
+
+                        worksheet[cellAddress].s = {
+                            fill: { fgColor: { rgb: bgColor } },
+                            alignment: { horizontal: "left", vertical: "center" },
+                            border: {
+                                top: { style: "thin", color: { rgb: "CCCCCC" } },
+                                bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+                                left: { style: "thin", color: { rgb: "CCCCCC" } },
+                                right: { style: "thin", color: { rgb: "CCCCCC" } }
+                            }
+                        };
+                    }
+                } else if (metadata.type === 'empty') {
+                    for (let col = range.s.c; col <= range.e.c; col++) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                        if (!worksheet[cellAddress]) worksheet[cellAddress] = { t: 's', v: '' };
+
+                        worksheet[cellAddress].s = {
+                            border: {
+                                top: { style: "thin", color: { rgb: "EEEEEE" } },
+                                bottom: { style: "thin", color: { rgb: "EEEEEE" } },
+                                left: { style: "thin", color: { rgb: "EEEEEE" } },
+                                right: { style: "thin", color: { rgb: "EEEEEE" } }
+                            }
+                        };
+                    }
+                }
+            }
+
+            worksheet['!freeze'] = { xSplit: 0, ySplit: 1 };
+            worksheet['!views'] = [{
+                state: 'frozen',
+                xSplit: 0,
+                ySplit: 1,
+                topLeftCell: 'A2',
+                activePane: 'bottomLeft'
+            }];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Training Data');
+
+            if (!workbook.Workbook) workbook.Workbook = {};
+            if (!workbook.Workbook.Views) workbook.Workbook.Views = [{}];
+            workbook.Workbook.Views[0].RTL = false;
+
+            const filename = `Training_Progress_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(workbook, filename, { cellStyles: true });
+        }
+
+        // ==================== VIEW SWITCHING ====================
+        function switchToCadetView() {
+            currentView = 'cadet';
+            document.getElementById('cadetView').classList.remove('hidden');
+            document.getElementById('adminView').classList.add('hidden');
+            document.getElementById('cadetViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg';
+            document.getElementById('adminViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200';
+        }
+
+        function switchToAdminView() {
+            currentView = 'admin';
+            document.getElementById('cadetView').classList.add('hidden');
+            document.getElementById('adminView').classList.remove('hidden');
+            document.getElementById('adminViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md hover:shadow-lg';
+            document.getElementById('cadetViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200';
+
+            // Show login if not authenticated
+            if (!isAdminAuth) {
+                document.getElementById('adminLogin').classList.remove('hidden');
+                document.getElementById('adminDashboard').classList.add('hidden');
+            } else {
+                document.getElementById('adminLogin').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+            }
+        }
+
+        async function handleAdminLogin() {
+            const isAuth = await checkAdminAuth();
+            if (isAuth) {
+                isAdminAuth = true;
+                document.getElementById('adminLogin').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                await loadDataFromSharePoint();
+            }
+        }
+
+        function showAnalyticsDashboard() {
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('analyticsDashboard').classList.remove('hidden');
+            updateAdminAnalytics();
+        }
+
+        function showHistoryDashboard() {
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('historyDashboard').classList.remove('hidden');
+            renderChangeHistory();
+        }
+
+        function backToAdmin() {
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            document.getElementById('analyticsDashboard').classList.add('hidden');
+            document.getElementById('historyDashboard').classList.add('hidden');
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load test mode preference
+            const savedTestMode = localStorage.getItem('testMode');
+            if (savedTestMode === 'true') {
+                testMode = true;
+                document.getElementById('testModeToggle').checked = true;
+                toggleTestMode();
+            }
+
+            // Load saved configuration
+            const savedSiteUrl = localStorage.getItem('sp_siteUrl');
+            const savedListName = localStorage.getItem('sp_listName');
+            if (savedSiteUrl) {
+                document.getElementById('siteUrl').value = savedSiteUrl;
+                sharePointConfig.siteUrl = savedSiteUrl;
+            }
+            if (savedListName) {
+                document.getElementById('listName').value = savedListName;
+                sharePointConfig.listName = savedListName;
+            }
+
+            // Initialize MSAL only if not in test mode
+            if (!testMode) {
+                initializeMSAL();
+            }
+
+            // Configuration buttons
+            document.getElementById('saveConfigBtn').addEventListener('click', () => {
+                const siteUrl = document.getElementById('siteUrl').value.trim();
+                const listName = document.getElementById('listName').value.trim();
+
+                if (!siteUrl || !listName) {
+                    alert('⚠️ Please enter both Site URL and List Name');
+                    return;
+                }
+
+                sharePointConfig.siteUrl = siteUrl;
+                sharePointConfig.listName = listName;
+                localStorage.setItem('sp_siteUrl', siteUrl);
+                localStorage.setItem('sp_listName', listName);
+
+                alert('✅ Configuration saved!');
+            });
+
+            document.getElementById('testConnectionBtn').addEventListener('click', testSharePointConnection);
+
+            // Test Mode buttons
+            document.getElementById('testModeToggle').addEventListener('change', toggleTestMode);
+            document.getElementById('loadSampleDataBtn').addEventListener('click', loadSampleData);
+            document.getElementById('clearTestDataBtn').addEventListener('click', clearTestData);
+
+            // Auth buttons
+            document.getElementById('signInBtn').addEventListener('click', signIn);
+            document.getElementById('signOutBtn').addEventListener('click', signOut);
+
+            // View toggle
+            document.getElementById('cadetViewBtn').addEventListener('click', switchToCadetView);
+            document.getElementById('adminViewBtn').addEventListener('click', switchToAdminView);
+
+            // User Portal
+            document.getElementById('loadCadetBtn').addEventListener('click', loadCadetInfo);
+            document.getElementById('updateCadetBtn').addEventListener('click', updateCadetInfo);
+
+            // Admin Panel
+            document.getElementById('adminLoginBtn').addEventListener('click', handleAdminLogin);
+            document.getElementById('refreshDataBtn').addEventListener('click', loadDataFromSharePoint);
+            document.getElementById('viewAnalyticsBtn').addEventListener('click', showAnalyticsDashboard);
+            document.getElementById('viewHistoryBtn').addEventListener('click', showHistoryDashboard);
+            document.getElementById('backToAdminBtn').addEventListener('click', backToAdmin);
+            document.getElementById('backToAdminBtn2').addEventListener('click', backToAdmin);
+            document.getElementById('addTraineeBtn').addEventListener('click', openAddModal);
+            document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('exportPowerBIBtn').addEventListener('click', exportToExcel);
+
+            // Modal buttons
+            document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+            document.getElementById('saveModalBtn').addEventListener('click', saveModal);
+
+            // Filters
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toUpperCase().trim();
+                renderTable();
+            });
+
+            document.getElementById('yearFilter').addEventListener('change', (e) => {
+                selectedYearFilter = e.target.value;
+                renderTable();
+            });
+
+            document.getElementById('batchFilter').addEventListener('change', (e) => {
+                selectedBatchFilter = e.target.value;
+                renderTable();
+            });
+
+            document.getElementById('rankFilter').addEventListener('change', (e) => {
+                selectedRankFilter = e.target.value;
+                renderTable();
+            });
+
+            document.getElementById('statusFilter').addEventListener('change', (e) => {
+                selectedStatusFilter = e.target.value;
+                renderTable();
+            });
+
+            // Clear All Filters button
+            document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+                selectedYearFilter = 'all';
+                selectedBatchFilter = 'all';
+                selectedRankFilter = 'all';
+                selectedStatusFilter = 'all';
+                searchQuery = '';
+
+                document.getElementById('yearFilter').value = 'all';
+                document.getElementById('batchFilter').value = 'all';
+                document.getElementById('rankFilter').value = 'all';
+                document.getElementById('statusFilter').value = 'all';
+                document.getElementById('searchInput').value = '';
+
+                renderTable();
+
+                // Reset hide completed toggle
+                if (hideCompleted) {
+                    document.getElementById('toggleCompletedBtn').click();
+                }
+            });
+
+            // Toggle completed trainees
+            document.getElementById('toggleCompletedBtn').addEventListener('click', () => {
+                hideCompleted = !hideCompleted;
+                const btn = document.getElementById('toggleCompletedBtn');
+                if (hideCompleted) {
+                    btn.innerHTML = '👁️ Show Completed';
+                    btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    btn.classList.add('bg-gray-600', 'hover:bg-gray-700');
+                } else {
+                    btn.innerHTML = '👁️ Hide Completed';
+                    btn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                }
+                renderTable();
+            });
+
+            document.getElementById('analyticsBatchFilter').addEventListener('change', (e) => {
+                updateAdminAnalytics(e.target.value);
+            });
+
+            // Sortable headers
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.column;
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.column = column;
+                        currentSort.direction = 'asc';
+                    }
+
+                    document.querySelectorAll('.sortable-header').forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    header.classList.add(`sort-${currentSort.direction}`);
+
+                    renderTable();
+                });
+            });
+        });
+
+        // Make functions globally accessible
+        window.editTrainee = editTrainee;
+        window.deleteTrainee = deleteTrainee;
+    </script>
+
+</body>
+</html>

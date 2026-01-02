@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Training Progress Tracker v3.0 - SharePoint Edition</title>
+    
+    <!-- Microsoft Authentication Library -->
+    <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js"></script>
+    
+    <!-- Other Libraries -->
+    <script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        input[type="text"]:not([disabled]),
+        select:not([disabled]),
+        textarea {
+            text-transform: uppercase;
+        }
+
+        input[type="date"] {
+            text-transform: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        * {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .data-table {
+            border-spacing: 0;
+            table-layout: auto;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th.sticky,
+        .data-table td.sticky {
+            position: sticky;
+            right: 0;
+            z-index: 10;
+        }
+
+        .data-table th.sticky {
+            z-index: 11;
+        }
+
+        .data-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .data-table thead th.sticky {
+            z-index: 21;
+        }
+
+        .data-table tbody tr.bg-blue-50 td.sticky {
+            background-color: #eff6ff;
+        }
+
+        .data-table tbody tr.bg-green-50 td.sticky {
+            background-color: #f0fdf4;
+        }
+
+        .data-table tbody tr.bg-red-50 td.sticky {
+            background-color: #fef2f2;
+        }
+
+        .data-table tbody tr:not([class*="bg-"]) td.sticky {
+            background-color: white;
+        }
+
+        .data-table tbody tr:hover td.sticky {
+            box-shadow: -4px 0 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
+        }
+
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+        }
+
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px !important;
+        }
+
+        .sortable-header:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .sortable-header::after {
+            content: '⇅';
+            position: absolute;
+            right: 5px;
+            opacity: 0.3;
+            font-size: 12px;
+        }
+
+        .sortable-header.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+            color: #0078D4;
+        }
+
+        .sortable-header.sort-desc::after {
+            content: '↓';
+            opacity: 1;
+            color: #0078D4;
+        }
+
+        .copy-btn {
+            transition: all 0.2s;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .copy-success {
+            animation: copyPulse 0.3s ease;
+        }
+
+        @keyframes copyPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .config-panel {
+            background: #f8f9fa;
+            border: 2px solid #0078D4;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Configuration Panel -->
+    <div id="configPanel" class="config-panel mx-4 mt-4">
+        <h3 class="text-xl font-bold mb-4 text-gray-800">📋 SharePoint Configuration</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">SharePoint Site URL:</label>
+                <input type="text" id="siteUrl" placeholder="https://yourtenant.sharepoint.com/sites/yoursite" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">List Name:</label>
+                <input type="text" id="listName" placeholder="Training_Progress" value="Training_Progress"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+        </div>
+        <div class="flex items-center justify-between">
+            <div>
+                <button id="saveConfigBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
+                    💾 Save Configuration
+                </button>
+                <button id="testConnectionBtn" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium ml-2">
+                    🔌 Test Connection
+                </button>
+            </div>
+            <div id="connectionStatus" class="status-badge status-disconnected">
+                ⚠️ Not Connected
+            </div>
+        </div>
+        <div class="mt-3 text-sm text-gray-600">
+            <strong>Note:</strong> Make sure the SharePoint list has these columns: Batch, Staff_ID, Rank, Name, First_IOE_Date, Functional_Date, LRC_Date, Interview_Date, Sectors_Flown, Status, Remarks, Last_Updated, Manual_Highlight
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="gradient-bg rounded-2xl shadow-2xl p-8 mb-8 animate-slide-in">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-2">🎓 Training Progress Tracker</h1>
+                    <p class="text-blue-100 text-lg">SharePoint Edition v3.0 - Microsoft Ecosystem Integration</p>
+                </div>
+                <div id="authContainer">
+                    <button id="signInBtn" class="bg-white text-blue-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition shadow-lg">
+                        🔐 Sign in with Microsoft
+                    </button>
+                    <div id="userInfo" class="hidden text-white text-right">
+                        <p class="font-semibold" id="userName"></p>
+                        <button id="signOutBtn" class="text-sm text-blue-100 hover:text-white underline mt-1">Sign out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-fade-in">
+            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">TOTAL TRAINEES</p>
+                        <p class="text-3xl font-bold text-gray-800 mt-2" id="totalCount">0</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <span class="text-2xl">👥</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">IN PROGRESS</p>
+                        <p class="text-3xl font-bold text-gray-800 mt-2" id="inProgressCount">0</p>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <span class="text-2xl">⏳</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-400">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">FUNCTIONAL</p>
+                        <p class="text-3xl font-bold text-gray-800 mt-2" id="functionalCount">0</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <span class="text-2xl">✈️</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">COMPLETED</p>
+                        <p class="text-3xl font-bold text-gray-800 mt-2" id="completedCount">0</p>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <span class="text-2xl">✅</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">🔍 Search</label>
+                    <input type="text" id="searchInput" placeholder="Name or Staff ID..." 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">📅 Year</label>
+                    <select id="yearFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Years</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">🎯 Batch</label>
+                    <select id="batchFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Batches</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">⭐ Rank</label>
+                    <select id="rankFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Ranks</option>
+                        <option value="FO">FO</option>
+                        <option value="SFO">SFO</option>
+                        <option value="CAPT">CAPT</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                <button id="addTraineeBtn" class="btn-primary bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
+                    ➕ Add Trainee
+                </button>
+                <button id="refreshBtn" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium">
+                    🔄 Refresh from SharePoint
+                </button>
+                <button id="exportExcelBtn" class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 font-medium">
+                    📊 Export to Excel
+                </button>
+                <button id="exportPowerBIBtn" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 font-medium">
+                    📈 Export for Power BI
+                </button>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="data-table w-full">
+                    <thead class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="batch">BATCH</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="staffId">STAFF ID</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="rank">RANK</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="name">NAME</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold">FIRST IOE</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold">FUNCTIONAL</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold">LRC</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold">INTERVIEW</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="sectorsFlown">SECTORS</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold">REMARKS</th>
+                            <th class="px-4 py-3 text-center text-sm font-semibold sticky bg-blue-700">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <tr>
+                            <td colspan="11" class="px-4 py-8 text-center text-gray-500">
+                                <p class="text-lg">📋 Configure SharePoint connection and sign in to load data</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="traineeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slide-in">
+            <div class="gradient-bg p-6 rounded-t-2xl">
+                <h2 id="modalTitle" class="text-2xl font-bold text-white">Add New Trainee</h2>
+            </div>
+            
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Batch *</label>
+                        <input type="text" id="modalBatch" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Staff ID *</label>
+                        <input type="text" id="modalStaffId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rank</label>
+                        <select id="modalRank" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Rank</option>
+                            <option value="FO">FO</option>
+                            <option value="SFO">SFO</option>
+                            <option value="CAPT">CAPT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                        <input type="text" id="modalName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First IOE Date</label>
+                        <input type="date" id="modalFirstIOE" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Functional Date</label>
+                        <input type="date" id="modalFunctional" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">LRC Date</label>
+                        <input type="date" id="modalLRC" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Interview Date</label>
+                        <input type="date" id="modalInterview" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sectors Flown</label>
+                        <input type="number" id="modalSectors" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" min="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Manual Highlight</label>
+                        <select id="modalHighlight" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">None (Auto)</option>
+                            <option value="blue">🔵 Functional</option>
+                            <option value="green">🟢 Completed</option>
+                            <option value="red">🔴 Special Case</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+                        <textarea id="modalRemarks" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button id="cancelModalBtn" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                        Cancel
+                    </button>
+                    <button id="saveModalBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
+                        💾 Save to SharePoint
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== MSAL Configuration ====================
+        let msalInstance;
+        let msalConfig = {
+            auth: {
+                clientId: 'YOUR_CLIENT_ID_HERE', // Replace with your Azure AD App Registration Client ID
+                authority: 'https://login.microsoftonline.com/YOUR_TENANT_ID_HERE', // Replace with your tenant ID or use 'common'
+                redirectUri: window.location.origin
+            },
+            cache: {
+                cacheLocation: 'localStorage',
+                storeAuthStateInCookie: false
+            }
+        };
+
+        const loginRequest = {
+            scopes: ['User.Read', 'Sites.ReadWrite.All']
+        };
+
+        // ==================== SharePoint Configuration ====================
+        let sharePointConfig = {
+            siteUrl: '',
+            listName: 'Training_Progress',
+            accessToken: null
+        };
+
+        // ==================== Data Storage ====================
+        let cadets = [];
+        let editingIndex = null;
+        let currentSort = { column: null, direction: 'asc' };
+        let selectedYearFilter = 'all';
+        let selectedBatchFilter = 'all';
+        let selectedRankFilter = 'all';
+        let searchQuery = '';
+
+        // ==================== Initialize MSAL ====================
+        function initializeMSAL() {
+            try {
+                msalInstance = new msal.PublicClientApplication(msalConfig);
+                console.log('✅ MSAL initialized successfully');
+                
+                // Check if user is already signed in
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length > 0) {
+                    msalInstance.setActiveAccount(accounts[0]);
+                    updateUIForSignedInUser(accounts[0]);
+                    acquireTokenAndLoadData();
+                }
+            } catch (error) {
+                console.error('❌ MSAL initialization failed:', error);
+                alert('⚠️ Authentication setup incomplete. Please configure your Azure AD App Registration.\n\nSee setup instructions in the comments of this file.');
+            }
+        }
+
+        // ==================== Authentication Functions ====================
+        async function signIn() {
+            try {
+                const loginResponse = await msalInstance.loginPopup(loginRequest);
+                msalInstance.setActiveAccount(loginResponse.account);
+                updateUIForSignedInUser(loginResponse.account);
+                sharePointConfig.accessToken = loginResponse.accessToken;
+                await loadDataFromSharePoint();
+            } catch (error) {
+                console.error('❌ Sign in failed:', error);
+                alert('Failed to sign in. Please try again.');
+            }
+        }
+
+        async function signOut() {
+            try {
+                await msalInstance.logoutPopup();
+                updateUIForSignedOutUser();
+                sharePointConfig.accessToken = null;
+                cadets = [];
+                renderTable();
+                updateStatistics();
+            } catch (error) {
+                console.error('❌ Sign out failed:', error);
+            }
+        }
+
+        async function acquireTokenAndLoadData() {
+            try {
+                const account = msalInstance.getActiveAccount();
+                if (!account) {
+                    throw new Error('No active account');
+                }
+
+                const tokenResponse = await msalInstance.acquireTokenSilent({
+                    ...loginRequest,
+                    account: account
+                });
+
+                sharePointConfig.accessToken = tokenResponse.accessToken;
+                await loadDataFromSharePoint();
+            } catch (error) {
+                console.error('❌ Token acquisition failed:', error);
+                if (error instanceof msal.InteractionRequiredAuthError) {
+                    await msalInstance.acquireTokenPopup(loginRequest);
+                    await acquireTokenAndLoadData();
+                }
+            }
+        }
+
+        function updateUIForSignedInUser(account) {
+            document.getElementById('signInBtn').classList.add('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('userName').textContent = account.name || account.username;
+        }
+
+        function updateUIForSignedOutUser() {
+            document.getElementById('signInBtn').classList.remove('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+        }
+
+        // ==================== SharePoint API Functions ====================
+        async function testSharePointConnection() {
+            const siteUrl = document.getElementById('siteUrl').value.trim();
+            const listName = document.getElementById('listName').value.trim();
+
+            if (!siteUrl || !listName) {
+                alert('⚠️ Please enter both Site URL and List Name');
+                return;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('⚠️ Please sign in first');
+                return;
+            }
+
+            try {
+                const sitePath = new URL(siteUrl).pathname;
+                const apiUrl = `${siteUrl}/_api/web/lists/getbytitle('${listName}')/items?$top=1`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose'
+                    }
+                });
+
+                if (response.ok) {
+                    document.getElementById('connectionStatus').className = 'status-badge status-connected';
+                    document.getElementById('connectionStatus').textContent = '✅ Connected';
+                    alert('✅ Connection successful! You can now load data.');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('❌ Connection test failed:', error);
+                document.getElementById('connectionStatus').className = 'status-badge status-disconnected';
+                document.getElementById('connectionStatus').textContent = '❌ Connection Failed';
+                alert('❌ Connection failed. Please check:\n- Site URL is correct\n- List name exists\n- You have permissions\n\nError: ' + error.message);
+            }
+        }
+
+        async function loadDataFromSharePoint() {
+            if (!sharePointConfig.siteUrl || !sharePointConfig.listName) {
+                alert('⚠️ Please configure SharePoint settings first');
+                return;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('⚠️ Please sign in first');
+                return;
+            }
+
+            try {
+                const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items?$top=5000`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const items = data.d.results;
+
+                cadets = items.map(item => ({
+                    id: item.Id,
+                    batch: item.Batch || '',
+                    staffId: item.Staff_ID || '',
+                    rank: item.Rank || '',
+                    name: item.Name || '',
+                    firstIOEDate: item.First_IOE_Date || '',
+                    functionalDate: item.Functional_Date || '',
+                    lrcDate: item.LRC_Date || '',
+                    interviewDate: item.Interview_Date || '',
+                    sectorsFlown: item.Sectors_Flown || 0,
+                    remarks: item.Remarks || '',
+                    lastUpdated: item.Last_Updated || new Date().toISOString(),
+                    manualHighlight: item.Manual_Highlight || ''
+                }));
+
+                populateFilters();
+                renderTable();
+                updateStatistics();
+                
+                alert(`✅ Loaded ${cadets.length} trainees from SharePoint!`);
+            } catch (error) {
+                console.error('❌ Failed to load data:', error);
+                alert('❌ Failed to load data from SharePoint.\n\nError: ' + error.message);
+            }
+        }
+
+        async function saveTraineeToSharePoint(traineeData, isEdit = false) {
+            if (!sharePointConfig.accessToken) {
+                alert('⚠️ Please sign in first');
+                return false;
+            }
+
+            try {
+                const listItemEntityType = await getListItemEntityType();
+                const itemData = {
+                    __metadata: { type: listItemEntityType },
+                    Batch: traineeData.batch,
+                    Staff_ID: traineeData.staffId,
+                    Rank: traineeData.rank,
+                    Title: traineeData.name, // Title is required in SharePoint
+                    Name: traineeData.name,
+                    First_IOE_Date: traineeData.firstIOEDate || null,
+                    Functional_Date: traineeData.functionalDate || null,
+                    LRC_Date: traineeData.lrcDate || null,
+                    Interview_Date: traineeData.interviewDate || null,
+                    Sectors_Flown: parseInt(traineeData.sectorsFlown) || 0,
+                    Remarks: traineeData.remarks,
+                    Last_Updated: new Date().toISOString(),
+                    Manual_Highlight: traineeData.manualHighlight
+                };
+
+                let apiUrl, method;
+                if (isEdit && traineeData.id) {
+                    apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items(${traineeData.id})`;
+                    method = 'POST';
+                    itemData['__metadata'] = { ...itemData.__metadata, type: listItemEntityType };
+                } else {
+                    apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items`;
+                    method = 'POST';
+                }
+
+                const headers = {
+                    'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                    'Accept': 'application/json;odata=verbose',
+                    'Content-Type': 'application/json;odata=verbose'
+                };
+
+                if (isEdit) {
+                    headers['X-HTTP-Method'] = 'MERGE';
+                    headers['IF-MATCH'] = '*';
+                }
+
+                const response = await fetch(apiUrl, {
+                    method: method,
+                    headers: headers,
+                    body: JSON.stringify(itemData)
+                });
+
+                if (response.ok || response.status === 204) {
+                    await loadDataFromSharePoint();
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('❌ Failed to save trainee:', error);
+                alert('❌ Failed to save to SharePoint.\n\nError: ' + error.message);
+                return false;
+            }
+        }
+
+        async function deleteTraineeFromSharePoint(itemId) {
+            if (!sharePointConfig.accessToken) {
+                alert('⚠️ Please sign in first');
+                return false;
+            }
+
+            try {
+                const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items(${itemId})`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose',
+                        'X-HTTP-Method': 'DELETE',
+                        'IF-MATCH': '*'
+                    }
+                });
+
+                if (response.ok || response.status === 204) {
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('❌ Failed to delete trainee:', error);
+                alert('❌ Failed to delete from SharePoint.\n\nError: ' + error.message);
+                return false;
+            }
+        }
+
+        async function getListItemEntityType() {
+            const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                    'Accept': 'application/json;odata=verbose'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data.d.ListItemEntityTypeFullName;
+            }
+            return 'SP.Data.Training_ProgressListItem'; // Fallback
+        }
+
+        // ==================== UI Functions ====================
+        function populateFilters() {
+            const years = new Set();
+            const batches = new Set();
+
+            cadets.forEach(cadet => {
+                const year = getYearFromBatch(cadet.batch);
+                if (year) years.add(year);
+                if (cadet.batch) batches.add(cadet.batch);
+            });
+
+            const yearFilter = document.getElementById('yearFilter');
+            const currentYear = yearFilter.value;
+            yearFilter.innerHTML = '<option value="all">All Years</option>';
+            Array.from(years).sort((a, b) => b - a).forEach(year => {
+                yearFilter.innerHTML += `<option value="${year}">${year}</option>`;
+            });
+            if (currentYear) yearFilter.value = currentYear;
+
+            const batchFilter = document.getElementById('batchFilter');
+            const currentBatch = batchFilter.value;
+            batchFilter.innerHTML = '<option value="all">All Batches</option>';
+            Array.from(batches).sort().forEach(batch => {
+                batchFilter.innerHTML += `<option value="${batch}">${batch}</option>`;
+            });
+            if (currentBatch) batchFilter.value = currentBatch;
+        }
+
+        function getYearFromBatch(batch) {
+            if (!batch) return null;
+            const match = batch.match(/(\d{4})/);
+            return match ? parseInt(match[1]) : null;
+        }
+
+        function filterCadets() {
+            return cadets.filter(cadet => {
+                if (selectedYearFilter !== 'all') {
+                    const cadetYear = getYearFromBatch(cadet.batch);
+                    if (cadetYear !== parseInt(selectedYearFilter)) return false;
+                }
+                if (selectedBatchFilter !== 'all' && cadet.batch.trim().toLowerCase() !== selectedBatchFilter.trim().toLowerCase()) return false;
+                if (selectedRankFilter !== 'all' && cadet.rank.toUpperCase() !== selectedRankFilter) return false;
+                if (searchQuery && !cadet.name.toUpperCase().includes(searchQuery) && !cadet.staffId.toUpperCase().includes(searchQuery)) return false;
+                return true;
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            let filteredCadets = filterCadets();
+
+            if (currentSort.column) {
+                filteredCadets.sort((a, b) => {
+                    let aVal = a[currentSort.column];
+                    let bVal = b[currentSort.column];
+
+                    if (currentSort.column === 'sectorsFlown') {
+                        aVal = parseInt(aVal) || 0;
+                        bVal = parseInt(bVal) || 0;
+                    } else {
+                        aVal = String(aVal || '').toLowerCase();
+                        bVal = String(bVal || '').toLowerCase();
+                    }
+
+                    if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            if (filteredCadets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="11" class="px-4 py-8 text-center text-gray-500">
+                            <p class="text-lg">No trainees found matching your filters</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredCadets.map((cadet, index) => {
+                const status = getTraineeStatus(cadet);
+                let rowClass = '';
+                if (status === 'functional') rowClass = 'bg-blue-50';
+                else if (status === 'completed') rowClass = 'bg-green-50';
+                else if (status === 'special') rowClass = 'bg-red-50';
+
+                return `
+                    <tr class="${rowClass}">
+                        <td class="px-4 py-3 text-sm">${cadet.batch}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.staffId}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.rank || '-'}</td>
+                        <td class="px-4 py-3 text-sm font-medium">${cadet.name}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.firstIOEDate || '-'}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.functionalDate || '-'}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.lrcDate || '-'}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.interviewDate || '-'}</td>
+                        <td class="px-4 py-3 text-sm text-center">${cadet.sectorsFlown || 0}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.remarks || '-'}</td>
+                        <td class="px-4 py-3 text-center sticky bg-white">
+                            <button onclick="editTrainee(${index})" class="text-blue-600 hover:text-blue-800 mx-1" title="Edit">
+                                ✏️
+                            </button>
+                            <button onclick="deleteTrainee(${index})" class="text-red-600 hover:text-red-800 mx-1" title="Delete">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStatistics() {
+            const total = cadets.length;
+            let inProgress = 0, functional = 0, completed = 0;
+
+            cadets.forEach(cadet => {
+                const status = getTraineeStatus(cadet);
+                if (status === 'inprogress') inProgress++;
+                else if (status === 'functional') functional++;
+                else if (status === 'completed') completed++;
+                else if (status === 'special') completed++; // Count special cases as completed
+            });
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('inProgressCount').textContent = inProgress;
+            document.getElementById('functionalCount').textContent = functional;
+            document.getElementById('completedCount').textContent = completed;
+        }
+
+        function getTraineeStatus(cadet) {
+            if (cadet.manualHighlight === 'blue') return 'functional';
+            if (cadet.manualHighlight === 'green') return 'completed';
+            if (cadet.manualHighlight === 'red') return 'special';
+            
+            const hasFirstIOE = cadet.firstIOEDate && cadet.firstIOEDate.trim() !== '';
+            const hasFunctional = cadet.functionalDate && cadet.functionalDate.trim() !== '';
+            const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
+            const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
+            
+            if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) return 'completed';
+            if (hasFirstIOE && hasFunctional && !hasLRC && !hasInterview) return 'functional';
+            return 'inprogress';
+        }
+
+        // ==================== Modal Functions ====================
+        function openAddModal() {
+            editingIndex = null;
+            document.getElementById('modalTitle').textContent = 'Add New Trainee';
+            document.getElementById('modalBatch').value = '';
+            document.getElementById('modalStaffId').value = '';
+            document.getElementById('modalRank').value = '';
+            document.getElementById('modalName').value = '';
+            document.getElementById('modalFirstIOE').value = '';
+            document.getElementById('modalFunctional').value = '';
+            document.getElementById('modalLRC').value = '';
+            document.getElementById('modalInterview').value = '';
+            document.getElementById('modalSectors').value = '';
+            document.getElementById('modalHighlight').value = '';
+            document.getElementById('modalRemarks').value = '';
+            document.getElementById('traineeModal').classList.remove('hidden');
+        }
+
+        function editTrainee(index) {
+            const filteredCadets = filterCadets();
+            const cadet = filteredCadets[index];
+            const originalIndex = cadets.findIndex(c => c.id === cadet.id);
+            
+            editingIndex = originalIndex;
+            document.getElementById('modalTitle').textContent = 'Edit Trainee';
+            document.getElementById('modalBatch').value = cadet.batch;
+            document.getElementById('modalStaffId').value = cadet.staffId;
+            document.getElementById('modalRank').value = cadet.rank;
+            document.getElementById('modalName').value = cadet.name;
+            document.getElementById('modalFirstIOE').value = cadet.firstIOEDate;
+            document.getElementById('modalFunctional').value = cadet.functionalDate;
+            document.getElementById('modalLRC').value = cadet.lrcDate;
+            document.getElementById('modalInterview').value = cadet.interviewDate;
+            document.getElementById('modalSectors').value = cadet.sectorsFlown;
+            document.getElementById('modalHighlight').value = cadet.manualHighlight || '';
+            document.getElementById('modalRemarks').value = cadet.remarks;
+            document.getElementById('traineeModal').classList.remove('hidden');
+        }
+
+        async function deleteTrainee(index) {
+            const filteredCadets = filterCadets();
+            const cadet = filteredCadets[index];
+            
+            if (confirm(`Are you sure you want to delete ${cadet.name}?`)) {
+                const success = await deleteTraineeFromSharePoint(cadet.id);
+                if (success) {
+                    await loadDataFromSharePoint();
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('traineeModal').classList.add('hidden');
+        }
+
+        async function saveModal() {
+            const traineeData = {
+                batch: document.getElementById('modalBatch').value.toUpperCase().trim(),
+                staffId: document.getElementById('modalStaffId').value.toUpperCase().trim(),
+                rank: document.getElementById('modalRank').value.toUpperCase().trim(),
+                name: document.getElementById('modalName').value.toUpperCase().trim(),
+                firstIOEDate: document.getElementById('modalFirstIOE').value,
+                functionalDate: document.getElementById('modalFunctional').value,
+                lrcDate: document.getElementById('modalLRC').value,
+                interviewDate: document.getElementById('modalInterview').value,
+                sectorsFlown: parseInt(document.getElementById('modalSectors').value) || 0,
+                remarks: document.getElementById('modalRemarks').value.toUpperCase().trim(),
+                manualHighlight: document.getElementById('modalHighlight').value
+            };
+
+            if (!traineeData.batch || !traineeData.staffId || !traineeData.name) {
+                alert('⚠️ Please fill in all required fields (Batch, Staff ID, Name)');
+                return;
+            }
+
+            const isEdit = editingIndex !== null;
+            if (isEdit) {
+                traineeData.id = cadets[editingIndex].id;
+            }
+
+            const success = await saveTraineeToSharePoint(traineeData, isEdit);
+            if (success) {
+                closeModal();
+            }
+        }
+
+        // ==================== Export Functions ====================
+        function exportToExcel() {
+            if (cadets.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+
+            const filteredCadets = filterCadets();
+            if (filteredCadets.length === 0) {
+                alert('No trainees match current filters!');
+                return;
+            }
+
+            const sortedCadets = [...filteredCadets].sort((a, b) => {
+                const batchCompare = a.batch.localeCompare(b.batch);
+                if (batchCompare !== 0) return batchCompare;
+                return a.name.localeCompare(b.name);
+            });
+
+            const dataWithStatus = sortedCadets.map(cadet => {
+                return {
+                    'Batch': cadet.batch,
+                    'Staff ID': cadet.staffId,
+                    'Rank': cadet.rank || '',
+                    'Name': cadet.name,
+                    'First IOE Date': cadet.firstIOEDate || '',
+                    'Functional Date': cadet.functionalDate || '',
+                    'LRC Date': cadet.lrcDate || '',
+                    'Interview Date': cadet.interviewDate || '',
+                    'Sectors Flown': cadet.sectorsFlown,
+                    'Status': getTraineeStatusLabel(cadet),
+                    'Last Updated': cadet.lastUpdated || '',
+                    'Remarks': cadet.remarks || ''
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(dataWithStatus);
+            worksheet['!cols'] = [
+                { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 25 },
+                { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 },
+                { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 30 }
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Training Data');
+            
+            const filename = `Training_Progress_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(workbook, filename);
+            
+            alert(`✅ Exported ${filteredCadets.length} trainees to ${filename}`);
+        }
+
+        function getTraineeStatusLabel(cadet) {
+            const status = getTraineeStatus(cadet);
+            if (status === 'functional') return 'FUNCTIONAL';
+            if (status === 'completed') return 'COMPLETED';
+            if (status === 'special') return 'SPECIAL CASE';
+            return 'IN PROGRESS';
+        }
+
+        // ==================== Event Listeners ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load saved configuration
+            const savedSiteUrl = localStorage.getItem('sp_siteUrl');
+            const savedListName = localStorage.getItem('sp_listName');
+            if (savedSiteUrl) {
+                document.getElementById('siteUrl').value = savedSiteUrl;
+                sharePointConfig.siteUrl = savedSiteUrl;
+            }
+            if (savedListName) {
+                document.getElementById('listName').value = savedListName;
+                sharePointConfig.listName = savedListName;
+            }
+
+            // Initialize MSAL
+            initializeMSAL();
+
+            // Configuration buttons
+            document.getElementById('saveConfigBtn').addEventListener('click', () => {
+                const siteUrl = document.getElementById('siteUrl').value.trim();
+                const listName = document.getElementById('listName').value.trim();
+                
+                if (!siteUrl || !listName) {
+                    alert('⚠️ Please enter both Site URL and List Name');
+                    return;
+                }
+
+                sharePointConfig.siteUrl = siteUrl;
+                sharePointConfig.listName = listName;
+                localStorage.setItem('sp_siteUrl', siteUrl);
+                localStorage.setItem('sp_listName', listName);
+                
+                alert('✅ Configuration saved!');
+            });
+
+            document.getElementById('testConnectionBtn').addEventListener('click', testSharePointConnection);
+
+            // Auth buttons
+            document.getElementById('signInBtn').addEventListener('click', signIn);
+            document.getElementById('signOutBtn').addEventListener('click', signOut);
+
+            // Control buttons
+            document.getElementById('addTraineeBtn').addEventListener('click', openAddModal);
+            document.getElementById('refreshBtn').addEventListener('click', loadDataFromSharePoint);
+            document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('exportPowerBIBtn').addEventListener('click', exportToExcel);
+
+            // Modal buttons
+            document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+            document.getElementById('saveModalBtn').addEventListener('click', saveModal);
+
+            // Filters
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toUpperCase().trim();
+                renderTable();
+            });
+
+            document.getElementById('yearFilter').addEventListener('change', (e) => {
+                selectedYearFilter = e.target.value;
+                renderTable();
+            });
+
+            document.getElementById('batchFilter').addEventListener('change', (e) => {
+                selectedBatchFilter = e.target.value;
+                renderTable();
+            });
+
+            document.getElementById('rankFilter').addEventListener('change', (e) => {
+                selectedRankFilter = e.target.value;
+                renderTable();
+            });
+
+            // Sortable headers
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.column;
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.column = column;
+                        currentSort.direction = 'asc';
+                    }
+
+                    document.querySelectorAll('.sortable-header').forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    header.classList.add(`sort-${currentSort.direction}`);
+
+                    renderTable();
+                });
+            });
+        });
+
+        // Make functions globally accessible
+        window.editTrainee = editTrainee;
+        window.deleteTrainee = deleteTrainee;
+    </script>
+
+    <!--
+    ==================== SETUP INSTRUCTIONS ====================
+    
+    To use this SharePoint-integrated tracker, you need to:
+    
+    1. CREATE AZURE AD APP REGISTRATION:
+       - Go to Azure Portal > Azure Active Directory > App registrations
+       - Click "New registration"
+       - Name: "Training Progress Tracker"
+       - Supported account types: "Accounts in this organizational directory only"
+       - Redirect URI: Web > http://localhost or your deployment URL
+       - Click "Register"
+    
+    2. CONFIGURE APP:
+       - Copy the "Application (client) ID" and replace YOUR_CLIENT_ID_HERE in line 350
+       - Copy the "Directory (tenant) ID" and replace YOUR_TENANT_ID_HERE in line 351
+       - Go to "API permissions" > "Add a permission"
+       - Microsoft Graph > Delegated permissions
+       - Add: User.Read, Sites.ReadWrite.All
+       - Click "Grant admin consent"
+    
+    3. CREATE SHAREPOINT LIST:
+       - Go to your SharePoint site
+       - Click "New" > "List"
+       - Name: "Training_Progress"
+       - Add these columns (exact names):
+         * Batch (Single line of text)
+         * Staff_ID (Single line of text)
+         * Rank (Choice: FO, SFO, CAPT)
+         * Name (Single line of text)
+         * First_IOE_Date (Date and time)
+         * Functional_Date (Date and time)
+         * LRC_Date (Date and time)
+         * Interview_Date (Date and time)
+         * Sectors_Flown (Number)
+         * Status (Single line of text)
+         * Remarks (Multiple lines of text)
+         * Last_Updated (Date and time)
+         * Manual_Highlight (Choice: blue, green, red)
+    
+    4. DEPLOY:
+       - Upload this HTML file to your web server or Azure Static Web Apps
+       - Or open locally (file:// will have CORS issues - use a local web server)
+    
+    5. USE:
+       - Open the page
+       - Enter your SharePoint site URL (e.g., https://yourtenant.sharepoint.com/sites/yoursite)
+       - Enter list name: Training_Progress
+       - Click "Save Configuration"
+       - Click "Sign in with Microsoft"
+       - Click "Test Connection"
+       - Click "Refresh from SharePoint" to load data
+    
+    ==================== TROUBLESHOOTING ====================
+    
+    - "Failed to sign in": Check your Client ID and Tenant ID
+    - "Connection failed": Verify SharePoint URL and list name are correct
+    - "Failed to load data": Ensure you have permissions to the SharePoint list
+    - CORS errors: Host the file on a proper web server, not file://
+    
+    ==================== NOTES ====================
+    
+    - All data is stored in SharePoint Lists (no local storage)
+    - Uses Microsoft Authentication Library (MSAL) for secure sign-in
+    - Supports real-time collaboration (multiple users can access)
+    - Data syncs across all devices
+    - Respects SharePoint permissions and security
+    
+    -->
+
+</body>
+</html>

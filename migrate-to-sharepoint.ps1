@@ -7,8 +7,8 @@ $SiteUrl = "https://yourtenant.sharepoint.com/sites/yoursite"
 $ListName = "Training_Progress"
 $ExcelPath = "C:\Path\To\training_data.xlsx"
 
-# Connect to SharePoint
-Connect-PnPOnline -Url $SiteUrl -Interactive
+# Connect to SharePoint using your Azure AD app
+Connect-PnPOnline -Url $SiteUrl -Interactive -ClientId "82a4ec5a-d90d-4957-8021-3093e60a4d70"
 
 # Read Excel file
 $excel = Import-Excel -Path $ExcelPath

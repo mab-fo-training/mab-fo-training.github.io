@@ -297,3 +297,220 @@ Informed IT of testing results:
 - `SETUP_GUIDE.md` - Technical setup instructions
 - `CLAUDE.md` - Complete project documentation
 - `index-sharepoint-v3-enhanced.html` - Application file (configured)
+
+---
+
+## 2026-01-13 - SharePoint App Permissions Page Method (appinv.aspx)
+
+### Context: New App Registration Created
+
+**Updated Application Credentials:**
+- **Application (Client) ID:** `82a4ec5a-d90d-4957-8021-3093e60a4d70`
+- **Directory (Tenant) ID:** `8fc3a567-1ee8-4994-809c-49f50cdb6d48`
+- **App Name:** Training Tracker SharePoint App
+
+**Reason for Change:** Previous PowerShell methods failed, new app created with different configuration approach.
+
+### Email Sent to IT - Simplified Method
+
+**Subject:** RE: Training Tracker App Permission - Step 4 XML
+
+**Method:** Using SharePoint's built-in App Permission page (`appinv.aspx`) instead of PowerShell
+
+**Instructions Provided:**
+
+1. Go to this URL (while signed in as site admin):
+   ```
+   https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING/_layouts/15/appinv.aspx
+   ```
+
+2. In the "App ID" field, enter:
+   ```
+   82a4ec5a-d90d-4957-8021-3093e60a4d70
+   ```
+
+3. Click the "Lookup" button
+   - Expected result: "Training Tracker SharePoint App" should appear
+
+4. In the "Permission Request XML" field, paste:
+   ```xml
+   <AppPermissionRequests AllowAppOnlyPolicy="true">
+     <AppPermissionRequest Scope="http://sharepoint/content/sitecollection/web" Right="Write" />
+   </AppPermissionRequests>
+   ```
+
+5. Click "Create" to grant access
+
+6. Click "Trust It" on the confirmation dialog
+
+### IT Response
+
+**Question from IT:** "What to paste in step 4?"
+
+**Reply Sent:** Provided the complete Permission Request XML (shown above)
+
+### XML Permission Breakdown
+
+**What the XML does:**
+- `AllowAppOnlyPolicy="true"` - Enables app-only authentication (app works independently of user permissions)
+- `Scope="http://sharepoint/content/sitecollection/web"` - Grants access to this specific site only
+- `Right="Write"` - Grants read and write permissions (required for CRUD operations on Training_Progress list)
+
+**Security Note:** This permission is site-scoped only. The app will NOT have access to other SharePoint sites.
+
+### Current Status
+
+- ✅ Updated app credentials configured in application code
+- ✅ Simplified permission grant method provided (no PowerShell required)
+- ✅ Complete XML provided to IT
+- ⏳ **WAITING:** IT to complete the 6-step process via appinv.aspx
+- 📋 **NEXT:** Test connection once IT confirms completion
+
+### Advantages of This Method
+
+1. **No PowerShell required** - Works through browser UI
+2. **No module dependencies** - No PnP PowerShell installation needed
+3. **Site admin sufficient** - Site collection admin can grant (doesn't require Global Admin)
+4. **Immediate feedback** - Success/failure visible in the browser
+5. **Standard Microsoft interface** - Built-in SharePoint functionality
+
+### What Happens After IT Completes This
+
+**Expected Outcome:**
+- App will be listed in Site Settings → Site App Permissions
+- App will have Write permission to the FLTOPS-TRAINING site
+- Application will be able to authenticate and access the Training_Progress list
+
+**Testing Steps (Once IT Confirms):**
+1. Open `index-sharepoint-v3-enhanced.html` in browser
+2. Sign in with Microsoft 365 credentials
+3. Enter site URL and list name in configuration
+4. Click "Test Connection"
+5. Expected result: ✅ Connection successful
+
+**If connection test passes:**
+- Proceed with data migration from Google Sheets
+- Begin user acceptance testing
+- Plan production deployment
+
+**Last Updated:** 2026-01-13
+**Status:** ⏳ Awaiting IT confirmation of app permission grant
+
+---
+
+## 2026-01-14 - App Permission Granted, User Permission Needed
+
+### IT Confirmation Received
+
+**Status:** ✅ IT successfully granted app permission via appinv.aspx
+
+### Connection Testing Results
+
+**Test Performed:** Device code authentication to SharePoint site
+
+**Results:**
+- ✅ **SharePoint Connection:** Success
+- ❌ **List Access:** 403 Forbidden
+- ❌ **Read Operations:** Blocked
+- ❌ **Write Operations:** Blocked
+
+**Error Message:** `The remote server returned an error: (403) Forbidden.`
+
+### Root Cause Analysis
+
+**Issue Identified:** User account permission level too restrictive
+
+**Current Situation:**
+- **App Permission:** ✅ Write permission granted (appinv.aspx method worked)
+- **User Permission:** ❌ "Limited Control" (read-only)
+
+**Why This Matters:**
+- The HTML application uses **delegated authentication** (user signs in with their account)
+- When the app runs, it operates with the signed-in user's permissions
+- Even though the app has Write permission, it's constrained by the user's permissions
+- "Limited Control" blocks all read/write operations on the Training_Progress list
+
+### Email Sent to IT - User Permission Upgrade Request
+
+**Subject:** Training Tracker - Need Edit Permission on FLTOPS-TRAINING Site
+
+**Request:** Upgrade user account permissions from "Limited Control" to "Edit" or "Contribute"
+
+**User Account:** mohamadshazreen.sazali@malaysiaairlines.com
+**Site:** https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING
+
+**Key Question to IT:** Are you able to upgrade user permissions on this site, or do we need to contact the site owner/administrator?
+
+**Instructions Provided (if IT can do it):**
+1. Go to: https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING
+2. Click Settings (gear icon) → Site permissions
+3. Find: mohamadshazreen.sazali@malaysiaairlines.com
+4. Change permission from "Limited Control" to "Edit"
+
+**If IT cannot do this:** Asked them to provide contact info for site owner or site collection admin
+
+### Permission Levels Explained
+
+| Level | Read | Write | Use Case |
+|-------|------|-------|----------|
+| **Limited Control** | ❌ Blocked | ❌ Blocked | Minimal access |
+| **Contribute** | ✅ Yes | ✅ Yes | Standard user |
+| **Edit** | ✅ Yes | ✅ Yes + manage lists | Recommended |
+
+**Requested:** Edit (preferred) or Contribute (minimum)
+
+### Current Status
+
+- ✅ App permission granted successfully
+- ✅ Connection test completed (confirms app permission works)
+- ✅ Issue identified (user permission level)
+- 📧 Email sent to IT requesting user permission upgrade
+- ⏳ **WAITING:** IT to upgrade user account to Edit/Contribute
+
+### Next Steps (After IT Upgrades User Permission)
+
+1. **Retest Connection:**
+   ```powershell
+   .\test-sharepoint-devicecode.ps1
+   ```
+   Expected result: All checks pass ✅
+
+2. **Run Migration:**
+   ```powershell
+   .\migrate-to-sharepoint.ps1
+   ```
+   Import data from Google Sheets to SharePoint
+
+3. **Test Application:**
+   ```bash
+   python -m http.server 8000
+   # Open: http://localhost:8000/index-sharepoint-v3-enhanced.html
+   ```
+
+4. **User Acceptance Testing:**
+   - Test CRUD operations
+   - Verify data integrity
+   - Test all filters and sorting
+   - Test Excel export
+
+5. **Production Deployment:**
+   - Upload to SharePoint document library or web hosting
+   - Update redirect URI in Azure AD
+   - Distribute URL to users
+
+### Technical Summary
+
+**What's Working:**
+- ✅ Azure AD app registration configured
+- ✅ App authentication flow
+- ✅ App-level Write permission to site
+- ✅ SharePoint connection via PnP PowerShell
+
+**What's Blocking:**
+- ❌ User account "Limited Control" permission
+
+**Solution:**
+- User account needs "Edit" or "Contribute" permission level on FLTOPS-TRAINING site
+
+**Last Updated:** 2026-01-14
+**Status:** ⏳ Awaiting IT to upgrade user permissions to Edit/Contribute

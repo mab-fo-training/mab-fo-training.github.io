@@ -1,6 +1,6 @@
 # SharePoint Setup Status
 
-**Last Updated:** 2026-01-14 10:30
+**Last Updated:** 2026-01-15 12:15
 
 ## Current Status: Waiting for IT to Upgrade User Permissions to Edit/Contribute
 
@@ -40,6 +40,12 @@
    - ✅ App now has Write permission to FLTOPS-TRAINING site
    - ✅ Connection test confirmed app permission is working
 
+7. **Authentication Scope Fix (2026-01-15)**
+   - ✅ Fixed 401 Unauthorized errors
+   - ✅ Changed scope from 'Sites.Selected' to SharePoint-specific scope
+   - ✅ Application now authenticates successfully
+   - ✅ Confirmed 403 Forbidden error (expected until user permissions upgraded)
+
 ### 🔄 Pending Steps
 
 #### ~~STEP 1: Grant App Permission via appinv.aspx~~ ✅ COMPLETED
@@ -52,7 +58,9 @@
 
 #### STEP 1B: Upgrade User Account Permissions (CURRENT - WAITING ON IT)
 
-**Issue Found:** User account has "Limited Control" which blocks all read/write operations
+**Status:** ✅ Authentication working, confirmed 403 Forbidden (permission issue)
+**Issue:** User account has "Limited Control" which blocks all read/write operations
+**Tested:** 2026-01-15 - Connection test shows proper authentication but insufficient permissions
 
 **What IT Needs to Do:**
 

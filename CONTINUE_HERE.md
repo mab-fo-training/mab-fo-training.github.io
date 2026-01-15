@@ -1,13 +1,13 @@
 # Continue From Here - Device Handoff
 
-**Last Updated:** 2026-01-14
-**Commit:** e460686 (pushed to GitHub)
+**Last Updated:** 2026-01-15 12:20
+**Latest Commit:** 41b951c (pushed to GitHub)
 
 ---
 
-## Current Status: WAITING FOR IT
+## Current Status: WAITING FOR IT - Authentication Fixed ✅
 
-We're waiting for IT to upgrade user permissions from "Limited Control" to "Edit" on the FLTOPS-TRAINING SharePoint site.
+Application is **fully configured and ready**. Authentication issue resolved on 2026-01-15. Now waiting for IT to upgrade user permissions from "Limited Control" to "Edit" on the FLTOPS-TRAINING SharePoint site.
 
 ### What's Been Done ✅
 
@@ -16,19 +16,44 @@ We're waiting for IT to upgrade user permissions from "Limited Control" to "Edit
    - Tenant ID: `8fc3a567-1ee8-4994-809c-49f50cdb6d48`
    - App has Write permission to site ✅
 
-2. **Email Sent to IT** (EMAIL_TO_IT_USER_PERMISSIONS.md)
+2. **Authentication Fixed (2026-01-15)** ✅
+   - Fixed 401 Unauthorized errors
+   - Changed scope from 'Sites.Selected' to SharePoint-specific scope
+   - Application now authenticates successfully
+   - Tested and confirmed working
+
+3. **Connection Testing Completed (2026-01-15)** ✅
+   - Tested via browser at http://localhost:8000/index-sharepoint-v3-enhanced.html
+   - Confirmed: Getting 403 Forbidden (expected until permissions upgraded)
+   - Authentication works ✅, permissions block confirmed ❌
+
+4. **Email Sent to IT** (EMAIL_TO_IT_USER_PERMISSIONS.md)
    - Requesting permission upgrade for: mohamadshazreen.sazali@malaysiaairlines.com
    - From: "Limited Control" → To: "Edit"
-   - Asking if IT can do this or if we need site owner
+   - Sent: 2026-01-14
+   - Status: ⏳ Awaiting response
 
-3. **Testing Completed**
-   - SharePoint connection: ✅ Works
-   - List access: ❌ Blocked by user permissions (403 Forbidden)
-
-4. **All Code & Scripts Ready**
+5. **All Code & Scripts Ready** ✅
    - Application configured: `index-sharepoint-v3-enhanced.html`
    - Migration script ready: `migrate-to-sharepoint.ps1`
    - Test scripts created and working
+   - Authentication fully working
+
+---
+
+## Latest Development (2026-01-15)
+
+### Authentication Issue Fixed ✅
+- **Problem:** Getting 401 Unauthorized errors when testing SharePoint connection
+- **Root Cause:** Authentication scope was set to 'Sites.Selected' (Microsoft Graph) instead of SharePoint-specific scope
+- **Solution:** Changed scope to 'https://mabitdept.sharepoint.com/.default'
+- **Result:** Authentication now works, confirmed with 403 Forbidden (expected permission error)
+
+### Testing Results
+- Signed in successfully with mohamadshazreen.sazali@malaysiaairlines.com
+- Access token acquired properly
+- 403 Forbidden confirms user permission issue (not authentication issue)
+- Application is ready to use once permissions granted
 
 ---
 
@@ -45,7 +70,7 @@ cd microsoft-training-tracker
 
 ```bash
 git log -1
-# Should show: "SharePoint setup progress: App permission granted, user permission pending"
+# Should show: "Update setup status: Authentication fix completed, confirmed permission block"
 ```
 
 ### 3. Review Current Status
@@ -59,12 +84,20 @@ Read these files in order:
 
 #### If IT Grants Permission:
 
-Run this test script:
+**Option A - Test via Browser (Easiest):**
+1. Start web server: `python -m http.server 8000` (or `nohup python -m http.server 8000 &`)
+2. Open: http://localhost:8000/index-sharepoint-v3-enhanced.html
+3. Sign in with Microsoft
+4. Configure SharePoint:
+   - Site URL: `https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING`
+   - List Name: `Training_Progress`
+5. Click "Test Connection"
+6. **Expected:** ✅ Connection successful!
+
+**Option B - Test via PowerShell (Windows only):**
 ```powershell
 .\test-sharepoint-devicecode.ps1
 ```
-
-**Expected result:** All checks pass ✅
 
 If test passes, proceed to migration:
 ```powershell
@@ -176,6 +209,21 @@ User permissions haven't been upgraded yet. Check with IT.
 
 When you start on the new device, tell Claude:
 
-> "We're working on the Microsoft Training Tracker SharePoint migration. Pull the latest from GitHub and check SETUP_STATUS.md. We're waiting for IT to upgrade user permissions from 'Limited Control' to 'Edit'. App permission is already granted. Once IT responds, we need to test and run the migration script."
+> "We're working on the Microsoft Training Tracker SharePoint migration. Pull the latest from GitHub and check SETUP_STATUS.md. Authentication was fixed on 2026-01-15 (401 resolved). We're now waiting for IT to upgrade user permissions from 'Limited Control' to 'Edit'. Getting 403 Forbidden confirms authentication works but permissions insufficient. Once IT grants permissions, we test connection and run migration."
 
 All context is in the repository files - Claude will pick up right where we left off.
+
+---
+
+## Quick Status Summary
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| Azure AD App | ✅ Complete | App ID configured, permissions granted |
+| Authentication | ✅ **Fixed (2026-01-15)** | Scope corrected, working properly |
+| App Permissions | ✅ Complete | Write access to site granted by IT |
+| User Permissions | ❌ **Blocked** | "Limited Control" needs upgrade to "Edit" |
+| Code & Scripts | ✅ Ready | All configured and tested |
+| Testing | ✅ Complete | 403 Forbidden confirms permission issue |
+
+**Next Action:** Wait for IT response → Test connection → Migrate data → Deploy

@@ -1,229 +1,222 @@
-# Continue From Here - Device Handoff
+# Continue From Here
 
-**Last Updated:** 2026-01-15 12:20
-**Latest Commit:** 41b951c (pushed to GitHub)
-
----
-
-## Current Status: WAITING FOR IT - Authentication Fixed ✅
-
-Application is **fully configured and ready**. Authentication issue resolved on 2026-01-15. Now waiting for IT to upgrade user permissions from "Limited Control" to "Edit" on the FLTOPS-TRAINING SharePoint site.
-
-### What's Been Done ✅
-
-1. **Azure AD App Created**
-   - App ID: `82a4ec5a-d90d-4957-8021-3093e60a4d70`
-   - Tenant ID: `8fc3a567-1ee8-4994-809c-49f50cdb6d48`
-   - App has Write permission to site ✅
-
-2. **Authentication Fixed (2026-01-15)** ✅
-   - Fixed 401 Unauthorized errors
-   - Changed scope from 'Sites.Selected' to SharePoint-specific scope
-   - Application now authenticates successfully
-   - Tested and confirmed working
-
-3. **Connection Testing Completed (2026-01-15)** ✅
-   - Tested via browser at http://localhost:8000/index-sharepoint-v3-enhanced.html
-   - Confirmed: Getting 403 Forbidden (expected until permissions upgraded)
-   - Authentication works ✅, permissions block confirmed ❌
-
-4. **Email Sent to IT** (EMAIL_TO_IT_USER_PERMISSIONS.md)
-   - Requesting permission upgrade for: mohamadshazreen.sazali@malaysiaairlines.com
-   - From: "Limited Control" → To: "Edit"
-   - Sent: 2026-01-14
-   - Status: ⏳ Awaiting response
-
-5. **All Code & Scripts Ready** ✅
-   - Application configured: `index-sharepoint-v3-enhanced.html`
-   - Migration script ready: `migrate-to-sharepoint.ps1`
-   - Test scripts created and working
-   - Authentication fully working
+**Last Updated:** 2026-01-20
 
 ---
 
-## Latest Development (2026-01-15)
+## Current Status: Evaluating Deployment Architecture
 
-### Authentication Issue Fixed ✅
-- **Problem:** Getting 401 Unauthorized errors when testing SharePoint connection
-- **Root Cause:** Authentication scope was set to 'Sites.Selected' (Microsoft Graph) instead of SharePoint-specific scope
-- **Solution:** Changed scope to 'https://mabitdept.sharepoint.com/.default'
-- **Result:** Authentication now works, confirmed with 403 Forbidden (expected permission error)
+### Latest Update (2026-01-20)
 
-### Testing Results
-- Signed in successfully with mohamadshazreen.sazali@malaysiaairlines.com
-- Access token acquired properly
-- 403 Forbidden confirms user permission issue (not authentication issue)
-- Application is ready to use once permissions granted
+**Explored Azure AD Application Permissions vs Delegated Permissions**
+
+Researched using app-only authentication (Application permissions) instead of user-delegated permissions to eliminate the need for trainees to have SharePoint site access.
+
+**Key Findings:**
+- App-only auth requires **certificate authentication** (not just client secret) for SharePoint REST API
+- Cannot be done from client-side JavaScript (security risk to expose credentials)
+- Requires a **backend server** (Azure Function) to proxy API calls
+- `Sites.Selected` permission allows granular access to only specific sites/lists
+
+**Architecture Options Evaluated:**
+
+| Option | Architecture | Cost | Complexity |
+|--------|-------------|------|------------|
+| **A: Delegated (current)** | Browser → SharePoint | $0 | Low |
+| **B: Azure Function Backend** | Browser → Azure Function → SharePoint | $0-2/mo | Medium |
+| **C: Dedicated Site** | Browser → SharePoint (isolated site) | $0 | Low |
+
+**Azure Functions Free Tier (Consumption Plan):**
+- 1 million executions/month FREE
+- 400,000 GB-seconds/month FREE
+- Estimated app usage: ~30,000 executions/month (3% of free tier)
+- Only cost: Storage account (~$0.50-2/month)
+
+**Decision Pending:** Choose between Option B (Azure Function) or Option C (Dedicated Site)
 
 ---
 
-## What to Do on Another Device
+### What's Done
 
-### 1. Clone the Repository
+**Infrastructure**
+- Azure AD App configured (Client ID: `82a4ec5a-d90d-4957-8021-3093e60a4d70`)
+- User granted **Site Owner** on FLTOPS-TRAINING
+- Authentication working (MSAL sign-in successful)
+- IT granted `Sites.ReadWrite.All` delegated permission
+- Connection test successful
+
+**App File**
+- Main file: `progress-tracker.html` (renamed from index-sharepoint-v3-enhanced.html)
+- Test at: http://localhost:8000/progress-tracker.html
+
+**Security Hardening**
+- Content Security Policy (CSP) with PDF.js worker support
+- Hardcoded site URL (locked to FLTOPS-TRAINING)
+- URL validation on all API calls
+- sessionStorage for tokens (clears on browser close)
+- 30-minute session timeout
+- HTML escaping for XSS prevention
+
+**Features Implemented**
+| Feature | Status |
+|---------|--------|
+| PDF Import (TJI parser) | Done |
+| Bulk Excel Import with preview | Done |
+| Command Check Date (CUC batches) | Done |
+| Year Filter | Done |
+| Training Type Filter (CPC/CUC) | Done |
+| Fleet Tracking (B738, B738M, A330, A350) | Done |
+| Fleet Filter | Done |
+| New Batch Creation inline | Done |
+| Rank options (CAPT, FO, SO, CDT) | Done |
+| Color Legend | Done |
+| Test Highlights Button | Done |
+| Column Sorting | Done |
+| Date format DD/MM/YY | Done |
+
+**Analytics Dashboard**
+| Chart | Description |
+|-------|-------------|
+| Status Distribution | Doughnut chart (In Progress vs Completed) |
+| Progress by Batch | Stacked bar chart per batch |
+| Fleet Completion Rate | Bar chart showing % completed per fleet |
+| Average Time to Completion | 4 metric cards (IOE→Func, Func→LRC, LRC→Interview, Total) |
+| Monthly Completion Trend | Line chart (last 12 months) |
+
+**Statistics Cards**
+- Total, In Progress, Completed (3 cards)
+
+**UI Updates (2026-01-20)**
+- All emojis replaced with professional text/SVG icons
+- Aviation-themed header with airplane icon
+- Admin panel simplified (password only, no setup instructions)
+- Subtitle: "Flight Operations Training Management System"
+
+**CUC Batch Logic**
+- CUC completion: First IOE + Functional + Command Check + LRC (no Interview)
+- CPC completion: First IOE + Functional + LRC + Interview
+- Command Check Date column positioned before LRC
+
+**Data Migration**
+- Fleet defaults to B738 when not specified (bulk import, PDF import, SharePoint load)
+- Ready to import Google Sheets data
+
+---
+
+### SharePoint List Schema Required
+
+The `Training_Progress` list needs these columns:
+| Column Name | Type | Notes |
+|-------------|------|-------|
+| Batch | Single line of text | |
+| Staff_ID | Single line of text | |
+| Rank | Choice | FO, SFO, CAPT, SO, CDT |
+| Name | Single line of text | |
+| Fleet | Choice | B738, B738M, A330, A350 |
+| First_IOE_Date | Date | |
+| Functional_Date | Date | |
+| Command_Check_Date | Date | For CUC batches only |
+| LRC_Date | Date | |
+| Interview_Date | Date | |
+| Sectors_Flown | Number | |
+| Remarks | Multiple lines of text | |
+| Last_Updated | Date and Time | |
+| Manual_Highlight | Choice | blue, green, red |
+| Sector_History | Multiple lines of text | JSON array |
+
+---
+
+### Next Steps (Resume Here)
+
+1. ~~**Add SharePoint columns**~~ ✓ DONE (2026-01-20)
+   - Fleet (Choice: B738, B738M, A330, A350)
+   - Command_Check_Date (Date)
+
+2. **Choose Deployment Architecture** ⚠️ DECISION NEEDED
+
+   **Issue:** Trainees need SharePoint site access to use the app with current delegated permissions.
+
+   **Option B: Azure Function Backend (Recommended if IT prefers no site access)**
+   ```
+   Browser App → Azure Function (certificate auth) → SharePoint
+   ```
+   - Uses `Sites.Selected` permission (access only to Training_Progress list)
+   - Trainees don't need any SharePoint site access
+   - Cost: ~$0-2/month (free tier covers usage)
+   - Requires: Certificate setup, Azure Function deployment
+   - **To implement:** Claude can build the Azure Function backend
+
+   **Option C: Dedicated SharePoint Site (Simpler)**
+   - Create `FLTOPS-TRACKER` site with only the Training_Progress list
+   - Give trainees Read access to site + Contribute to list
+   - No code changes needed
+   - Cost: $0
+
+   **References:**
+   - [Microsoft: App-Only Access via Entra ID](https://learn.microsoft.com/en-us/sharepoint/dev/solution-guidance/security-apponly-azuread)
+   - [Microsoft: Sites.Selected Permissions](https://techcommunity.microsoft.com/blog/spblog/develop-applications-that-use-sites-selected-permissions-for-spo-sites-/3790476)
+   - [Azure Functions Pricing](https://azure.microsoft.com/en-us/pricing/details/functions/)
+
+3. **Deploy to SharePoint**
+   - Upload `progress-tracker.html` to Document Library
+   - Copy the URL
+   - If Option B: Deploy Azure Function first, update app to call function
+   - If Option C: Update app's hardcoded site URL to new site
+
+4. **Update Azure AD Redirect URI**
+   - Add production URL to App Registration → Authentication
+
+5. **Data Migration**
+   - Export Google Sheets to Excel
+   - Use Bulk Import (Fleet defaults to B738)
+
+6. **User Rollout**
+   - Distribute admin password
+   - Send user communication
+   - Share app URL
+
+---
+
+## Key Details
+
+| Item | Value |
+|------|-------|
+| App ID | `82a4ec5a-d90d-4957-8021-3093e60a4d70` |
+| Tenant ID | `8fc3a567-1ee8-4994-809c-49f50cdb6d48` |
+| Site URL | `https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING` |
+| List Name | `Training_Progress` |
+| User | mohamadshazreen.sazali@malaysiaairlines.com |
+
+---
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `progress-tracker.html` | Main app file (production ready) |
+| `index-sharepoint-v3-enhanced.html` | Backup/original |
+| `SETUP_STATUS.md` | Full status details |
+| `CONTINUE_HERE.md` | This file |
+| `EMAIL_TO_IT_SECURITY_MITIGATIONS.md` | Security mitigations doc |
+
+---
+
+## Quick Resume Commands
 
 ```bash
-git clone https://github.com/mr-shzrn/microsoft-training-tracker.git
-cd microsoft-training-tracker
+# Start local server
+python -m http.server 8000
+
+# Test app
+# Open: http://localhost:8000/progress-tracker.html
 ```
 
-### 2. Check Latest Commit
+## Testing Notes
 
-```bash
-git log -1
-# Should show: "Update setup status: Authentication fix completed, confirmed permission block"
-```
-
-### 3. Review Current Status
-
-Read these files in order:
-1. **SETUP_STATUS.md** - Current setup status and blockers
-2. **IT_CORRESPONDENCE_LOG.md** - Full history of IT communications
-3. **EMAIL_TO_IT_USER_PERMISSIONS.md** - Email sent to IT (waiting for response)
-
-### 4. When IT Responds
-
-#### If IT Grants Permission:
-
-**Option A - Test via Browser (Easiest):**
-1. Start web server: `python -m http.server 8000` (or `nohup python -m http.server 8000 &`)
-2. Open: http://localhost:8000/index-sharepoint-v3-enhanced.html
-3. Sign in with Microsoft
-4. Configure SharePoint:
-   - Site URL: `https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING`
-   - List Name: `Training_Progress`
-5. Click "Test Connection"
-6. **Expected:** ✅ Connection successful!
-
-**Option B - Test via PowerShell (Windows only):**
-```powershell
-.\test-sharepoint-devicecode.ps1
-```
-
-If test passes, proceed to migration:
-```powershell
-.\migrate-to-sharepoint.ps1
-```
-
-#### If IT Says They Can't Do It:
-
-Contact the FLTOPS-TRAINING site owner/administrator directly and request:
-- User: mohamadshazreen.sazali@malaysiaairlines.com
-- Permission: Edit (or Contribute)
-- Site: https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING
-
-#### If IT Hasn't Responded Yet:
-
-Just wait. All code is ready to go once permissions are granted.
-
----
-
-## Important Configuration
-
-### SharePoint Details
-- **Site URL:** https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING
-- **List Name:** Training_Progress
-- **Your Email:** mohamadshazreen.sazali@malaysiaairlines.com
-
-### Azure AD App
-- **Client ID:** 82a4ec5a-d90d-4957-8021-3093e60a4d70
-- **Tenant ID:** 8fc3a567-1ee8-4994-809c-49f50cdb6d48
-- **App Name:** Training Tracker SharePoint App
-
-### Google Sheets (Source Data)
-- **Spreadsheet ID:** 1D31q-19IK0DSLVQaI8jwrxLVspyMIWIZ6thiO7vGoNg
-- **Sheet Name:** 738 cpc
-- **API Key & Client ID:** In index.html (Google Sheets version)
-
----
-
-## Next Steps (Checklist)
-
-- [ ] **CURRENT:** Wait for IT to upgrade user permissions
-- [ ] Run `.\test-sharepoint-devicecode.ps1` to verify access
-- [ ] Run `.\migrate-to-sharepoint.ps1` to import data from Google Sheets
-- [ ] Test application in browser: `python -m http.server 8000`
-- [ ] Open: http://localhost:8000/index-sharepoint-v3-enhanced.html
-- [ ] Sign in and verify all features work
-- [ ] Begin user acceptance testing
-- [ ] Plan production deployment
-
----
-
-## Quick Reference Scripts
-
-All scripts are in the root directory:
-
-| Script | Purpose |
-|--------|---------|
-| `test-sharepoint-devicecode.ps1` | Test connection (device code auth) |
-| `test-read-only.ps1` | Diagnostic permission test |
-| `test-sharepoint-setup.ps1` | Full prerequisites check |
-| `migrate-to-sharepoint.ps1` | Import Google Sheets data |
-| `check-modules.ps1` | Verify PowerShell modules |
-| `verify-install.ps1` | Installation verification |
-
----
-
-## Key Files to Know
-
-| File | Description |
-|------|-------------|
-| `index-sharepoint-v3-enhanced.html` | SharePoint version (configured, ready to use) |
-| `index.html` | Google Sheets version (currently in production) |
-| `SETUP_STATUS.md` | Current status tracker |
-| `IT_CORRESPONDENCE_LOG.md` | IT communication history |
-| `EMAIL_TO_IT_USER_PERMISSIONS.md` | Latest email to IT |
-| `CLAUDE.md` | Complete project documentation |
-
----
-
-## Troubleshooting
-
-### If you get "Module not found" errors:
-
-```powershell
-.\check-modules.ps1
-# If modules missing, run:
-.\verify-install.ps1
-```
-
-### If authentication fails:
-
-Check that you're using: mohamadshazreen.sazali@malaysiaairlines.com
-
-### If still getting 403 Forbidden:
-
-User permissions haven't been upgraded yet. Check with IT.
-
----
-
-## Contact Points
-
-- **IT Department:** For permission upgrades
-- **FLTOPS-TRAINING Site Owner:** If IT can't grant permissions
-- **GitHub Repo:** https://github.com/mr-shzrn/microsoft-training-tracker
-
----
-
-## Summary for Claude (On New Device)
-
-When you start on the new device, tell Claude:
-
-> "We're working on the Microsoft Training Tracker SharePoint migration. Pull the latest from GitHub and check SETUP_STATUS.md. Authentication was fixed on 2026-01-15 (401 resolved). We're now waiting for IT to upgrade user permissions from 'Limited Control' to 'Edit'. Getting 403 Forbidden confirms authentication works but permissions insufficient. Once IT grants permissions, we test connection and run migration."
-
-All context is in the repository files - Claude will pick up right where we left off.
-
----
-
-## Quick Status Summary
-
-| Component | Status | Details |
-|-----------|--------|---------|
-| Azure AD App | ✅ Complete | App ID configured, permissions granted |
-| Authentication | ✅ **Fixed (2026-01-15)** | Scope corrected, working properly |
-| App Permissions | ✅ Complete | Write access to site granted by IT |
-| User Permissions | ❌ **Blocked** | "Limited Control" needs upgrade to "Edit" |
-| Code & Scripts | ✅ Ready | All configured and tested |
-| Testing | ✅ Complete | 403 Forbidden confirms permission issue |
-
-**Next Action:** Wait for IT response → Test connection → Migrate data → Deploy
+1. **Test Mode**: Toggle to use local storage instead of SharePoint
+2. **Sample Data**: Load sample data (includes CUC batches, fleet assignments)
+3. **PDF Import**: Upload TJI PDF to extract trainee data
+4. **Bulk Import**: Upload Excel file (Fleet defaults to B738 if missing)
+5. **CUC Features**: CUC batches show Command Check Date, complete at LRC
+6. **Fleet Filter**: Filter by aircraft type
+7. **Analytics**: View charts in Analytics section

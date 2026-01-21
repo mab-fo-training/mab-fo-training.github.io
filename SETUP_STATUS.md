@@ -1,8 +1,8 @@
 # SharePoint Setup Status
 
-**Last Updated:** 2026-01-19
+**Last Updated:** 2026-01-21
 
-## Current Status: ✅ SharePoint Connection Working!
+## Current Status: 🔄 Azure Function Backend In Progress
 
 ### ✅ Completed Steps
 
@@ -24,49 +24,51 @@
    - Site URL: `https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING`
    - List Name: `Training_Progress`
 
-5. **Sites.Selected Attempt** ❌ (2026-01-19)
-   - IT ran PowerShell script to grant app site permission
-   - Still got 403 Forbidden
-   - **Root cause:** `Sites.Selected` is for app-only auth, not user sign-in
-
-### ❌ Current Blocker
-
-**Need Delegated Permission Instead of Application Permission**
-
-`Sites.Selected` is an **Application permission** for daemon/service apps using client credentials. Our app uses **user sign-in** (MSAL popup), which requires **Delegated permissions**.
-
-**Error:** 403 Forbidden when app tries to access `/_api/web/lists`
-
-### 🔄 Pending: IT Action Required
-
-**Email:** `EMAIL_TO_IT_DELEGATED_PERMISSION.md`
-
-IT needs to:
-1. Azure Portal → App Registrations → Training Tracker SharePoint App
-2. API Permissions → Add permission → Microsoft Graph → **Delegated**
-3. Select: `Sites.ReadWrite.All`
-4. Click **Grant admin consent**
+5. **API Permissions Granted** ✅ (2026-01-21)
+   - `Sites.ReadWrite.All` (Delegated) - ✅ Granted
+   - `Sites.Selected` (Application) - ✅ Granted
+   - `User.Read` (Delegated) - Needs consent
+   - `Sites.Selected` (SharePoint, Delegated) - ✅ Granted
 
 ---
 
-## Next Steps (After IT Adds Delegated Permission)
+## 🔄 Current Phase: Azure Function Backend
 
-1. **Test Connection**
-   - Open: http://localhost:8000/index-sharepoint-v3-enhanced.html
-   - Sign in with Microsoft
-   - Click "Test Connection"
-   - Expected: Green success message
+### Why Azure Function?
+- Browser-based delegated auth works but requires user to be signed in
+- Azure Function enables **app-only authentication** for backend operations
+- Better for automated sync and service-level access
 
-2. **Run Migration**
-   ```powershell
-   .\migrate-to-sharepoint.ps1
-   ```
+### Steps to Complete
 
-3. **Test Application**
-   - Verify all CRUD operations work
-   - Test filtering and export features
+#### Step 1: Client Secret ✅ (Can do yourself)
+- Azure Portal → App Registrations → Your App → Certificates & secrets
+- Create new client secret and save the value
 
-4. **Deploy to Production**
+#### Step 2: Grant App Site Permission 🔄 (IT Required)
+**Email drafted and ready to send**
+
+IT needs to run this PowerShell command:
+```powershell
+# Connect to SharePoint Admin Center
+Connect-PnPOnline -Url "https://mabitdept-admin.sharepoint.com" -Interactive
+
+# Grant app permission to the specific site
+Grant-PnPAzureADAppSitePermission `
+    -AppId "82a4ec5a-d90d-4957-8021-3093e60a4d70" `
+    -DisplayName "Training Progress Tracker" `
+    -Site "https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING" `
+    -Permissions Write
+```
+
+#### Step 3: Create Azure Function (Can do yourself)
+- Azure Portal → Create Resource → Function App
+- Runtime: Node.js 18 or Python 3.10
+- Plan: Consumption (serverless)
+
+#### Step 4: Deploy Function Code (Pending)
+- Endpoints: GET/POST/PATCH/DELETE for trainees
+- Will be created after IT completes Step 2
 
 ---
 
@@ -75,13 +77,56 @@ IT needs to:
 | Component | Status |
 |-----------|--------|
 | Azure AD App | ✅ Configured |
-| Sites.ReadWrite.All (Delegated) | ✅ **Granted by IT** (2026-01-19) |
+| Sites.ReadWrite.All (Delegated) | ✅ Granted by IT (2026-01-21) |
+| Sites.Selected (Application) | ✅ Granted - needs site permission |
 | User Permission (Site Owner) | ✅ Granted |
-| Authentication | ✅ Working |
-| SharePoint Connection | ✅ **Working!** |
-| Security Hardening | ✅ Implemented (CSP, URL validation, timeout) |
+| Authentication (Browser) | ✅ Working |
+| Security Hardening | ✅ Implemented |
 | Application Code | ✅ Ready |
-| Migration Script | ✅ Ready |
+| **Azure Function Backend** | 🔄 **In Progress** |
+| IT Site Permission (PowerShell) | ⏳ **Pending IT Action** |
+
+---
+
+## Next Actions
+
+1. **Send email to IT** requesting PowerShell command execution (email drafted below)
+2. **Create client secret** in Azure AD app registration
+3. **Wait for IT** to run the PowerShell command
+4. **Create Azure Function** code once Step 2 is complete
+
+---
+
+## Email to IT (Ready to Send)
+
+**Subject:** RE: Request: Grant Azure AD App Permission to SharePoint Site for Training Tracker Application
+
+```
+Dear IT Team,
+
+Thank you for adding the Sites.ReadWrite.All delegated permission.
+I have tested it and the browser-based authentication now works for user-level access.
+
+However, I am now implementing a backend service (Azure Function) that needs
+to access SharePoint independently without requiring a user to be signed in.
+
+The app registration already has Sites.Selected (Application) permission granted.
+To complete the setup, please run this PowerShell command:
+
+Connect-PnPOnline -Url "https://mabitdept-admin.sharepoint.com" -Interactive
+
+Grant-PnPAzureADAppSitePermission `
+    -AppId "82a4ec5a-d90d-4957-8021-3093e60a4d70" `
+    -DisplayName "Training Progress Tracker" `
+    -Site "https://mabitdept.sharepoint.com/sites/FLTOPS-TRAINING" `
+    -Permissions Write
+
+This follows Microsoft's least-privilege model - the app can only access
+the FLTOPS-TRAINING site, not all SharePoint sites.
+
+Best regards,
+Capt. Mohamad Shazreen Sazali
+```
 
 ---
 
@@ -90,8 +135,7 @@ IT needs to:
 | File | Purpose |
 |------|---------|
 | `index-sharepoint-v3-enhanced.html` | SharePoint version (ready to use) |
-| `EMAIL_TO_IT_DELEGATED_PERMISSION.md` | **Current email for IT** |
-| `EMAIL_TO_IT_SITE_PERMISSION.md` | Previous email (Sites.Selected) |
 | `migrate-to-sharepoint.ps1` | Data migration script |
 | `test-sharepoint.py` | Python connection test |
-| `CONTINUE_HERE.md` | Handoff guide |
+| `SETUP_STATUS.md` | This file - current progress |
+| `CLAUDE.md` | Project documentation |

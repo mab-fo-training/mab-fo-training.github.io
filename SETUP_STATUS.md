@@ -1,6 +1,6 @@
 # SharePoint Setup Status
 
-**Last Updated:** 2026-01-21
+**Last Updated:** 2026-01-22
 
 ## Current Status: 🔄 Azure Function Backend In Progress
 
@@ -84,16 +84,19 @@ Grant-PnPAzureADAppSitePermission `
 | Security Hardening | ✅ Implemented |
 | Application Code | ✅ Ready |
 | **Azure Function Backend** | 🔄 **In Progress** |
-| IT Site Permission (PowerShell) | ⏳ **Pending IT Action** |
+| IT Site Permission (PowerShell) | ✅ **Completed** (2026-01-22) |
+| Azure Function App Creation | ⏳ **Pending IT Action** |
 
 ---
 
 ## Next Actions
 
-1. **Send email to IT** requesting PowerShell command execution (email drafted below)
-2. **Create client secret** in Azure AD app registration
-3. **Wait for IT** to run the PowerShell command
-4. **Create Azure Function** code once Step 2 is complete
+1. ~~**Send email to IT** requesting PowerShell command execution~~ ✅ Done
+2. ~~**Create client secret** in Azure AD app registration~~ ✅ Done
+3. ~~**Wait for IT** to run the PowerShell command~~ ✅ Done (2026-01-22)
+4. **Send email to IT** requesting Azure Function App creation (see `EMAIL_TO_IT_AZURE_FUNCTION.md`)
+5. **Wait for IT** to create Function App and grant Contributor access
+6. **Deploy Azure Function** code once Function App is ready
 
 ---
 

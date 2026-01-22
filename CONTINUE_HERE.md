@@ -1,38 +1,41 @@
 # Continue From Here
 
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-22
 
 ---
 
-## Current Status: Evaluating Deployment Architecture
+## Current Status: Waiting for IT to Create Azure Function App
 
-### Latest Update (2026-01-20)
+### Latest Update (2026-01-22)
 
-**Explored Azure AD Application Permissions vs Delegated Permissions**
+**IT Completed PowerShell Command for Sites.Selected Permission**
 
-Researched using app-only authentication (Application permissions) instead of user-delegated permissions to eliminate the need for trainees to have SharePoint site access.
+IT successfully ran the `Grant-PnPAzureADAppSitePermission` PowerShell command, granting the app write access to the FLTOPS-TRAINING site using `Sites.Selected` permission.
 
-**Key Findings:**
-- App-only auth requires **certificate authentication** (not just client secret) for SharePoint REST API
-- Cannot be done from client-side JavaScript (security risk to expose credentials)
-- Requires a **backend server** (Azure Function) to proxy API calls
-- `Sites.Selected` permission allows granular access to only specific sites/lists
+**Completed Today:**
+1. ✅ IT ran PowerShell command for site-level permission
+2. ✅ Client secret created in Azure AD
+3. ✅ Researched Azure Function costs (storage account: $0.01-$0.50/month)
+4. ✅ Drafted email to IT requesting Azure Function App creation
 
-**Architecture Options Evaluated:**
+**Architecture Decision: Option B (Azure Function Backend)**
 
-| Option | Architecture | Cost | Complexity |
-|--------|-------------|------|------------|
-| **A: Delegated (current)** | Browser → SharePoint | $0 | Low |
-| **B: Azure Function Backend** | Browser → Azure Function → SharePoint | $0-2/mo | Medium |
-| **C: Dedicated Site** | Browser → SharePoint (isolated site) | $0 | Low |
+```
+Browser App → Azure Function (app-only auth) → SharePoint
+```
 
-**Azure Functions Free Tier (Consumption Plan):**
-- 1 million executions/month FREE
-- 400,000 GB-seconds/month FREE
-- Estimated app usage: ~30,000 executions/month (3% of free tier)
-- Only cost: Storage account (~$0.50-2/month)
+**Cost Breakdown:**
+| Component | Monthly Cost |
+|-----------|--------------|
+| Azure Functions (Consumption) | $0 (free tier: 1M executions) |
+| Storage Account | $0.01 - $0.50 |
+| **Total** | **Under $1/month** |
 
-**Decision Pending:** Choose between Option B (Azure Function) or Option C (Dedicated Site)
+**Security Benefits:**
+- Trainees do NOT need SharePoint site access
+- App authenticates directly using app-only credentials
+- SharePoint remains completely isolated from end users
+- Principle of least privilege via `Sites.Selected`
 
 ---
 
@@ -128,52 +131,44 @@ The `Training_Progress` list needs these columns:
 
 ### Next Steps (Resume Here)
 
-1. ~~**Add SharePoint columns**~~ ✓ DONE (2026-01-20)
+1. ~~**Add SharePoint columns**~~ ✅ Done (2026-01-20)
    - Fleet (Choice: B738, B738M, A330, A350)
    - Command_Check_Date (Date)
 
-2. **Choose Deployment Architecture** ⚠️ DECISION NEEDED
+2. ~~**Choose Deployment Architecture**~~ ✅ Decision Made: Azure Function Backend
 
-   **Issue:** Trainees need SharePoint site access to use the app with current delegated permissions.
+3. ~~**IT: Grant Sites.Selected permission**~~ ✅ Done (2026-01-22)
+   - IT ran PowerShell `Grant-PnPAzureADAppSitePermission` command
 
-   **Option B: Azure Function Backend (Recommended if IT prefers no site access)**
-   ```
-   Browser App → Azure Function (certificate auth) → SharePoint
-   ```
-   - Uses `Sites.Selected` permission (access only to Training_Progress list)
-   - Trainees don't need any SharePoint site access
-   - Cost: ~$0-2/month (free tier covers usage)
-   - Requires: Certificate setup, Azure Function deployment
-   - **To implement:** Claude can build the Azure Function backend
+4. ~~**Create client secret**~~ ✅ Done (2026-01-22)
 
-   **Option C: Dedicated SharePoint Site (Simpler)**
-   - Create `FLTOPS-TRACKER` site with only the Training_Progress list
-   - Give trainees Read access to site + Contribute to list
-   - No code changes needed
-   - Cost: $0
+5. **Send email to IT requesting Azure Function App** ⏳ CURRENT
+   - Email drafted: `EMAIL_TO_IT_AZURE_FUNCTION.md`
+   - Requested config: Node.js 18, Southeast Asia, Consumption plan
+   - Request Contributor access for deployment
 
-   **References:**
-   - [Microsoft: App-Only Access via Entra ID](https://learn.microsoft.com/en-us/sharepoint/dev/solution-guidance/security-apponly-azuread)
-   - [Microsoft: Sites.Selected Permissions](https://techcommunity.microsoft.com/blog/spblog/develop-applications-that-use-sites-selected-permissions-for-spo-sites-/3790476)
-   - [Azure Functions Pricing](https://azure.microsoft.com/en-us/pricing/details/functions/)
+6. **Wait for IT to create Function App** ⏳ Pending
+   - IT will create Function App
+   - IT will add you as Contributor
 
-3. **Deploy to SharePoint**
-   - Upload `progress-tracker.html` to Document Library
-   - Copy the URL
-   - If Option B: Deploy Azure Function first, update app to call function
-   - If Option C: Update app's hardcoded site URL to new site
+7. **Deploy Azure Function Code** 🔜 Next
+   - Claude will generate complete backend code
+   - Endpoints: GET/POST/PATCH/DELETE for `/api/trainees`
+   - Deploy via Azure Portal or VS Code
 
-4. **Update Azure AD Redirect URI**
-   - Add production URL to App Registration → Authentication
+8. **Update Frontend App**
+   - Modify `progress-tracker.html` to call Azure Function instead of SharePoint directly
+   - Remove MSAL (no user sign-in needed)
 
-5. **Data Migration**
-   - Export Google Sheets to Excel
-   - Use Bulk Import (Fleet defaults to B738)
+9. **Deploy to SharePoint**
+   - Upload updated `progress-tracker.html` to Document Library
+   - Update Azure AD Redirect URI
 
-6. **User Rollout**
-   - Distribute admin password
-   - Send user communication
-   - Share app URL
+10. **Data Migration & User Rollout**
+    - Export Google Sheets to Excel
+    - Use Bulk Import (Fleet defaults to B738)
+    - Distribute admin password
+    - Share app URL
 
 ---
 
@@ -198,6 +193,7 @@ The `Training_Progress` list needs these columns:
 | `SETUP_STATUS.md` | Full status details |
 | `CONTINUE_HERE.md` | This file |
 | `EMAIL_TO_IT_SECURITY_MITIGATIONS.md` | Security mitigations doc |
+| `EMAIL_TO_IT_AZURE_FUNCTION.md` | **NEW** - Request for Azure Function App |
 
 ---
 

@@ -4,21 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This repository contains **two versions** of a Training Progress Tracker for managing flight training progress (First IOE, Functional Date, LRC, Interview, sectors flown). Both are single-page HTML applications with no build process.
+This repository contains a **Training Progress Tracker** for managing flight training progress (First IOE, Functional Date, Command Check, LRC, Interview, sectors flown). The active version is a single-page HTML application targeting SharePoint/Microsoft 365.
 
-### Version 2.2 - Google Sheets Edition (`index.html`)
-- **3,274 lines** - Production version with full feature set
+### Active Version - SharePoint Enhanced (`index-sharepoint-v3-enhanced.html`)
+- **~3,700 lines** - Full-featured production version
+- SharePoint REST API for data storage
+- MSAL.js for Microsoft 365 authentication (delegated)
+- Dual interface: User Portal + Admin Panel
+- Analytics dashboard, change history, PDF import, Excel export
+- Dedicated SharePoint Communication Site as backend
+
+### Legacy Version - Google Sheets Edition (`index.html` / `index-2.html`)
 - Google Sheets API for data storage
 - Google Identity Services for authentication
-- Dual interface: User Portal + Admin Panel
-- Change history tracking and analytics dashboard
-
-### Version 3.0 - SharePoint Edition (`index-sharepoint.html`)
-- **1,299 lines** - Enterprise migration version
-- SharePoint REST API for data storage
-- MSAL.js for Microsoft 365 authentication
-- Admin-focused interface (no user portal)
-- Designed for Microsoft ecosystem integration
+- Kept for reference; SharePoint version is the active development target
 
 **Common Technologies:**
 - Pure vanilla JavaScript (no build tooling)
@@ -26,294 +25,209 @@ This repository contains **two versions** of a Training Progress Tracker for man
 - XLSX.js for Excel exports
 - Chart.js for visualizations
 
-## Architecture Comparison
+## Current Architecture
 
-### Single-File Design (Both Versions)
-Both applications are intentionally single-file HTML with embedded JavaScript. No build process required - deploy directly to web servers or document libraries.
+### Dedicated SharePoint Site
+- **Site URL**: `https://mabitdept.sharepoint.com/sites/FlightOpsIOETrainingTracker`
+- **Site Type**: Communication Site (lightweight, no M365 Group overhead)
+- **Site Owner**: mohamadshazreen.sazali@malaysiaairlines.com
+- **Purpose**: Data backend and (pending) app hosting
+- **Access**: "Everyone except external users" added as Members with Edit permission
 
-### Google Sheets Version (v2.2) - `index.html`
+### Why a Dedicated Site
+Previously the app targeted the shared `FLTOPS-TRAINING` SharePoint site. This was changed to a dedicated site to:
+- Avoid permission conflicts with shared departmental content
+- Give full control over site settings and permissions
+- Isolate training tracker data
+- Eliminate dependency on other teams for site management
 
-**Data Flow:**
-1. **Authentication**: Google Identity Services → JWT token parsing → user profile extraction
-2. **Authorization**: Access token requested with `spreadsheets` scope
-3. **Data Storage**: Google Sheets as database (range: `[SHEET_NAME]!A2:M`)
-4. **State Management**: In-memory `cadets[]` array synchronized with Sheets on load/save
-5. **Admin Access**: Separate `AdminUsers` sheet validates admin emails (column A) and optional password (cell B1)
+### Azure Function Approach (Abandoned)
+An Azure Function backend was explored for app-only authentication but abandoned due to:
+- Required cross-department IT involvement (Function App creation, Contributor access)
+- Certificate management overhead
+- Unnecessary complexity when delegated auth works with a dedicated site
 
-**Google Sheets Schema:**
-Columns A-M in the main sheet:
-- A: Batch
-- B: Staff_ID
-- C: Rank (CAPT, FO, SO, CDT)
-- D: Name
-- E: First_IOE_Date (DD/MM/YY format, converted to YYYY-MM-DD)
-- F: Functional_Date
-- G: LRC_Date
-- H: Interview_Date
-- I: Sectors_Flown (number)
-- J: Last_Updated (timestamp)
-- K: Remarks
-- L: Manual_Highlight (blue/green/red)
-- M: Sector_History (JSON array tracking sector changes)
+### Authentication & Authorization
 
-**Configuration** (hardcoded at lines 1137-1142):
-```javascript
-API_KEY: 'AIzaSyDkxsnzpdOCXqUJ9xbpWKeoVU9P4hYCrik'
-CLIENT_ID: '657166589265-ocmfi5cgl3rktnakqcd0bjjd0284mv4f.apps.googleusercontent.com'
-SPREADSHEET_ID: '1D31q-19IK0DSLVQaI8jwrxLVspyMIWIZ6thiO7vGoNg'
-SHEET_NAME: '738 cpc'
+**Authentication**: MSAL.js delegated auth (browser popup)
+- Client ID: `82a4ec5a-d90d-4957-8021-3093e60a4d70`
+- Tenant ID: `8fc3a567-1ee8-4994-809c-49f50cdb6d48`
+- Scope: `https://mabitdept.sharepoint.com/.default`
+- Token storage: `sessionStorage` (cleared on browser close)
+- Redirect URI: `window.location.origin` (dynamic)
+
+**Admin Authorization**: `AdminUsers` SharePoint list
+- `checkAdminAuth()` queries the `AdminUsers` list for the signed-in user's email
+- If the email is not found, admin access is denied
+- AdminUsers list columns: `Title` (name), `Email` (Microsoft 365 email)
+
+**User Portal Authorization**: UI-level enforcement
+- Trainees can only update their own record via Staff ID lookup
+- Not API-level — technically savvy users could call SharePoint REST directly
+- Acceptable for this use case
+
+### Data Flow
+```
+User Browser → MSAL sign-in popup → Access token
+          → SharePoint REST API (Training_Progress list)
+          → In-memory cadets[] array → Render UI
 ```
 
-**Dual View Architecture:**
-1. **User Portal** (Cadet View): Self-service interface where trainees enter Staff ID, select rank (locks after first selection), and update their own dates/sectors
-2. **Admin Panel**: Full CRUD access, analytics dashboard, batch filtering, change history
+## SharePoint List Schema
 
-### SharePoint Version (v3.0) - `index-sharepoint.html`
+### Training_Progress List
+| Column Name | Type | Notes |
+|---|---|---|
+| `Title` | Single line of text | Built-in, stores trainee name |
+| `Batch` | Single line of text | |
+| `Staff_ID` | Single line of text | |
+| `Rank` | Choice: `CADET`, `SO`, `FO`, `CAPTAIN` | |
+| `Fleet` | Choice: `B738`, `B738M`, `A330`, `A350` | |
+| `First_IOE_Date` | Date | |
+| `Functional_Date` | Date | |
+| `Command_Check_Date` | Date | CUC batches only |
+| `LRC_Date` | Date | |
+| `Interview_Date` | Date | |
+| `Sectors_Flown` | Number | |
+| `Status` | Single line of text | |
+| `Remarks` | Multiple lines of text | |
+| `Last_Updated` | Date and time | |
+| `Manual_Highlight` | Choice: `blue`, `green`, `red` | |
 
-**Data Flow:**
-1. **Authentication**: MSAL.js handles Microsoft 365 sign-in → popup authentication
-2. **Configuration**: SharePoint site URL and list name stored in `localStorage`
-3. **Data Storage**: SharePoint List via REST API (`_api/web/lists/...`)
-4. **API Communication**: OData v3 format (`odata=verbose`)
-5. **State Management**: In-memory `cadets[]` synchronized with SharePoint
+**Important**: Name is stored in `Title` (SharePoint built-in field), NOT a custom `Name` column. The code saves to `Title` and reads from `item.Title`.
 
-**SharePoint List Schema:**
-List name: `Training_Progress` with exact columns:
-- `Batch` (Single line of text)
-- `Staff_ID` (Single line of text)
-- `Rank` (Choice: FO, SFO, CAPT)
-- `Name` (Single line of text)
-- `First_IOE_Date` (Date)
-- `Functional_Date` (Date)
-- `LRC_Date` (Date)
-- `Interview_Date` (Date)
-- `Sectors_Flown` (Number)
-- `Status` (Single line of text)
-- `Remarks` (Multiple lines of text)
-- `Last_Updated` (Date with time)
-- `Manual_Highlight` (Choice: blue, green, red)
+### AdminUsers List
+| Column Name | Type |
+|---|---|
+| `Title` | Single line of text (admin name) |
+| `Email` | Single line of text (Microsoft 365 email) |
 
-**Important**: SharePoint's default `Title` field is also used for trainee name.
+### Status Logic
+- **In Progress**: Initial state, missing functional date
+- **Functional** (blue): Has First IOE + Functional Date
+- **Completed** (green):
+  - CPC batches: First IOE + Functional + LRC + Interview
+  - CUC batches: First IOE + Functional + Command Check + LRC
+- **Special** (red): Manual override via `Manual_Highlight`
 
-### Status Logic (Common to Both Versions)
-Trainee status is determined by date completion:
-- **In Progress** (white background): Initial state, no functional date
-- **Functional** (blue background): Has `First_IOE_Date` + `Functional_Date`, missing LRC/Interview
-- **Completed** (green background): All 4 dates filled (IOE, Functional, LRC, Interview)
-- **Special Case** (red background): Manual override via `Manual_Highlight` field
+`Command_Check_Date` is only required for CUC batches. The `isCUCBatch()` function checks if the batch name contains "CUC".
 
 Manual highlight takes precedence over automatic status detection.
 
-## Configuration Requirements
+## Configuration
 
-### Google Sheets Version (v2.2)
-**Google Cloud Console Setup:**
-1. Create project in Google Cloud Console
-2. Enable Google Sheets API
-3. Create OAuth 2.0 Client ID (Web application)
-4. Create API Key
-5. Update `CONFIG` object (lines 1137-1142) with credentials
-6. No additional user configuration needed - fully hardcoded
-
-**Google Sheets Setup:**
-1. Create main sheet with name matching `CONFIG.SHEET_NAME`
-2. Add columns A-M (see schema above)
-3. Create `AdminUsers` sheet:
-   - Column A: Admin email addresses (one per row)
-   - Cell B1: Optional password for admin access
-
-**Optional Domain Restriction:**
-Uncomment lines 1504-1512 to restrict access to specific email domains (e.g., `@malaysiaairlines.com`).
-
-### SharePoint Version (v3.0)
-**Azure AD App Registration:**
-1. Create Azure AD App Registration
-2. Replace `YOUR_CLIENT_ID_HERE` at line 516
-3. Replace `YOUR_TENANT_ID_HERE` at line 517
-4. Configure API permissions: `User.Read`, `Sites.ReadWrite.All`
-5. Grant admin consent in Azure Portal
-6. Set redirect URI to deployment URL
-
-**SharePoint Setup:**
-1. Create SharePoint list named `Training_Progress`
-2. Add exact columns (see schema above - names are case-sensitive)
-
-See SETUP_GUIDE.md for detailed SharePoint setup instructions.
-
-## Key Functions by Version
-
-### Google Sheets Version (`index.html`)
-
-**Authentication & Authorization:**
-- `gapiLoaded()` (line 1439): Initializes Google Sheets API client
-- `gisLoaded()` (line 1450): Initializes OAuth token client
-- `handleCredentialResponse()` (line 1491): Parses JWT, extracts user info, handles domain restriction
-- `checkAdminAuth()`: Validates admin access against AdminUsers sheet
-
-**Data Operations:**
-- `loadFromSheets()` (line 1542): Fetches data from Google Sheets range A2:M
-- `saveToSheets()`: Writes entire `cadets[]` array back to Sheets (batch update)
-- `ddmmyyToDatePicker()` (line 1170): Converts DD/MM/YY format to YYYY-MM-DD for date inputs
-
-**User Portal (Cadet View):**
-- User enters Staff ID → finds their record → can update only their own dates/sectors
-- Rank selection locks after first save (prevents changing after commitment)
-- Sector history tracked in JSON array (column M)
-
-**Admin Panel:**
-- Full CRUD operations on all trainees
-- `updateAdminAnalytics()` (line 1325): Generates distribution and top 10 charts
-- Change history tracking
-- Batch-based filtering and analytics
-
-**State Management:**
-- `cadets[]`: Main data array
-- `changeHistory[]`: Tracks all modifications
-- `batches[]`: Unique batch list for filters
-
-### SharePoint Version (`index-sharepoint.html`)
-
-**Authentication:**
-- `initializeMSAL()` (line 547): Initializes MSAL client
-- `signIn()` (line 566): Popup authentication flow
-- `acquireTokenAndLoadData()` (line 592): Silent token refresh
-
-**SharePoint Operations:**
-- `loadDataFromSharePoint()` (line 668): Fetches items via REST API
-- `saveTraineeToSharePoint()` (line 724): Creates/updates using MERGE method
-- `deleteTraineeFromSharePoint()` (line 789): Deletes by item ID
-- `getListItemEntityType()` (line 820): Gets metadata for proper API calls
-- `testSharePointConnection()` (line 627): Validates connection before operations
-
-**Data Management:**
-- `filterCadets()` (line 872): Applies search, year, batch, rank filters
-- `renderTable()` (line 885): Renders filtered/sorted data to DOM
-- `getTraineeStatus()` (line 969): Determines status based on date completion
-
-**Export:**
-- `exportToExcel()` (line 1071): XLSX export with formatting
-- Power BI export uses same function
-
-## Common Development Tasks
-
-### Testing Locally (Both Versions)
-Must be served via HTTP server (not `file://` due to CORS):
-```bash
-# Python
-python -m http.server 8000
-
-# Node.js
-npx http-server -p 8000
+### Security Constants (hardcoded in HTML)
+```javascript
+const ALLOWED_SITE_URL = 'https://mabitdept.sharepoint.com/sites/FlightOpsIOETrainingTracker';
+const ALLOWED_LIST_NAME = 'Training_Progress';
 ```
+- Site URL is validated before every API call via `validateSharePointUrl()`
+- Config panel is hidden in production (`class="hidden"`)
 
-Then open:
-- Google Sheets version: `http://localhost:8000/index.html`
-- SharePoint version: `http://localhost:8000/index-sharepoint.html`
+### Azure AD App Registration
+- **Client ID**: `82a4ec5a-d90d-4957-8021-3093e60a4d70`
+- **Tenant ID**: `8fc3a567-1ee8-4994-809c-49f50cdb6d48`
+- **Delegated permissions granted**: `User.Read`, `Sites.ReadWrite.All`, `Sites.Selected`
+- **Site-level permission**: Write access granted via PowerShell `Grant-PnPAzureADAppSitePermission`
+- **Redirect URI**: Needs to be updated to match final hosting URL
 
-### Modifying Data Schema
+## Key Functions
 
-**Google Sheets Version:**
-1. Update `loadFromSheets()` (line 1542) - array index mapping
-2. Update `saveToSheets()` - write mapping to match new columns
-3. Add new column letter to range (currently A2:M)
-4. Update form fields in both User Portal and Admin Panel
-5. Test with actual Google Sheet to ensure column alignment
+### Authentication
+- `initializeMSAL()`: Initializes MSAL client, checks for existing sessions
+- `signIn()`: Popup authentication flow
+- `acquireTokenAndLoadData()`: Silent token refresh
+- `checkAdminAuth()`: Queries AdminUsers list to verify admin access
 
-**SharePoint Version:**
-1. Add column in SharePoint list (exact case-sensitive name)
-2. Update mapping in `loadDataFromSharePoint()` (line 697)
-3. Update mapping in `saveTraineeToSharePoint()` (line 732)
-4. Update modal form fields (lines 442-496)
-5. Update table headers (lines 407-420)
-6. Update render logic (lines 926-946)
+### SharePoint Operations
+- `loadDataFromSharePoint()`: GET items from Training_Progress list (top 5000)
+- `saveTraineeToSharePoint()`: POST (create) or POST+MERGE (update) items
+- `deleteTraineeFromSharePoint()`: POST+DELETE by item ID
+- `getListItemEntityType()`: Gets OData metadata for proper API calls
+- `testSharePointConnection()`: Validates site/list accessibility
 
-### Adding Features to SharePoint Version (from Google Sheets)
+### Data Management
+- `filterCadets()`: Applies search, year, batch, rank, fleet, status, training type filters
+- `renderTable()`: Renders filtered/sorted data to DOM
+- `getTraineeStatus()`: Determines status based on date completion and batch type
+- `isCUCBatch()`: Returns true if batch name contains "CUC"
 
-**To add User Portal (self-service):**
-1. Copy cadet view section from `index.html` (lines 429-550)
-2. Implement Staff ID lookup against SharePoint
-3. Add rank locking logic
-4. Restrict updates to only user's own record
-5. Add sector history column (JSON) to SharePoint list
-
-**To add Admin Analytics:**
-1. Copy admin analytics dashboard from `index.html` (lines 922-1015)
-2. Copy `updateAdminAnalytics()` function (line 1325)
-3. Ensure Chart.js charts render properly
-4. Add batch filter integration
-
-## Deployment Options
-
-### Google Sheets Version (`index.html`)
-1. **Web Server**: Any static hosting (GitHub Pages, Netlify, Vercel)
-2. **Google Sites**: Embed as custom HTML
-3. **Internal Network**: Company intranet server
-4. **Google Drive**: Host as web page (with proper CORS)
-
-**Important**: Update Google Cloud Console redirect URIs to match deployment URL.
-
-### SharePoint Version (`index-sharepoint.html`)
-1. **SharePoint Document Library**: Upload HTML file directly
-2. **Azure Static Web Apps**: Deploy via Azure Portal
-3. **Microsoft Teams**: Embed as website tab
-4. **Local Server**: For development/testing only
-
-**Important**: Update Azure AD redirect URI to match deployment URL.
-
-## Important Notes
-
-### Common to Both
-- **No Build Process**: Intentional design - direct deployment
-- **Text Transform**: All inputs auto-uppercase via CSS (lines 16-24)
-- **Sticky Columns**: Actions column sticky on scroll
-- **Date Format**: Internal format is YYYY-MM-DD (HTML5 date input standard)
-- **State Management**: In-memory only, no IndexedDB/localStorage for data
-
-### Google Sheets Specific
-- **Batch Updates**: Entire sheet rewritten on save (not row-by-row)
-- **Date Format Conversion**: DD/MM/YY from sheets converted to YYYY-MM-DD for pickers
-- **Sector History**: JSON array stored as string in column M
-- **Admin Security**: Email-based + optional password (plaintext in cell B1)
-- **API Quotas**: Google Sheets API has rate limits (100 requests per 100 seconds per user)
-
-### SharePoint Specific
-- **Column Name Precision**: Case-sensitive, must match exactly
-- **OData Version**: Uses OData v3 (`odata=verbose`) format
-- **MERGE vs POST**: Updates use `X-HTTP-Method: MERGE` header (line 766)
-- **5000 Item Limit**: Default query limit (add pagination if needed)
-- **Token Expiration**: MSAL handles silent refresh automatically
+### Error Handling
+- Save errors now return the full SharePoint response body for debugging
+- Console logging with `[OK]`, `[ERROR]`, `[DENIED]` prefixes
 
 ## Files
 
-- `index.html`: Google Sheets version (3,274 lines) - **PRODUCTION**
-- `index-sharepoint.html`: SharePoint version (1,299 lines) - **ENTERPRISE MIGRATION**
-- `SETUP_GUIDE.md`: SharePoint/Azure AD setup instructions
-- `QUICK_REFERENCE.md`: End-user quick reference (SharePoint version)
-- `CLAUDE.md`: This file
-- `files.zip`: Archive (contents not examined)
+| File | Description | Status |
+|---|---|---|
+| `index-sharepoint-v3-enhanced.html` | SharePoint version, full-featured | **ACTIVE - upload this** |
+| `progress-tracker.html` | Copy of enhanced version (kept in sync) | Mirror |
+| `tracker.html` | Renamed copy for clean URL | For deployment |
+| `index.html` | Google Sheets version (v2.2) | Legacy |
+| `index-2.html` | Google Sheets version (updated) | Legacy |
+| `index-sharepoint.html` | Original SharePoint template | Archived |
+| `CLAUDE.md` | This file | |
+| `SETUP_GUIDE.md` | SharePoint/Azure AD setup instructions | |
+| `QUICK_REFERENCE.md` | End-user quick reference | |
+| `EMAIL_TO_IT_SHAREPOINT_SETUP.md` | Latest IT email draft | |
 
-## Feature Comparison
+## Deployment Status
 
-| Feature | Google Sheets (v2.2) | SharePoint (v3.0) |
-|---------|---------------------|-------------------|
-| **User Self-Service Portal** | ✅ Yes | ❌ No |
-| **Admin Panel** | ✅ Yes | ✅ Yes (basic) |
-| **Analytics Dashboard** | ✅ Yes (charts) | ❌ No |
-| **Change History Tracking** | ✅ Yes | ❌ No |
-| **Sector History Tracking** | ✅ Yes (JSON) | ❌ No |
-| **Admin Authentication** | Email list + password | Azure AD only |
-| **Data Storage** | Google Sheets | SharePoint Lists |
-| **Offline Support** | ❌ No | ❌ No |
-| **Real-time Sync** | ❌ Manual refresh | ❌ Manual refresh |
-| **Power BI Export** | ❌ No | ✅ Yes |
-| **Setup Complexity** | Low | High (Azure AD) |
-| **Enterprise Integration** | Google Workspace | Microsoft 365 |
+### Current State: Awaiting IT for Hosting
+The app is fully functional locally (`python -m http.server 8000`). Hosting is blocked:
 
-## Migration Notes
+**SharePoint document library hosting**:
+- `DenyAddAndCustomizePages` set to `Disabled` (confirmed) but HTML still renders as preview
+- Likely a tenant-level `NoScriptSite` policy overriding site-level setting
+- IT email sent requesting tenant-level check
 
-If migrating from Google Sheets to SharePoint:
-1. Export data from Google Sheets to Excel
-2. Import Excel to SharePoint list (use Import Spreadsheet feature)
-3. Verify all column names match exactly
-4. User portal and analytics features will need to be manually ported
-5. Consider keeping Google Sheets version if self-service is critical
+**Azure Static Web Apps**:
+- No Azure subscription available (company account shows "Welcome to Azure" with no subscription)
+- Requested IT to provision one as alternative
+
+**GitHub Pages**:
+- Viable fallback (free, no IT needed)
+- Publicly accessible URL but app requires Microsoft sign-in (safe)
+- Client ID and Tenant ID in source are not secrets
+- Private repo possible for source code protection
+- KIV (kept in view) pending IT response
+
+### Hosting Options (in order of preference)
+1. **SharePoint site** — cleanest, needs IT to fix script policy
+2. **Azure Static Web Apps** — free tier, needs Azure subscription from IT
+3. **GitHub Pages** — free, self-service, publicly accessible URL but auth-protected
+
+### After Hosting is Resolved
+1. Upload/deploy `index-sharepoint-v3-enhanced.html`
+2. Add hosting URL as redirect URI in Azure AD app registration (Authentication → SPA)
+3. Verify MSAL sign-in works from hosted URL
+4. Test full flow: sign in → load data → add/edit/delete → admin access
+
+## Development Notes
+
+### Common Issues Encountered
+- **HTTP 400 on save**: Caused by sending fields that don't exist in SharePoint list (e.g., `Fleet`, `Sector_History`, `Name`). Only send columns that exist.
+- **Name field empty**: SharePoint uses `Title` as the built-in name field. Custom `Name` column conflicts with SharePoint internals. Always use `Title` for trainee name.
+- **HTML preview instead of rendering**: SharePoint tenant-level NoScriptSite policy blocks HTML execution even when site-level DenyAddAndCustomizePages is disabled.
+- **Rank mismatches**: SharePoint Choice columns must exactly match the values in the code. Current values: `CADET`, `SO`, `FO`, `CAPTAIN`.
+
+### Testing Locally
+```bash
+python -m http.server 8000
+# Open http://localhost:8000/index-sharepoint-v3-enhanced.html
+```
+
+### Modifying Data Schema
+1. Add column in SharePoint list (exact case-sensitive name)
+2. Update mapping in `loadDataFromSharePoint()` — reads from `item.ColumnName`
+3. Update mapping in `saveTraineeToSharePoint()` — writes `ColumnName: value`
+4. Update modal form fields in HTML
+5. Update table headers and render logic
+
+### Security Measures
+- URL validation: All API calls checked against `ALLOWED_SITE_URL`
+- HTML escaping: `escapeHtml()` function prevents XSS
+- Session timeout: 30-minute inactivity timeout
+- Token storage: `sessionStorage` (cleared on browser close)
+- Admin auth: Email checked against AdminUsers SharePoint list
+- Config panel: Hidden in production UI

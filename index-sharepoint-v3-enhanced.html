@@ -1786,7 +1786,6 @@
                 return isAuth;
             }
 
-            // For SharePoint version: Anyone authenticated via Azure AD has admin access
             if (!sharePointConfig.accessToken) {
                 alert('Warning: Please sign in first');
                 return false;
@@ -1797,9 +1796,37 @@
                 return false;
             }
 
-            // Successfully authenticated via Azure AD = admin access granted
-            console.log('[OK] Admin access granted to:', currentUser.email);
-            return true;
+            try {
+                // Check if user's email exists in AdminUsers list
+                const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.adminListName}')/items?$filter=Email eq '${currentUser.email}'&$top=1`;
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error('[ERROR] Failed to check AdminUsers list:', response.status);
+                    alert('Error: Unable to verify admin access. Please try again.');
+                    return false;
+                }
+
+                const data = await response.json();
+                if (data.d.results.length === 0) {
+                    alert('Access Denied: You are not authorized as an admin.');
+                    console.log('[DENIED] Admin access denied for:', currentUser.email);
+                    return false;
+                }
+
+                console.log('[OK] Admin access granted to:', currentUser.email);
+                return true;
+            } catch (error) {
+                console.error('[ERROR] Admin auth check failed:', error);
+                alert('Error: Failed to verify admin access. Please try again.');
+                return false;
+            }
         }
 
         // ==================== CHANGE HISTORY ====================

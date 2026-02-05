@@ -231,3 +231,46 @@ python -m http.server 8000
 - Token storage: `sessionStorage` (cleared on browser close)
 - Admin auth: Email checked against AdminUsers SharePoint list
 - Config panel: Hidden in production UI
+
+## Power Automate Integration
+
+### Trainer Submission Form
+A Microsoft Forms form (`https://forms.office.com/r/aBkYkEMw1f`) is used by trainers to submit trainee progression updates. An existing Power Automate flow sends email notifications on submission.
+
+**Form fields:**
+1. NAME OF TRAINEE (text)
+2. STAFF NUMBER (text)
+3. FLEET (choice: A350, A333, B737) — ignored, already in SharePoint
+4. TOTAL SECTORS (number)
+5. DATE (date, M/d/yyyy)
+6. Progression Stage (choice — see mapping below)
+
+### Power Automate → SharePoint List Update
+
+The flow should be extended to update the `Training_Progress` list automatically after the email action.
+
+**Flow steps:**
+1. **Get items** — filter `Training_Progress` by `Staff_ID eq '[Staff Number]'`
+2. **Condition** — check if trainee exists
+3. **If yes** — Switch on Progression Stage to update the correct field
+4. **If no** — send notification (trainee should already exist in list)
+
+**Progression Stage → SharePoint field mapping:**
+
+| Progression Stage | Action |
+|---|---|
+| Cleared Functional | `Functional_Date` = form DATE |
+| Line Release Check COMPLETED | `LRC_Date` = form DATE |
+| Command Check COMPLETED | `Command_Check_Date` = form DATE |
+| Cleared for Line Release Check | `Remarks` = append "Cleared for LRC - [DATE]" |
+| Cleared for Command Check | `Remarks` = append "Cleared for Command Check - [DATE]" |
+| REFERRED TO SIP | `Manual_Highlight` = "red", `Remarks` = append "Referred to SIP - [DATE]" |
+
+**All submissions also update:**
+- `Sectors_Flown` = form TOTAL SECTORS
+- `Last_Updated` = `utcNow()`
+
+**Notes:**
+- Fleet from form (A350/A333/B737) is ignored — the SharePoint list already has this data
+- Only completed stages update date columns; "Cleared for" stages go to Remarks
+- "REFERRED TO SIP" sets the manual highlight to red (flags the trainee in the tracker UI)

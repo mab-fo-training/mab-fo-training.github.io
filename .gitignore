@@ -20,3 +20,6 @@ desktop.ini
 # Backup files
 *.bak
 *~
+secret.txt
+nul
+tmpclaude-*

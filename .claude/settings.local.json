@@ -30,7 +30,18 @@
       "Bash(powershell:*)",
       "Bash(start index-sharepoint-v3-enhanced.html)",
       "Bash(start http://localhost:8000/index-sharepoint-v3-enhanced.html)",
-      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"grant-site-permission.ps1\")"
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"grant-site-permission.ps1\")",
+      "Bash(python:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(copy \"C:\\\\Users\\\\shazreen\\\\Desktop\\\\Microsoft Training Tracker\\\\index-sharepoint-v3-enhanced.html\" \"C:\\\\Users\\\\shazreen\\\\Desktop\\\\Microsoft Training Tracker\\\\progress-tracker.html\")",
+      "WebSearch",
+      "WebFetch(domain:techcommunity.microsoft.com)",
+      "Bash(git fetch:*)",
+      "WebFetch(domain:azure.microsoft.com)",
+      "Bash(git status:*)",
+      "WebFetch(domain:forms.office.com)"
     ],
     "deny": [],
     "ask": []

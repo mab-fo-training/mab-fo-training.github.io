@@ -1,0 +1,3662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Training Progress Tracker v3.0 Enhanced - SharePoint Edition</title>
+
+    <!-- Content Security Policy - Restricts connections to approved domains only -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://alcdn.msauth.net https://unpkg.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+        connect-src 'self' https://mabitdept.sharepoint.com https://login.microsoftonline.com https://*.microsoftonline.com https://*.msauth.net;
+        style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+        font-src 'self' data:;
+        img-src 'self' data: https:;
+        worker-src 'self' blob:;
+    ">
+
+    <!-- Microsoft Authentication Library -->
+    <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js"></script>
+
+    <!-- Other Libraries -->
+    <script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+
+    <style>
+        input[type="text"]:not([disabled]),
+        select:not([disabled]),
+        textarea {
+            text-transform: uppercase;
+        }
+
+        input[type="date"], input[type="password"] {
+            text-transform: none;
+        }
+
+        /* Exempt SharePoint configuration fields from uppercase */
+        #siteUrl, #listName {
+            text-transform: none !important;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        * {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .data-table {
+            border-spacing: 0;
+            table-layout: auto;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th.sticky,
+        .data-table td.sticky {
+            position: sticky;
+            right: 0;
+            z-index: 10;
+        }
+
+        .data-table th.sticky {
+            z-index: 11;
+        }
+
+        .data-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .data-table thead th.sticky {
+            z-index: 21;
+        }
+
+        .data-table tbody tr.bg-blue-50 td.sticky {
+            background-color: #eff6ff;
+        }
+
+        .data-table tbody tr.bg-green-50 td.sticky {
+            background-color: #f0fdf4;
+        }
+
+        .data-table tbody tr.bg-red-50 td.sticky {
+            background-color: #fef2f2;
+        }
+
+        .data-table tbody tr:not([class*="bg-"]) td.sticky {
+            background-color: white;
+        }
+
+        .data-table tbody tr:hover td.sticky {
+            box-shadow: -4px 0 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
+        }
+
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+        }
+
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px !important;
+        }
+
+        .sortable-header:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .sortable-header::after {
+            content: '⇅';
+            position: absolute;
+            right: 5px;
+            opacity: 0.3;
+            font-size: 12px;
+        }
+
+        .sortable-header.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+            color: #0078D4;
+        }
+
+        .sortable-header.sort-desc::after {
+            content: '↓';
+            opacity: 1;
+            color: #0078D4;
+        }
+
+        .config-panel {
+            background: #f8f9fa;
+            border: 2px solid #0078D4;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Configuration Panel (hidden for production) -->
+    <div id="configPanel" class="config-panel mx-4 mt-4 hidden">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-800">Configuration</h3>
+            <div class="flex items-center space-x-3">
+                <label class="text-sm font-medium text-gray-700">Mode:</label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="testModeToggle" class="sr-only peer">
+                    <div class="relative w-14 h-7 bg-blue-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
+                    <span id="testModeLabel" class="ml-3 text-sm font-medium text-blue-700">SharePoint</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- SharePoint Config (hidden in test mode) -->
+        <div id="sharepointConfig">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <input type="text" id="siteUrl" readonly class="hidden">
+                </div>
+                <div>
+                    <input type="text" id="listName" readonly class="hidden">
+                </div>
+            </div>
+            <div id="connectionStatus" class="hidden">
+                Not Connected
+            </div>
+        </div>
+
+        <!-- Test Mode Info (shown in test mode) -->
+        <div id="testModeConfig" class="hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <button id="loadSampleDataBtn" class="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 font-medium">
+                        Load Sample Data
+                    </button>
+                    <button id="clearTestDataBtn" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium ml-2">
+                        Clear All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="gradient-bg rounded-2xl shadow-2xl p-8 mb-8 animate-slide-in">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                    </svg>
+                    <div>
+                        <h1 class="text-4xl font-bold text-white mb-2">Training Progress Tracker</h1>
+                        <p class="text-blue-100 text-lg">Flight Operations Training Management System</p>
+                    </div>
+                </div>
+                <div id="authContainer">
+                    <button id="signInBtn" class="bg-white text-blue-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition shadow-lg">
+                        Sign in with Microsoft
+                    </button>
+                    <div id="userInfo" class="hidden text-white text-right">
+                        <p class="font-semibold" id="userName"></p>
+                        <p class="text-sm" id="userEmail"></p>
+                        <button id="signOutBtn" class="text-sm text-blue-100 hover:text-white underline mt-1">Sign out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Toggle -->
+        <div id="mainApp" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg p-2 mb-6 animate-fade-in">
+                <div class="flex gap-2">
+                    <button id="cadetViewBtn" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg">
+                        User Portal
+                    </button>
+                    <button id="adminViewBtn" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        Admin Panel
+                    </button>
+                </div>
+            </div>
+
+            <!-- USER PORTAL (Cadet View) -->
+            <div id="cadetView" class="bg-white rounded-2xl shadow-xl p-6 md:p-8 animate-fade-in">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-400 rounded-full"></div>
+                    <h2 class="text-3xl font-bold text-gray-800">Self-Service Portal</h2>
+                </div>
+
+                <div class="max-w-2xl">
+                    <div class="mb-8">
+                        <label class="block text-gray-700 font-semibold mb-3 text-lg">Staff ID</label>
+                        <div class="flex gap-3">
+                            <input type="text" id="cadetStaffId" class="flex-1 px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg" placeholder="Enter your Staff ID">
+                            <button id="loadCadetBtn" class="btn-primary px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all">
+                                Load Info
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="cadetFormSection" class="hidden">
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-5 rounded-xl mb-8 shadow-sm">
+                            <div class="flex items-start gap-3">
+                                <div class="text-2xl">ℹ️</div>
+                                <div>
+                                    <p class="text-sm text-blue-900 font-medium mb-1">Important Notes</p>
+                                    <p class="text-sm text-blue-800">• Rank field locks after first selection</p>
+                                    <p class="text-sm text-blue-800">• Date fields use calendar picker</p>
+                                    <p class="text-sm text-blue-800">• All fields can be updated anytime</p>
+                                    <p class="text-sm text-blue-800">• Sectors field is optional</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-5 mb-8">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Rank</label>
+                                <select id="cadetRank" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                    <option value="">Select your rank...</option>
+                                    <option value="CADET">CADET</option>
+                                    <option value="SO">SO</option>
+                                    <option value="FO">FO</option>
+                                    <option value="CAPTAIN">CAPTAIN</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Name</label>
+                                <input type="text" id="cadetNameDisplay" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl bg-gray-50" disabled>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Batch</label>
+                                <input type="text" id="cadetBatchDisplay" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl bg-gray-50" disabled>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">First IOE Date</label>
+                                    <input type="date" id="cadetFirstIOE" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Functional Date</label>
+                                    <input type="date" id="cadetFunctional" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">LRC Date</label>
+                                    <input type="date" id="cadetLRC" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Interview Date</label>
+                                    <input type="date" id="cadetInterview" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                </div>
+                                <div id="cadetCommandCheckDateContainer" class="hidden">
+                                    <label class="block text-gray-700 font-semibold mb-2">Command Check Date <span class="text-xs text-gray-500">(CUC only)</span></label>
+                                    <input type="date" id="cadetCommandCheck" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Total Sectors Flown (Optional)</label>
+                                <input type="number" id="newSectorCount" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg font-bold" placeholder="Enter total sector count" min="0">
+                                <div id="currentSectorsDisplay" class="hidden mt-2 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+                                    <p class="text-sm text-blue-900">
+                                        <span class="font-bold">Current sectors:</span>
+                                        <span id="currentSectorsValue" class="text-lg font-black text-blue-700"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="updateCadetBtn" class="btn-primary w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all">
+                            Save All Updates
+                        </button>
+
+                        <div id="updateMessage" class="mt-4 p-4 rounded-xl hidden shadow-sm"></div>
+
+                        <!-- Advanced Analytics Section -->
+                        <div id="analyticsSection" class="mt-10 hidden">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-1 h-8 bg-gradient-to-b from-purple-600 to-purple-400 rounded-full"></div>
+                                <h3 class="text-2xl font-bold text-gray-800">Advanced Analytics</h3>
+                            </div>
+
+                            <!-- Quick Stats -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200 shadow-sm">
+                                    <div class="text-sm text-blue-700 opacity-80 mb-1">Total Sectors</div>
+                                    <div class="text-3xl font-bold text-blue-900" id="userTotalSectors">0</div>
+                                </div>
+                                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200 shadow-sm">
+                                    <div class="text-sm text-green-700 opacity-80 mb-1">30-Day Average</div>
+                                    <div class="text-3xl font-bold text-green-900" id="user30DayAvg">0</div>
+                                </div>
+                                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200 shadow-sm">
+                                    <div class="text-sm text-purple-700 opacity-80 mb-1">Weekly Rate</div>
+                                    <div class="text-3xl font-bold text-purple-900" id="userWeeklyRate">0</div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Chart -->
+                            <div class="mb-6">
+                                <h4 class="text-lg font-bold text-gray-800 mb-3">30-Day Progress</h4>
+                                <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm" style="height: 300px;">
+                                    <canvas id="userProgressChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Batch Comparison -->
+                            <div class="mb-6">
+                                <h4 class="text-lg font-bold text-gray-800 mb-3">Batch Comparison</h4>
+                                <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm" style="height: 350px;">
+                                    <canvas id="userBatchChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Metrics -->
+                            <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
+                                <h4 class="text-lg font-bold text-gray-800 mb-4">Detailed Metrics</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <div class="text-sm text-gray-600 mb-1">Last 7 Days</div>
+                                        <div class="text-2xl font-bold text-blue-700" id="userLast7Days">0</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-600 mb-1">Last 30 Days</div>
+                                        <div class="text-2xl font-bold text-blue-700" id="userLast30Days">0</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-600 mb-1">Batch Average</div>
+                                        <div class="text-2xl font-bold text-purple-700" id="userBatchAverage">0</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-600 mb-1">Difference</div>
+                                        <div class="text-2xl font-bold" id="userDifference">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN PANEL -->
+            <div id="adminView" class="hidden">
+                <!-- Admin Login -->
+                <div id="adminLogin" class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto animate-slide-in">
+                    <div class="text-center mb-8">
+                        <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">Admin Access</h2>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-semibold mb-3">Password</label>
+                        <input type="password" id="adminPassword" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all" placeholder="Enter admin password">
+                    </div>
+                    <button id="adminLoginBtn" class="btn-primary w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all">
+                        Verify Access
+                    </button>
+                    <p id="adminCheckEmail" class="hidden"></p>
+                </div>
+
+                <!-- Admin Dashboard -->
+                <div id="adminDashboard" class="hidden animate-fade-in">
+                    <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
+                        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
+                            <div class="flex flex-wrap gap-3">
+                                <button id="refreshDataBtn" class="btn-primary bg-cyan-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-cyan-700 shadow-md">
+                                    Refresh
+                                </button>
+                                <button id="viewAnalyticsBtn" class="btn-primary bg-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-purple-700 shadow-md">
+                                    Analytics
+                                </button>
+                                <button id="viewHistoryBtn" class="btn-primary bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 shadow-md">
+                                    History
+                                </button>
+                                <button id="exportExcelBtn" class="btn-primary bg-green-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-green-700 shadow-md">
+                                    Export Excel
+                                </button>
+                                <button id="exportPowerBIBtn" class="btn-primary bg-orange-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-orange-700 shadow-md">
+                                    Power BI
+                                </button>
+                                <button id="addTraineeBtn" class="btn-primary bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-700 shadow-md">
+                                    + Add Trainee
+                                </button>
+                                <button id="bulkImportBtn" class="btn-primary bg-teal-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-teal-700 shadow-md" title="Import multiple trainees from Excel">
+                                    Bulk Import
+                                </button>
+                                <button id="pdfImportBtn" class="btn-primary bg-rose-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-rose-700 shadow-md" title="Import trainees from Training Joining Instructions PDF">
+                                    Import PDF
+                                </button>
+                                <button id="testHighlightsBtn" class="btn-primary bg-yellow-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-yellow-700 shadow-md" title="Test highlight visibility">
+                                    Test Colors
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Color Legend -->
+                        <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <span class="text-sm font-semibold text-gray-700 mr-4">Status Legend:</span>
+                            <span class="inline-flex items-center mr-3"><span class="w-4 h-4 bg-white border border-gray-300 rounded mr-1"></span><span class="text-xs">In Progress</span></span>
+                            <span class="inline-flex items-center mr-3"><span class="w-4 h-4 bg-blue-100 border border-blue-300 rounded mr-1"></span><span class="text-xs">Functional</span></span>
+                            <span class="inline-flex items-center mr-3"><span class="w-4 h-4 bg-green-100 border border-green-300 rounded mr-1"></span><span class="text-xs">Completed</span></span>
+                            <span class="inline-flex items-center"><span class="w-4 h-4 bg-red-100 border border-red-300 rounded mr-1"></span><span class="text-xs">Special Case</span></span>
+                        </div>
+
+                        <!-- Statistics Cards -->
+                        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-gray-600 text-sm font-medium">TOTAL TRAINEES</p>
+                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="totalCount">0</p>
+                                    </div>
+                                    <div class="bg-blue-100 p-3 rounded-full">
+                                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-gray-600 text-sm font-medium">IN PROGRESS</p>
+                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="inProgressCount">0</p>
+                                    </div>
+                                    <div class="bg-yellow-100 p-3 rounded-full">
+                                        <span class="text-2xl">⏳</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-gray-600 text-sm font-medium">COMPLETED</p>
+                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="completedCount">0</p>
+                                    </div>
+                                    <div class="bg-green-100 p-3 rounded-full">
+                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="mb-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">Filters</h3>
+
+                            <div class="mb-4">
+                                <input type="text" id="searchInput" placeholder="Search by name or staff ID..." class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <div>
+                                    <select id="yearFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Years</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="batchFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Batches</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="trainingTypeFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Types</option>
+                                        <option value="cuc">CUC</option>
+                                        <option value="cadet">CADET</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="fleetFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Fleets</option>
+                                        <option value="B738">B738</option>
+                                        <option value="B738M">B738M</option>
+                                        <option value="A330">A330</option>
+                                        <option value="A350">A350</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="rankFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Ranks</option>
+                                        <option value="CADET">CADET</option>
+                                        <option value="SO">SO</option>
+                                        <option value="FO">FO</option>
+                                        <option value="CAPTAIN">CAPTAIN</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="statusFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                        <option value="all">All Status</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="functional">Functional</option>
+                                        <option value="special">Special</option>
+                                        <option value="inprogress">⏳ In Progress</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-3 mt-4 items-center">
+                                <div id="exportFilterNotice" class="hidden text-xs text-orange-700 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200">
+                                    Exports include only filtered trainees
+                                </div>
+                                <button id="clearFiltersBtn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold shadow-sm hover:shadow transition-all">
+                                    Clear All
+                                </button>
+                                <button id="toggleCompletedBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold shadow-sm hover:shadow transition-all" title="Hide/Show completed trainees">
+                                    Hide Completed
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                            <div class="overflow-x-auto" style="max-height: 600px; overflow-y: auto;">
+                                <table class="data-table w-full" style="position: relative;">
+                                    <thead class="bg-gradient-to-r from-blue-600 to-blue-700 text-white" style="position: sticky; top: 0; z-index: 20;">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="batch">BATCH</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="staffId">STAFF ID</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="rank">RANK</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="fleet">FLEET</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="name">NAME</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">FIRST IOE</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">FUNCTIONAL</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">CMD CHECK</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">LRC</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">INTERVIEW</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="sectorsFlown">SECTORS</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">REMARKS</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold sticky right-0 bg-blue-700 shadow-md">ACTIONS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dataTableBody">
+                                        <tr>
+                                            <td colspan="13" class="px-4 py-8 text-center text-gray-500">
+                                                <p class="text-lg">Sign in and configure SharePoint to load data</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Dashboard -->
+                <div id="analyticsDashboard" class="hidden bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Analytics Dashboard</h2>
+                            <button id="backToAdminBtn" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                                ← Back to Admin
+                            </button>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-semibold mb-2">Filter by Batch:</label>
+                            <select id="analyticsBatchFilter" class="w-full md:w-64 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-semibold">
+                                <option value="all">All Batches</option>
+                            </select>
+                        </div>
+
+                        <!-- Row 1: Status Distribution + Progress by Batch -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Status Distribution</h3>
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="adminDistributionChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Progress by Batch</h3>
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="batchProgressChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Fleet Completion Rate + Avg Time to Completion -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Fleet Completion Rate</h3>
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="fleetCompletionChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Average Time to Completion</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-blue-50 rounded-lg p-4 text-center">
+                                        <p class="text-sm text-gray-600">First IOE → Functional</p>
+                                        <p class="text-2xl font-bold text-blue-600" id="avgIoeToFunc">-</p>
+                                        <p class="text-xs text-gray-500">days avg</p>
+                                    </div>
+                                    <div class="bg-green-50 rounded-lg p-4 text-center">
+                                        <p class="text-sm text-gray-600">Functional → LRC</p>
+                                        <p class="text-2xl font-bold text-green-600" id="avgFuncToLrc">-</p>
+                                        <p class="text-xs text-gray-500">days avg</p>
+                                    </div>
+                                    <div class="bg-purple-50 rounded-lg p-4 text-center">
+                                        <p class="text-sm text-gray-600">LRC → Interview</p>
+                                        <p class="text-2xl font-bold text-purple-600" id="avgLrcToInterview">-</p>
+                                        <p class="text-xs text-gray-500">days avg</p>
+                                    </div>
+                                    <div class="bg-orange-50 rounded-lg p-4 text-center">
+                                        <p class="text-sm text-gray-600">Total Training Time</p>
+                                        <p class="text-2xl font-bold text-orange-600" id="avgTotalTime">-</p>
+                                        <p class="text-xs text-gray-500">days avg</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Monthly Completion Trend -->
+                        <div class="mb-8">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Monthly Completion Trend</h3>
+                            <div class="chart-container" style="height: 250px;">
+                                <canvas id="monthlyTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Change History -->
+                    <div id="historyDashboard" class="hidden bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Change History</h2>
+                            <button id="backToAdminBtn2" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                                ← Back to Admin
+                            </button>
+                        </div>
+
+                        <div id="historyTableContainer" class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Timestamp</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">User</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Trainee</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Field</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">Old Value</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold">New Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">No changes recorded yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="traineeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slide-in">
+            <div class="gradient-bg p-6 rounded-t-2xl">
+                <h2 id="modalTitle" class="text-2xl font-bold text-white">Add New Trainee</h2>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Batch *</label>
+                        <input type="text" id="modalBatch" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Staff ID *</label>
+                        <input type="text" id="modalStaffId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rank</label>
+                        <select id="modalRank" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Rank</option>
+                            <option value="CADET">CADET</option>
+                            <option value="SO">SO</option>
+                            <option value="FO">FO</option>
+                            <option value="CAPTAIN">CAPTAIN</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fleet</label>
+                        <select id="modalFleet" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Fleet</option>
+                            <option value="B738">B738</option>
+                            <option value="B738M">B738M</option>
+                            <option value="A330">A330</option>
+                            <option value="A350">A350</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                        <input type="text" id="modalName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First IOE Date</label>
+                        <input type="date" id="modalFirstIOE" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Functional Date</label>
+                        <input type="date" id="modalFunctional" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">LRC Date</label>
+                        <input type="date" id="modalLRC" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Interview Date</label>
+                        <input type="date" id="modalInterview" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div id="modalCommandCheckContainer" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Command Check Date <span class="text-xs text-gray-500">(CUC only)</span></label>
+                        <input type="date" id="modalCommandCheck" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sectors Flown</label>
+                        <input type="number" id="modalSectors" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" min="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Manual Highlight</label>
+                        <select id="modalHighlight" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">None (Auto)</option>
+                            <option value="blue">Functional</option>
+                            <option value="green">Completed</option>
+                            <option value="red">Special Case</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+                        <textarea id="modalRemarks" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button id="cancelModalBtn" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                        Cancel
+                    </button>
+                    <button id="saveModalBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
+                        Save to SharePoint
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Import Modal -->
+    <div id="bulkImportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="gradient-bg text-white p-6 rounded-t-2xl">
+                <h3 class="text-2xl font-bold">Bulk Import Trainees</h3>
+                <p class="text-sm opacity-90 mt-1">Upload Excel file to add multiple trainees at once</p>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-bold text-blue-900 mb-2">Required Columns:</h4>
+                    <ul class="text-sm text-blue-800 space-y-1 ml-4">
+                        <li>• <strong>Batch</strong> (e.g., 24/1A)</li>
+                        <li>• <strong>Staff_ID</strong> (e.g., 123456)</li>
+                        <li>• <strong>Name</strong> (e.g., JOHN DOE)</li>
+                        <li>• <strong>Rank</strong> (optional: FO, SO, CAPT, CDT)</li>
+                        <li>• <strong>Sectors_Flown</strong> (optional: number)</li>
+                        <li>• <strong>First_IOE_Date, Functional_Date, LRC_Date, Interview_Date</strong> (optional)</li>
+                        <li>• <strong>Command_Check_Date</strong> (optional: for CUC batches)</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Select Excel File</label>
+                    <input type="file" id="bulkImportFile" accept=".xlsx,.xls" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div id="bulkImportPreview" class="hidden">
+                    <h4 class="font-bold text-gray-800 mb-2">Preview:</h4>
+                    <div class="border border-gray-300 rounded-lg p-3 max-h-60 overflow-auto">
+                        <div id="bulkImportPreviewContent" class="text-sm"></div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button id="processBulkImportBtn" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Import Trainees
+                    </button>
+                    <button id="cancelBulkImportBtn" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Import Modal -->
+    <div id="pdfImportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="gradient-bg text-white p-6 rounded-t-2xl">
+                <h3 class="text-2xl font-bold">Import from Training Joining Instructions PDF</h3>
+                <p class="text-sm opacity-90 mt-1">Upload PDF to automatically extract trainee information</p>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="bg-teal-50 border border-teal-200 rounded-lg p-4">
+                    <h4 class="font-bold text-teal-900 mb-2">Supported PDF Format:</h4>
+                    <ul class="text-sm text-teal-800 space-y-1 ml-4">
+                        <li>• Training Joining Instructions documents</li>
+                        <li>• Cadet Pilot Course (CPC): MAB-7/25-CPC → Batch: 25/7</li>
+                        <li>• Command Upgrade Course (CUC): MAB-05/25-CUC → Batch: 25/5 CUC</li>
+                        <li>• Automatically extracts Staff IDs, Names, and Ranks</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Select PDF File</label>
+                    <input type="file" id="pdfImportFile" accept=".pdf" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
+                </div>
+
+                <div id="pdfProcessingStatus" class="hidden">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-blue-800 font-semibold">⏳ Processing PDF...</p>
+                    </div>
+                </div>
+
+                <div id="pdfImportPreview" class="hidden">
+                    <h4 class="font-bold text-gray-800 mb-2">Preview & Edit Before Import:</h4>
+                    <div class="border border-gray-300 rounded-lg overflow-auto max-h-96">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-semibold">#</th>
+                                    <th class="px-3 py-2 text-left font-semibold">Staff ID</th>
+                                    <th class="px-3 py-2 text-left font-semibold">Name</th>
+                                    <th class="px-3 py-2 text-left font-semibold">Batch</th>
+                                    <th class="px-3 py-2 text-left font-semibold">Fleet</th>
+                                    <th class="px-3 py-2 text-left font-semibold">Rank</th>
+                                    <th class="px-3 py-2 text-left font-semibold">Sectors</th>
+                                    <th class="px-3 py-2 text-center font-semibold">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pdfImportPreviewContent">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <p class="text-xs text-yellow-800">Review the extracted data above. Edit any fields as needed. Training dates will be left blank and can be filled in later.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button id="processPdfImportBtn" class="flex-1 bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Import <span id="pdfImportCount">0</span> Trainees
+                    </button>
+                    <button id="cancelPdfImportBtn" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        let testMode = false; // Toggle between Test Mode (localStorage) and SharePoint Mode
+
+        // ==================== SECURITY CONSTANTS ====================
+        // Hardcoded allowed site - app cannot access any other SharePoint site
+        const ALLOWED_SITE_URL = 'https://mabitdept.sharepoint.com/sites/FlightOpsIOETrainingTracker';
+        const ALLOWED_LIST_NAME = 'Training_Progress';
+        const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes inactivity timeout
+        let lastActivityTime = Date.now();
+
+        // Validate that a URL is the allowed SharePoint site
+        function validateSharePointUrl(url) {
+            if (!url) return false;
+            const normalizedUrl = url.trim().toLowerCase().replace(/\/$/, '');
+            const allowedUrl = ALLOWED_SITE_URL.toLowerCase().replace(/\/$/, '');
+            return normalizedUrl === allowedUrl;
+        }
+
+        // Escape HTML to prevent XSS attacks
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
+
+        let msalInstance;
+        let msalConfig = {
+            auth: {
+                clientId: '82a4ec5a-d90d-4957-8021-3093e60a4d70',
+                authority: 'https://login.microsoftonline.com/8fc3a567-1ee8-4994-809c-49f50cdb6d48',
+                redirectUri: window.location.origin
+            },
+            cache: {
+                cacheLocation: 'sessionStorage', // Security: tokens cleared when browser closes
+                storeAuthStateInCookie: false
+            }
+        };
+
+        const loginRequest = {
+            scopes: ['https://mabitdept.sharepoint.com/.default']
+        };
+
+        let sharePointConfig = {
+            siteUrl: ALLOWED_SITE_URL,        // Security: hardcoded, cannot be changed
+            listName: ALLOWED_LIST_NAME,      // Security: hardcoded, cannot be changed
+            adminListName: 'AdminUsers',
+            accessToken: null
+        };
+
+        // ==================== STATE ====================
+        let cadets = [];
+        let changeHistory = [];
+        let editingIndex = null;
+        let currentSort = { column: null, direction: 'asc' };
+        let selectedYearFilter = 'all';
+        let selectedBatchFilter = 'all';
+        let selectedRankFilter = 'all';
+        let selectedStatusFilter = 'all';
+        let selectedTrainingTypeFilter = 'all';
+        let selectedFleetFilter = 'all';
+        let searchQuery = '';
+        let hideCompleted = false;
+        let currentView = 'cadet';
+        let isAdminAuth = false;
+        let currentUserStaffId = null;
+        let currentUserRecord = null;
+        let adminDistributionChart = null;
+        let batchProgressChart = null;
+        let fleetCompletionChart = null;
+        let monthlyTrendChart = null;
+        let userProgressChart = null;
+        let userBatchChart = null;
+        let currentUser = null;
+        let bulkImportData = null;
+        let pdfImportData = [];
+        let batches = [];
+
+        // Initialize PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        }
+
+        // ==================== INITIALIZE MSAL ====================
+        function initializeMSAL() {
+            try {
+                msalInstance = new msal.PublicClientApplication(msalConfig);
+                console.log('[OK] MSAL initialized');
+
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length > 0) {
+                    msalInstance.setActiveAccount(accounts[0]);
+                    currentUser = {
+                        name: accounts[0].name,
+                        email: accounts[0].username
+                    };
+                    updateUIForSignedInUser(accounts[0]);
+                    acquireTokenAndShowApp();
+                }
+            } catch (error) {
+                console.error('[ERROR] MSAL initialization failed:', error);
+                alert('Warning: Authentication setup incomplete. Please configure your Azure AD App Registration.');
+            }
+        }
+
+        // ==================== AUTHENTICATION ====================
+        async function signIn() {
+            if (testMode) {
+                mockSignIn();
+                return;
+            }
+
+            try {
+                const loginResponse = await msalInstance.loginPopup(loginRequest);
+                msalInstance.setActiveAccount(loginResponse.account);
+                currentUser = {
+                    name: loginResponse.account.name,
+                    email: loginResponse.account.username
+                };
+                updateUIForSignedInUser(loginResponse.account);
+                sharePointConfig.accessToken = loginResponse.accessToken;
+                showMainApp();
+            } catch (error) {
+                console.error('[ERROR] Sign in failed:', error);
+                alert('Failed to sign in. Please try again.');
+            }
+        }
+
+        async function signOut() {
+            try {
+                await msalInstance.logoutPopup();
+                updateUIForSignedOutUser();
+                sharePointConfig.accessToken = null;
+                currentUser = null;
+                isAdminAuth = false;
+                cadets = [];
+                document.getElementById('mainApp').classList.add('hidden');
+            } catch (error) {
+                console.error('[ERROR] Sign out failed:', error);
+            }
+        }
+
+        async function acquireTokenAndShowApp() {
+            try {
+                const account = msalInstance.getActiveAccount();
+                if (!account) throw new Error('No active account');
+
+                const tokenResponse = await msalInstance.acquireTokenSilent({
+                    ...loginRequest,
+                    account: account
+                });
+
+                sharePointConfig.accessToken = tokenResponse.accessToken;
+                showMainApp();
+            } catch (error) {
+                console.error('[ERROR] Token acquisition failed:', error);
+                if (error instanceof msal.InteractionRequiredAuthError) {
+                    await msalInstance.acquireTokenPopup(loginRequest);
+                    await acquireTokenAndShowApp();
+                }
+            }
+        }
+
+        function updateUIForSignedInUser(account) {
+            document.getElementById('signInBtn').classList.add('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('userName').textContent = account.name || account.username;
+            document.getElementById('userEmail').textContent = account.username;
+            document.getElementById('adminCheckEmail').textContent = account.username;
+        }
+
+        function updateUIForSignedOutUser() {
+            document.getElementById('signInBtn').classList.remove('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('mainApp').classList.remove('hidden');
+        }
+
+        // ==================== TEST MODE FUNCTIONS ====================
+        function toggleTestMode() {
+            testMode = !testMode;
+            const label = document.getElementById('testModeLabel');
+            const sharepointConfig = document.getElementById('sharepointConfig');
+            const testModeConfig = document.getElementById('testModeConfig');
+            const signInBtn = document.getElementById('signInBtn');
+
+            if (testMode) {
+                label.textContent = 'Test Mode';
+                label.classList.remove('text-blue-700');
+                label.classList.add('text-orange-700');
+                sharepointConfig.classList.add('hidden');
+                testModeConfig.classList.remove('hidden');
+                signInBtn.textContent = 'Test Sign In';
+                signInBtn.classList.remove('bg-white', 'text-blue-700', 'hover:bg-blue-50');
+                signInBtn.classList.add('bg-orange-500', 'text-white', 'hover:bg-orange-600');
+            } else {
+                label.textContent = 'SharePoint';
+                label.classList.remove('text-orange-700');
+                label.classList.add('text-blue-700');
+                sharepointConfig.classList.remove('hidden');
+                testModeConfig.classList.add('hidden');
+                signInBtn.textContent = 'Sign in with Microsoft';
+                signInBtn.classList.remove('bg-orange-500', 'text-white', 'hover:bg-orange-600');
+                signInBtn.classList.add('bg-white', 'text-blue-700', 'hover:bg-blue-50');
+            }
+
+            localStorage.setItem('testMode', testMode);
+        }
+
+        function mockSignIn() {
+            const userName = prompt('Enter your name for testing:', 'Test User');
+            if (!userName) return;
+
+            currentUser = {
+                name: userName,
+                email: 'testuser@testmode.local'
+            };
+
+            const mockAccount = {
+                name: userName,
+                username: 'testuser@testmode.local'
+            };
+
+            updateUIForSignedInUser(mockAccount);
+            sharePointConfig.accessToken = 'test-mode-token';
+            showMainApp();
+        }
+
+        function generateSampleData() {
+            const batches = ['2024-01', '2024-02', '2024-03', '2023-12', 'CUC-2024-01', 'CUC-2024-02'];
+            const ranks = ['FO', 'SFO', 'CAPT', 'SO', 'CDT'];
+            const fleets = ['B738', 'B738M', 'A330', 'A350'];
+            const names = [
+                'AHMAD RIZAL', 'SITI NURHALIZA', 'CHEN WEI', 'KUMAR RAJAN', 'DAVID TAN',
+                'FARAH AINA', 'LIM KAR MENG', 'NURUL IMAN', 'WONG KAI MING', 'AZIZAH BINTI',
+                'MICHAEL LEE', 'PRIYA SHARMA', 'JOHN SMITH', 'EMILY WONG', 'HASSAN ALI',
+                'LISA TAN', 'RAVI KUMAR', 'SARAH ABDULLAH', 'KEVIN NG', 'ZAINAB MOHD'
+            ];
+
+            const sampleData = [];
+
+            for (let i = 0; i < 20; i++) {
+                const batch = batches[i % batches.length];
+                const hasIOE = Math.random() > 0.2;
+                const hasFunctional = hasIOE && Math.random() > 0.3;
+                const hasLRC = hasFunctional && Math.random() > 0.4;
+                const hasInterview = hasLRC && Math.random() > 0.5;
+
+                const baseDate = new Date('2024-01-01');
+                const ioeDate = hasIOE ? new Date(baseDate.getTime() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+                const functionalDate = hasFunctional ? new Date(new Date(ioeDate).getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+
+                const isCUC = batch.toUpperCase().includes('CUC');
+
+                // For CUC: Command Check comes after Functional, before LRC
+                // For CUC: LRC is the final step (no Interview needed)
+                const commandCheckDate = isCUC && hasFunctional ?
+                    new Date(new Date(functionalDate).getTime() + Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+
+                const lrcDate = hasLRC ? new Date(new Date(isCUC && commandCheckDate ? commandCheckDate : functionalDate).getTime() + Math.random() * 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+
+                // For CUC batches, don't generate interview date (LRC is completion)
+                const interviewDate = (!isCUC && hasInterview) ? new Date(new Date(lrcDate).getTime() + Math.random() * 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '';
+
+                const sectors = hasIOE ? Math.floor(Math.random() * 100) : 0;
+
+                sampleData.push({
+                    id: i + 1,
+                    batch: batch,
+                    staffId: `STF${String(10000 + i).padStart(5, '0')}`,
+                    rank: ranks[i % ranks.length],
+                    fleet: fleets[i % fleets.length],
+                    name: names[i % names.length],
+                    firstIOEDate: ioeDate,
+                    functionalDate: functionalDate,
+                    lrcDate: lrcDate,
+                    interviewDate: interviewDate,
+                    commandCheckDate: commandCheckDate,
+                    sectorsFlown: sectors,
+                    remarks: Math.random() > 0.7 ? 'PROGRESSING WELL' : '',
+                    lastUpdated: new Date().toISOString(),
+                    manualHighlight: '',
+                    sectorHistory: []
+                });
+            }
+
+            return sampleData;
+        }
+
+        function loadSampleData() {
+            cadets = generateSampleData();
+            saveToLocalStorage();
+            populateFilters();
+            if (isAdminAuth) {
+                renderTable();
+                updateStatistics();
+            }
+            alert(`Loaded ${cadets.length} sample trainees.`);
+        }
+
+        function clearTestData() {
+            if (!confirm('This will delete ALL test data. Continue?')) return;
+
+            localStorage.removeItem('test_cadets');
+            localStorage.removeItem('test_changeHistory');
+            cadets = [];
+            changeHistory = [];
+
+            if (isAdminAuth) {
+                renderTable();
+                updateStatistics();
+            }
+
+            alert('Success: All test data cleared!');
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('test_cadets', JSON.stringify(cadets));
+            localStorage.setItem('test_changeHistory', JSON.stringify(changeHistory));
+        }
+
+        function loadFromLocalStorage() {
+            const savedCadets = localStorage.getItem('test_cadets');
+            const savedHistory = localStorage.getItem('test_changeHistory');
+
+            if (savedCadets) {
+                cadets = JSON.parse(savedCadets);
+            } else {
+                // Load sample data if no data exists
+                cadets = generateSampleData();
+                saveToLocalStorage();
+            }
+
+            if (savedHistory) {
+                changeHistory = JSON.parse(savedHistory);
+            }
+
+            populateFilters();
+            if (isAdminAuth) {
+                renderTable();
+                updateStatistics();
+            }
+
+            alert(`Loaded ${cadets.length} trainees from test storage.`);
+        }
+
+        async function saveTraineeToLocalStorage(traineeData, isEdit = false) {
+            try {
+                if (isEdit) {
+                    const index = cadets.findIndex(c => c.id === traineeData.id);
+                    if (index !== -1) {
+                        const oldData = {...cadets[index]};
+                        cadets[index] = traineeData;
+
+                        // Track change
+                        changeHistory.push({
+                            date: new Date().toISOString(),
+                            user: currentUser?.name || 'Test User',
+                            action: 'UPDATE',
+                            trainee: traineeData.name,
+                            staffId: traineeData.staffId,
+                            changes: `Updated trainee information`
+                        });
+                    }
+                } else {
+                    // New trainee - assign ID
+                    traineeData.id = cadets.length > 0 ? Math.max(...cadets.map(c => c.id)) + 1 : 1;
+                    cadets.push(traineeData);
+
+                    // Track change
+                    changeHistory.push({
+                        date: new Date().toISOString(),
+                        user: currentUser?.name || 'Test User',
+                        action: 'CREATE',
+                        trainee: traineeData.name,
+                        staffId: traineeData.staffId,
+                        changes: `Added new trainee`
+                    });
+                }
+
+                saveToLocalStorage();
+                return true;
+            } catch (error) {
+                console.error('[ERROR] Failed to save to localStorage:', error);
+                return false;
+            }
+        }
+
+        async function deleteTraineeFromLocalStorage(traineeId) {
+            try {
+                const index = cadets.findIndex(c => c.id === traineeId);
+                if (index !== -1) {
+                    const deletedTrainee = cadets[index];
+                    cadets.splice(index, 1);
+
+                    // Track change
+                    changeHistory.push({
+                        date: new Date().toISOString(),
+                        user: currentUser?.name || 'Test User',
+                        action: 'DELETE',
+                        trainee: deletedTrainee.name,
+                        staffId: deletedTrainee.staffId,
+                        changes: `Deleted trainee`
+                    });
+
+                    saveToLocalStorage();
+                }
+                return true;
+            } catch (error) {
+                console.error('[ERROR] Failed to delete from localStorage:', error);
+                return false;
+            }
+        }
+
+        async function checkAdminAuthTestMode(password) {
+            // In test mode, accept any password or the default "admin"
+            return password === 'admin' || password.length > 0;
+        }
+
+        // ==================== SHAREPOINT API ====================
+        async function testSharePointConnection() {
+            // Security: Always use hardcoded values, ignore any input field values
+            const siteUrl = ALLOWED_SITE_URL;
+            const listName = ALLOWED_LIST_NAME;
+
+            // Security: Validate URL before any API call
+            if (!validateSharePointUrl(siteUrl)) {
+                console.error('[SECURITY] Blocked attempt to access unauthorized site');
+                alert('Security Error: Only the authorized SharePoint site can be accessed.');
+                return;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('Warning: Please sign in first');
+                return;
+            }
+
+            try {
+                // First, try to get all lists to see what's available
+                const listsUrl = `${siteUrl}/_api/web/lists?$select=Title,Id`;
+
+                const listsResponse = await fetch(listsUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose'
+                    }
+                });
+
+                if (!listsResponse.ok) {
+                    throw new Error(`Cannot access site: HTTP ${listsResponse.status}`);
+                }
+
+                const listsData = await listsResponse.json();
+                const availableLists = listsData.d.results.map(l => `${l.Title} (Hidden: ${l.Hidden})`);
+                console.log('[INFO] Available lists:', availableLists);
+                console.log('[INFO] All list details:', listsData.d.results);
+
+                // Try to find the list by title (case-insensitive)
+                const targetList = listsData.d.results.find(l =>
+                    l.Title.toLowerCase().replace(/\s/g, '_') === listName.toLowerCase() ||
+                    l.Title.toLowerCase() === listName.toLowerCase() ||
+                    l.Title.replace(/\s/g, '_') === listName
+                );
+
+                let apiUrl;
+
+                if (targetList) {
+                    console.log('[OK] Found list:', targetList.Title);
+                    apiUrl = `${siteUrl}/_api/web/lists/getbytitle('${targetList.Title}')/items?$top=1`;
+                } else {
+                    // List not in the main query, try direct access anyway
+                    console.log('[WARN] List not found in query, trying direct access...');
+                    apiUrl = `${siteUrl}/_api/web/lists/getbytitle('${listName}')/items?$top=1`;
+                }
+
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('[OK] List data:', data);
+                    document.getElementById('connectionStatus').className = 'status-badge status-connected';
+                    document.getElementById('connectionStatus').textContent = ' Connected';
+                    alert('Success: Connection successful! List found and accessible.');
+                } else {
+                    const errorText = await response.text();
+                    console.error('[ERROR] API Error Response:', errorText);
+
+                    let errorMsg = `Cannot access list "${listName}". `;
+
+                    if (response.status === 404) {
+                        errorMsg += `The list exists in SharePoint but is not accessible via API yet. This can happen if:\n\n`;
+                        errorMsg += `1. The list was just created (wait 2-3 minutes)\n`;
+                        errorMsg += `2. The list has no columns yet\n`;
+                        errorMsg += `3. Your permissions haven't propagated\n\n`;
+                        errorMsg += `Available lists: ${listsData.d.results.filter(l => !l.Hidden).map(l => l.Title).join(', ')}`;
+                    } else {
+                        errorMsg += `HTTP ${response.status}: ${response.statusText}`;
+                    }
+
+                    throw new Error(errorMsg);
+                }
+            } catch (error) {
+                console.error('[ERROR] Connection test failed:', error);
+                document.getElementById('connectionStatus').className = 'status-badge status-disconnected';
+                document.getElementById('connectionStatus').textContent = ' Failed';
+                alert('Error: Connection failed: ' + error.message);
+            }
+        }
+
+        async function loadDataFromSharePoint() {
+            if (testMode) {
+                loadFromLocalStorage();
+                return;
+            }
+
+            // Security: Validate URL before any API call
+            if (!validateSharePointUrl(sharePointConfig.siteUrl)) {
+                console.error('[SECURITY] Blocked unauthorized site access in loadDataFromSharePoint');
+                alert('Security Error: Unauthorized site URL detected.');
+                return;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('Warning: Please sign in first');
+                return;
+            }
+
+            try {
+                const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items?$top=5000`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const items = data.d.results;
+
+                cadets = items.map(item => ({
+                    id: item.Id,
+                    batch: item.Batch || '',
+                    staffId: item.Staff_ID || '',
+                    rank: item.Rank || '',
+                    fleet: item.Fleet || '',
+                    name: item.Title || '',
+                    firstIOEDate: formatSharePointDate(item.First_IOE_Date),
+                    functionalDate: formatSharePointDate(item.Functional_Date),
+                    lrcDate: formatSharePointDate(item.LRC_Date),
+                    interviewDate: formatSharePointDate(item.Interview_Date),
+                    commandCheckDate: formatSharePointDate(item.Command_Check_Date),
+                    sectorsFlown: item.Sectors_Flown || 0,
+                    remarks: item.Remarks || '',
+                    lastUpdated: item.Last_Updated || new Date().toISOString(),
+                    manualHighlight: item.Manual_Highlight || '',
+                    sectorHistory: []
+                }));
+
+                populateFilters();
+                if (isAdminAuth) {
+                    renderTable();
+                    updateStatistics();
+                }
+
+                alert(`Loaded ${cadets.length} trainees from SharePoint.`);
+            } catch (error) {
+                console.error('[ERROR] Failed to load data:', error);
+                alert('Error: Failed to load data from SharePoint: ' + error.message);
+            }
+        }
+
+        async function saveTraineeToSharePoint(traineeData, isEdit = false) {
+            if (testMode) {
+                const result = await saveTraineeToLocalStorage(traineeData, isEdit);
+                if (result && isAdminAuth) {
+                    populateFilters();
+                    renderTable();
+                    updateStatistics();
+                }
+                return result;
+            }
+
+            // Security: Validate URL before any API call
+            if (!validateSharePointUrl(sharePointConfig.siteUrl)) {
+                console.error('[SECURITY] Blocked unauthorized site access in saveTraineeToSharePoint');
+                alert('Security Error: Unauthorized site URL detected.');
+                return false;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('Warning: Please sign in first');
+                return false;
+            }
+
+            try {
+                const listItemEntityType = await getListItemEntityType();
+                const itemData = {
+                    __metadata: { type: listItemEntityType },
+                    Batch: traineeData.batch,
+                    Staff_ID: traineeData.staffId,
+                    Rank: traineeData.rank,
+                    Fleet: traineeData.fleet || null,
+                    Title: traineeData.name,
+                    First_IOE_Date: traineeData.firstIOEDate || null,
+                    Functional_Date: traineeData.functionalDate || null,
+                    LRC_Date: traineeData.lrcDate || null,
+                    Interview_Date: traineeData.interviewDate || null,
+                    Command_Check_Date: traineeData.commandCheckDate || null,
+                    Sectors_Flown: parseInt(traineeData.sectorsFlown) || 0,
+                    Remarks: traineeData.remarks,
+                    Last_Updated: new Date().toISOString(),
+                    Manual_Highlight: traineeData.manualHighlight
+                };
+
+                let apiUrl, method;
+                if (isEdit && traineeData.id) {
+                    apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items(${traineeData.id})`;
+                    method = 'POST';
+                } else {
+                    apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items`;
+                    method = 'POST';
+                }
+
+                const headers = {
+                    'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                    'Accept': 'application/json;odata=verbose',
+                    'Content-Type': 'application/json;odata=verbose'
+                };
+
+                if (isEdit) {
+                    headers['X-HTTP-Method'] = 'MERGE';
+                    headers['IF-MATCH'] = '*';
+                }
+
+                const response = await fetch(apiUrl, {
+                    method: method,
+                    headers: headers,
+                    body: JSON.stringify(itemData)
+                });
+
+                if (response.ok || response.status === 204) {
+                    // Log change to history
+                    logChange(traineeData.staffId, traineeData.name, isEdit ? 'update' : 'create');
+                    await loadDataFromSharePoint();
+                    return true;
+                } else {
+                    const errBody = await response.text();
+                    console.error('[ERROR] SharePoint response:', errBody);
+                    throw new Error(`HTTP ${response.status}: ${errBody}`);
+                }
+            } catch (error) {
+                console.error('[ERROR] Failed to save trainee:', error);
+                alert('Error: Failed to save to SharePoint: ' + error.message);
+                return false;
+            }
+        }
+
+        async function deleteTraineeFromSharePoint(itemId) {
+            if (testMode) {
+                const result = await deleteTraineeFromLocalStorage(itemId);
+                if (result && isAdminAuth) {
+                    populateFilters();
+                    renderTable();
+                    updateStatistics();
+                }
+                return result;
+            }
+
+            // Security: Validate URL before any API call
+            if (!validateSharePointUrl(sharePointConfig.siteUrl)) {
+                console.error('[SECURITY] Blocked unauthorized site access in deleteTraineeFromSharePoint');
+                alert('Security Error: Unauthorized site URL detected.');
+                return false;
+            }
+
+            if (!sharePointConfig.accessToken) {
+                alert('Warning: Please sign in first');
+                return false;
+            }
+
+            try {
+                const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items(${itemId})`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                        'Accept': 'application/json;odata=verbose',
+                        'X-HTTP-Method': 'DELETE',
+                        'IF-MATCH': '*'
+                    }
+                });
+
+                if (response.ok || response.status === 204) {
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('[ERROR] Failed to delete trainee:', error);
+                alert('Error: Failed to delete from SharePoint: ' + error.message);
+                return false;
+            }
+        }
+
+        async function getListItemEntityType() {
+            // Security: Validate URL before any API call
+            if (!validateSharePointUrl(sharePointConfig.siteUrl)) {
+                console.error('[SECURITY] Blocked unauthorized site access in getListItemEntityType');
+                throw new Error('Security Error: Unauthorized site URL');
+            }
+
+            const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')`;
+
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${sharePointConfig.accessToken}`,
+                    'Accept': 'application/json;odata=verbose'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data.d.ListItemEntityTypeFullName;
+            }
+            return 'SP.Data.Training_ProgressListItem';
+        }
+
+        // ==================== ADMIN AUTHENTICATION ====================
+        async function checkAdminAuth() {
+            const password = document.getElementById('adminPassword').value.trim();
+
+            if (testMode) {
+                const isAuth = await checkAdminAuthTestMode(password);
+                if (!isAuth) {
+                    alert('Error: Test mode password required. Use "admin" or any non-empty password.');
+                }
+                return isAuth;
+            }
+
+            // For SharePoint version: Anyone authenticated via Azure AD has admin access
+            if (!sharePointConfig.accessToken) {
+                alert('Warning: Please sign in first');
+                return false;
+            }
+
+            if (!currentUser || !currentUser.email) {
+                alert('Warning: User information not available. Please sign in again.');
+                return false;
+            }
+
+            // Successfully authenticated via Azure AD = admin access granted
+            console.log('[OK] Admin access granted to:', currentUser.email);
+            return true;
+        }
+
+        // ==================== CHANGE HISTORY ====================
+        function logChange(staffId, name, action, field = '', oldValue = '', newValue = '') {
+            const change = {
+                timestamp: new Date().toISOString(),
+                user: currentUser ? currentUser.name : 'Unknown',
+                staffId: staffId,
+                name: name,
+                action: action,
+                field: field,
+                oldValue: oldValue,
+                newValue: newValue
+            };
+            changeHistory.unshift(change);
+            // Keep only last 100 changes
+            if (changeHistory.length > 100) {
+                changeHistory = changeHistory.slice(0, 100);
+            }
+        }
+
+        function renderChangeHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            if (changeHistory.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No changes recorded yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = changeHistory.slice(0, 50).map(change => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm">${new Date(change.timestamp).toLocaleString()}</td>
+                    <td class="px-4 py-3 text-sm">${change.user}</td>
+                    <td class="px-4 py-3 text-sm">${change.name} (${change.staffId})</td>
+                    <td class="px-4 py-3 text-sm">${change.field || change.action}</td>
+                    <td class="px-4 py-3 text-sm">${change.oldValue || '-'}</td>
+                    <td class="px-4 py-3 text-sm">${change.newValue || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // ==================== USER PORTAL ====================
+        async function loadCadetInfo() {
+            const staffId = document.getElementById('cadetStaffId').value.toUpperCase().trim();
+            if (!staffId) {
+                alert('Warning: Please enter your Staff ID');
+                return;
+            }
+
+            if (cadets.length === 0) {
+                await loadDataFromSharePoint();
+            }
+
+            const cadet = cadets.find(c => c.staffId === staffId);
+
+            if (!cadet) {
+                alert('Error: Staff ID not found. Please check and try again.');
+                return;
+            }
+
+            currentUserStaffId = staffId;
+            currentUserRecord = cadet;
+
+            // Populate form
+            document.getElementById('cadetNameDisplay').value = cadet.name;
+            document.getElementById('cadetBatchDisplay').value = cadet.batch;
+            document.getElementById('cadetRank').value = cadet.rank;
+            document.getElementById('cadetFirstIOE').value = cadet.firstIOEDate;
+            document.getElementById('cadetFunctional').value = cadet.functionalDate;
+            document.getElementById('cadetLRC').value = cadet.lrcDate;
+            document.getElementById('cadetInterview').value = cadet.interviewDate;
+            document.getElementById('newSectorCount').value = '';
+
+            // Show current sectors
+            if (cadet.sectorsFlown > 0) {
+                document.getElementById('currentSectorsDisplay').classList.remove('hidden');
+                document.getElementById('currentSectorsValue').textContent = cadet.sectorsFlown;
+            }
+
+            // Lock rank if already set
+            if (cadet.rank) {
+                document.getElementById('cadetRank').disabled = true;
+            }
+
+            document.getElementById('cadetFormSection').classList.remove('hidden');
+
+            // Show command check date field for CUC batches
+            showCommandCheckIfCUC(cadet.batch);
+            if (isCUCBatch(cadet.batch) && cadet.commandCheckDate) {
+                document.getElementById('cadetCommandCheck').value = cadet.commandCheckDate;
+            }
+
+            // Update analytics
+            updateUserAnalytics(cadet);
+        }
+
+        async function updateCadetInfo() {
+            if (!currentUserRecord) {
+                alert('Warning: Please load your information first');
+                return;
+            }
+
+            const rank = document.getElementById('cadetRank').value;
+            if (!rank) {
+                alert('Warning: Please select your rank');
+                return;
+            }
+
+            // Prepare updated data
+            const oldSectors = currentUserRecord.sectorsFlown;
+            const newSectorsInput = document.getElementById('newSectorCount').value;
+            const newSectors = newSectorsInput ? parseInt(newSectorsInput) : oldSectors;
+
+            // Update sector history if changed
+            let sectorHistory = currentUserRecord.sectorHistory || [];
+            if (newSectors !== oldSectors) {
+                sectorHistory.push({
+                    date: new Date().toISOString(),
+                    count: newSectors,
+                    change: newSectors - oldSectors,
+                    user: currentUser.name
+                });
+            }
+
+            // Get command check date for CUC batches
+            const commandCheckDate = isCUCBatch(currentUserRecord.batch) ?
+                document.getElementById('cadetCommandCheck').value : currentUserRecord.commandCheckDate;
+
+            const updatedData = {
+                ...currentUserRecord,
+                rank: rank,
+                firstIOEDate: document.getElementById('cadetFirstIOE').value,
+                functionalDate: document.getElementById('cadetFunctional').value,
+                lrcDate: document.getElementById('cadetLRC').value,
+                interviewDate: document.getElementById('cadetInterview').value,
+                commandCheckDate: commandCheckDate,
+                sectorsFlown: newSectors,
+                sectorHistory: sectorHistory
+            };
+
+            const success = await saveTraineeToSharePoint(updatedData, true);
+
+            if (success) {
+                const msg = document.getElementById('updateMessage');
+                msg.textContent = ' Successfully updated!';
+                msg.className = 'mt-4 p-4 rounded-xl bg-green-100 text-green-800 font-semibold';
+                msg.classList.remove('hidden');
+
+                setTimeout(() => {
+                    msg.classList.add('hidden');
+                }, 3000);
+
+                // Reload data
+                await loadCadetInfo();
+            }
+        }
+
+        // ==================== USER ANALYTICS ====================
+        function calculateAnalytics(cadet, allCadets) {
+            const total = cadet.sectorsFlown || 0;
+
+            // Calculate from sector history if available
+            const sectorHistory = cadet.sectorHistory || [];
+            let last30Days = 0;
+            let last7Days = 0;
+
+            if (sectorHistory.length > 0) {
+                const now = new Date();
+                const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+                sectorHistory.forEach(entry => {
+                    const entryDate = new Date(entry.date);
+                    if (entryDate >= thirtyDaysAgo) {
+                        last30Days += entry.change || 0;
+                    }
+                    if (entryDate >= sevenDaysAgo) {
+                        last7Days += entry.change || 0;
+                    }
+                });
+            } else {
+                // Fallback: Use mock data for demo if no history
+                last30Days = Math.floor(total * 0.3);
+                last7Days = Math.floor(total * 0.1);
+            }
+
+            const avg30Day = last30Days / 30;
+            const weeklyRate = (last7Days / 7) * 7;
+
+            // Batch stats
+            const batchCadets = allCadets.filter(c => c.batch === cadet.batch);
+            const batchTotal = batchCadets.reduce((sum, c) => sum + (c.sectorsFlown || 0), 0);
+            const batchAvg = batchCadets.length > 0 ? Math.round(batchTotal / batchCadets.length) : 0;
+
+            return {
+                total,
+                last30Days,
+                last7Days,
+                avg30Day: Math.round(avg30Day * 10) / 10,
+                weeklyRate: Math.round(weeklyRate),
+                batchAvg,
+                difference: total - batchAvg
+            };
+        }
+
+        function updateUserAnalytics(cadet) {
+            const analytics = calculateAnalytics(cadet, cadets);
+
+            // Update stats
+            document.getElementById('userTotalSectors').textContent = analytics.total;
+            document.getElementById('user30DayAvg').textContent = analytics.avg30Day;
+            document.getElementById('userWeeklyRate').textContent = analytics.weeklyRate;
+            document.getElementById('userLast7Days').textContent = analytics.last7Days;
+            document.getElementById('userLast30Days').textContent = analytics.last30Days;
+            document.getElementById('userBatchAverage').textContent = analytics.batchAvg;
+
+            const diffEl = document.getElementById('userDifference');
+            const diff = analytics.difference;
+            diffEl.textContent = (diff >= 0 ? '+' : '') + diff;
+            diffEl.className = 'text-2xl font-bold ' + (diff >= 0 ? 'text-green-700' : 'text-red-700');
+
+            // Create progress chart
+            if (userProgressChart) userProgressChart.destroy();
+            const ctx1 = document.getElementById('userProgressChart').getContext('2d');
+
+            // Generate 30 days of data from sector history or mock
+            const days = [];
+            const sectors = [];
+            const sectorHistory = cadet.sectorHistory || [];
+
+            if (sectorHistory.length > 1) {
+                // Use actual history
+                const sortedHistory = [...sectorHistory].sort((a, b) =>
+                    new Date(a.date) - new Date(b.date)
+                );
+
+                sortedHistory.slice(-30).forEach(entry => {
+                    const date = new Date(entry.date);
+                    days.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+                    sectors.push(entry.count);
+                });
+            } else {
+                // Generate mock 30-day data
+                let cumulative = 0;
+                for (let i = 29; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    days.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+                    const dailySectors = Math.floor(Math.random() * 3);
+                    cumulative += dailySectors;
+                    sectors.push(cumulative);
+                }
+            }
+
+            userProgressChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Cumulative Sectors',
+                        data: sectors,
+                        borderColor: 'rgb(99, 102, 241)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Create batch comparison chart
+            if (userBatchChart) userBatchChart.destroy();
+            const ctx2 = document.getElementById('userBatchChart').getContext('2d');
+
+            const batchCadets = cadets.filter(c => c.batch === cadet.batch);
+            const topPerformers = batchCadets
+                .sort((a, b) => (b.sectorsFlown || 0) - (a.sectorsFlown || 0))
+                .slice(0, 10);
+
+            userBatchChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: topPerformers.map((c, i) =>
+                        c.staffId === cadet.staffId ? `YOU (${c.name.split(' ')[0]})` : c.name.split(' ')[0]
+                    ),
+                    datasets: [{
+                        label: 'Sectors Flown',
+                        data: topPerformers.map(c => c.sectorsFlown || 0),
+                        backgroundColor: topPerformers.map(c =>
+                            c.staffId === cadet.staffId ? 'rgba(99, 102, 241, 0.8)' : 'rgba(156, 163, 175, 0.6)'
+                        ),
+                        borderColor: topPerformers.map(c =>
+                            c.staffId === cadet.staffId ? 'rgb(99, 102, 241)' : 'rgb(156, 163, 175)'
+                        ),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Show analytics section
+            document.getElementById('analyticsSection').classList.remove('hidden');
+        }
+
+        // ==================== ADMIN PANEL ====================
+        function populateFilters() {
+            const years = new Set();
+            const batchSet = new Set();
+
+            cadets.forEach(cadet => {
+                const year = getYearFromBatch(cadet.batch);
+                if (year) years.add(year);
+                if (cadet.batch) batchSet.add(cadet.batch);
+            });
+
+            // Store batches globally
+            batches = Array.from(batchSet).sort();
+
+            // Year filter
+            const yearFilter = document.getElementById('yearFilter');
+            const currentYear = yearFilter.value;
+            yearFilter.innerHTML = '<option value="all">All Years</option>';
+            Array.from(years).sort((a, b) => b - a).forEach(year => {
+                yearFilter.innerHTML += `<option value="${year}">${year}</option>`;
+            });
+            if (currentYear) yearFilter.value = currentYear;
+
+            // Batch filter
+            const batchFilter = document.getElementById('batchFilter');
+            const analyticsBatchFilter = document.getElementById('analyticsBatchFilter');
+            const currentBatch = batchFilter.value;
+            batchFilter.innerHTML = '<option value="all">All Batches</option>';
+            analyticsBatchFilter.innerHTML = '<option value="all">All Batches</option>';
+            batches.forEach(batch => {
+                batchFilter.innerHTML += `<option value="${batch}">${batch}</option>`;
+                analyticsBatchFilter.innerHTML += `<option value="${batch}">${batch}</option>`;
+            });
+            if (currentBatch) batchFilter.value = currentBatch;
+
+            // Update batch filter based on selected year
+            updateBatchFilterByYear();
+        }
+
+        // Note: getYearFromBatch is defined above in the year filter section
+
+        function filterCadets() {
+            return cadets.filter(cadet => {
+                // Hide completed trainees if toggle is active
+                if (hideCompleted) {
+                    const status = getTraineeStatus(cadet);
+                    if (status === 'completed') return false;
+                }
+
+                if (selectedYearFilter !== 'all') {
+                    const cadetYear = getYearFromBatch(cadet.batch);
+                    if (cadetYear !== parseInt(selectedYearFilter)) return false;
+                }
+                if (selectedBatchFilter !== 'all' && cadet.batch.trim().toLowerCase() !== selectedBatchFilter.trim().toLowerCase()) return false;
+
+                // Training type filter (CUC vs CADET)
+                if (selectedTrainingTypeFilter !== 'all') {
+                    const isCUC = isCUCBatch(cadet.batch);
+                    if (selectedTrainingTypeFilter === 'cuc' && !isCUC) return false;
+                    if (selectedTrainingTypeFilter === 'cadet' && isCUC) return false;
+                }
+
+                // Fleet filter
+                if (selectedFleetFilter !== 'all' && (cadet.fleet || '').toUpperCase() !== selectedFleetFilter) return false;
+
+                if (selectedRankFilter !== 'all' && cadet.rank.toUpperCase() !== selectedRankFilter) return false;
+                if (selectedStatusFilter !== 'all') {
+                    const status = getTraineeStatus(cadet);
+                    if (status !== selectedStatusFilter) return false;
+                }
+                if (searchQuery && !cadet.name.toUpperCase().includes(searchQuery) && !cadet.staffId.toUpperCase().includes(searchQuery)) return false;
+                return true;
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            let filteredCadets = filterCadets();
+
+            if (currentSort.column) {
+                filteredCadets.sort((a, b) => {
+                    let aVal = a[currentSort.column];
+                    let bVal = b[currentSort.column];
+
+                    if (currentSort.column === 'sectorsFlown') {
+                        aVal = parseInt(aVal) || 0;
+                        bVal = parseInt(bVal) || 0;
+                    } else {
+                        aVal = String(aVal || '').toLowerCase();
+                        bVal = String(bVal || '').toLowerCase();
+                    }
+
+                    if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            if (filteredCadets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="13" class="px-4 py-8 text-center text-gray-500">
+                            <p class="text-lg">No trainees found matching your filters</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredCadets.map((cadet, index) => {
+                const status = getTraineeStatus(cadet);
+                let rowClass = '';
+                if (status === 'functional') rowClass = 'bg-blue-50';
+                else if (status === 'completed') rowClass = 'bg-green-50';
+                else if (status === 'special') rowClass = 'bg-red-50';
+
+                return `
+                    <tr class="${rowClass}">
+                        <td class="px-4 py-3 text-sm">${cadet.batch}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.staffId}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.rank || '-'}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.fleet || '-'}</td>
+                        <td class="px-4 py-3 text-sm font-medium">${cadet.name}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.firstIOEDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.functionalDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.commandCheckDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lrcDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.interviewDate)}</td>
+                        <td class="px-4 py-3 text-sm text-center">${cadet.sectorsFlown || 0}</td>
+                        <td class="px-4 py-3 text-sm">${cadet.remarks || '-'}</td>
+                        <td class="px-4 py-3 text-center sticky right-0 ${rowClass || 'bg-white'} shadow-md">
+                            <button onclick="editTrainee(${index})" class="text-blue-600 hover:text-blue-800 mx-1 font-bold" title="Edit">
+                                Edit
+                            </button>
+                            <button onclick="deleteTrainee(${index})" class="text-red-600 hover:text-red-800 mx-1 font-bold" title="Delete">
+                                Del
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStatistics() {
+            const total = cadets.length;
+            let inProgress = 0, completed = 0;
+
+            cadets.forEach(cadet => {
+                const status = getTraineeStatus(cadet);
+                if (status === 'completed') {
+                    completed++;
+                } else {
+                    inProgress++;
+                }
+            });
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('inProgressCount').textContent = inProgress;
+            document.getElementById('completedCount').textContent = completed;
+        }
+
+        function getTraineeStatus(cadet) {
+            if (cadet.manualHighlight === 'blue') return 'functional';
+            if (cadet.manualHighlight === 'green') return 'completed';
+            if (cadet.manualHighlight === 'red') return 'special';
+
+            const hasFirstIOE = cadet.firstIOEDate && cadet.firstIOEDate.trim() !== '';
+            const hasFunctional = cadet.functionalDate && cadet.functionalDate.trim() !== '';
+            const hasCommandCheck = cadet.commandCheckDate && cadet.commandCheckDate.trim() !== '';
+            const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
+            const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
+
+            // CUC batches: completed when LRC is entered (requires First IOE, Functional, Command Check, LRC)
+            if (isCUCBatch(cadet.batch)) {
+                if (hasFirstIOE && hasFunctional && hasCommandCheck && hasLRC) return 'completed';
+                if (hasFirstIOE && hasFunctional) return 'functional';
+                return 'inprogress';
+            }
+
+            // CPC batches: completed when all 4 dates are entered
+            if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) return 'completed';
+            if (hasFirstIOE && hasFunctional) return 'functional';
+            return 'inprogress';
+        }
+
+        function getTraineeStatusLabel(cadet) {
+            const status = getTraineeStatus(cadet);
+            if (status === 'functional') return 'FUNCTIONAL';
+            if (status === 'completed') return 'COMPLETED';
+            if (status === 'special') return 'SPECIAL CASE';
+            return 'IN PROGRESS';
+        }
+
+        // ==================== ANALYTICS ====================
+        function updateAdminAnalytics(selectedBatch = 'all') {
+            let filteredCadets = cadets;
+            if (selectedBatch !== 'all') {
+                filteredCadets = cadets.filter(c => c.batch === selectedBatch);
+            }
+
+            // 1. Status Distribution Chart (In Progress vs Completed)
+            let inProgressCount = 0, completedCount = 0;
+            filteredCadets.forEach(cadet => {
+                const status = getTraineeStatus(cadet);
+                if (status === 'completed') completedCount++;
+                else inProgressCount++;
+            });
+
+            if (adminDistributionChart) adminDistributionChart.destroy();
+            const ctx1 = document.getElementById('adminDistributionChart').getContext('2d');
+            adminDistributionChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['In Progress', 'Completed'],
+                    datasets: [{
+                        data: [inProgressCount, completedCount],
+                        backgroundColor: ['#FCD34D', '#34D399']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // 2. Progress by Batch Chart
+            const batchStats = {};
+            filteredCadets.forEach(cadet => {
+                if (!batchStats[cadet.batch]) {
+                    batchStats[cadet.batch] = { total: 0, completed: 0 };
+                }
+                batchStats[cadet.batch].total++;
+                const status = getTraineeStatus(cadet);
+                if (status === 'completed') batchStats[cadet.batch].completed++;
+            });
+
+            const batchLabels = Object.keys(batchStats).sort();
+            const batchCompleted = batchLabels.map(b => batchStats[b].completed);
+            const batchInProgress = batchLabels.map(b => batchStats[b].total - batchStats[b].completed);
+
+            if (batchProgressChart) batchProgressChart.destroy();
+            const ctx2 = document.getElementById('batchProgressChart').getContext('2d');
+            batchProgressChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: batchLabels,
+                    datasets: [
+                        { label: 'Completed', data: batchCompleted, backgroundColor: '#34D399' },
+                        { label: 'In Progress', data: batchInProgress, backgroundColor: '#FCD34D' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { stacked: true }, y: { stacked: true } },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // 3. Fleet Completion Rate Chart
+            const fleetStats = { 'B738': { total: 0, completed: 0 }, 'B738M': { total: 0, completed: 0 },
+                                 'A330': { total: 0, completed: 0 }, 'A350': { total: 0, completed: 0 } };
+            filteredCadets.forEach(cadet => {
+                const fleet = (cadet.fleet || '').toUpperCase();
+                if (fleetStats[fleet]) {
+                    fleetStats[fleet].total++;
+                    const status = getTraineeStatus(cadet);
+                    if (status === 'completed') fleetStats[fleet].completed++;
+                }
+            });
+
+            const fleetLabels = Object.keys(fleetStats);
+            const fleetRates = fleetLabels.map(f =>
+                fleetStats[f].total > 0 ? Math.round((fleetStats[f].completed / fleetStats[f].total) * 100) : 0
+            );
+
+            if (fleetCompletionChart) fleetCompletionChart.destroy();
+            const ctx3 = document.getElementById('fleetCompletionChart').getContext('2d');
+            fleetCompletionChart = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: fleetLabels,
+                    datasets: [{
+                        label: 'Completion Rate (%)',
+                        data: fleetRates,
+                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 4. Average Time to Completion
+            let ioeToFuncDays = [], funcToLrcDays = [], lrcToInterviewDays = [], totalDays = [];
+            filteredCadets.forEach(cadet => {
+                if (cadet.firstIOEDate && cadet.functionalDate) {
+                    const diff = (new Date(cadet.functionalDate) - new Date(cadet.firstIOEDate)) / (1000 * 60 * 60 * 24);
+                    if (diff > 0 && diff < 365) ioeToFuncDays.push(diff);
+                }
+                if (cadet.functionalDate && cadet.lrcDate) {
+                    const diff = (new Date(cadet.lrcDate) - new Date(cadet.functionalDate)) / (1000 * 60 * 60 * 24);
+                    if (diff > 0 && diff < 365) funcToLrcDays.push(diff);
+                }
+                if (cadet.lrcDate && cadet.interviewDate) {
+                    const diff = (new Date(cadet.interviewDate) - new Date(cadet.lrcDate)) / (1000 * 60 * 60 * 24);
+                    if (diff > 0 && diff < 365) lrcToInterviewDays.push(diff);
+                }
+                if (cadet.firstIOEDate && cadet.interviewDate) {
+                    const diff = (new Date(cadet.interviewDate) - new Date(cadet.firstIOEDate)) / (1000 * 60 * 60 * 24);
+                    if (diff > 0 && diff < 730) totalDays.push(diff);
+                }
+            });
+
+            const avgIoeToFunc = ioeToFuncDays.length > 0 ? Math.round(ioeToFuncDays.reduce((a,b) => a+b, 0) / ioeToFuncDays.length) : '-';
+            const avgFuncToLrc = funcToLrcDays.length > 0 ? Math.round(funcToLrcDays.reduce((a,b) => a+b, 0) / funcToLrcDays.length) : '-';
+            const avgLrcToInt = lrcToInterviewDays.length > 0 ? Math.round(lrcToInterviewDays.reduce((a,b) => a+b, 0) / lrcToInterviewDays.length) : '-';
+            const avgTotal = totalDays.length > 0 ? Math.round(totalDays.reduce((a,b) => a+b, 0) / totalDays.length) : '-';
+
+            document.getElementById('avgIoeToFunc').textContent = avgIoeToFunc;
+            document.getElementById('avgFuncToLrc').textContent = avgFuncToLrc;
+            document.getElementById('avgLrcToInterview').textContent = avgLrcToInt;
+            document.getElementById('avgTotalTime').textContent = avgTotal;
+
+            // 5. Monthly Completion Trend
+            const monthlyCompletions = {};
+            filteredCadets.forEach(cadet => {
+                if (cadet.interviewDate) {
+                    const month = cadet.interviewDate.substring(0, 7); // YYYY-MM
+                    monthlyCompletions[month] = (monthlyCompletions[month] || 0) + 1;
+                }
+            });
+
+            const monthLabels = Object.keys(monthlyCompletions).sort().slice(-12); // Last 12 months
+            const monthData = monthLabels.map(m => monthlyCompletions[m]);
+
+            if (monthlyTrendChart) monthlyTrendChart.destroy();
+            const ctx4 = document.getElementById('monthlyTrendChart').getContext('2d');
+            monthlyTrendChart = new Chart(ctx4, {
+                type: 'line',
+                data: {
+                    labels: monthLabels.map(m => {
+                        const [year, month] = m.split('-');
+                        return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(month)-1]} ${year.slice(-2)}`;
+                    }),
+                    datasets: [{
+                        label: 'Completions',
+                        data: monthData,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // ==================== MODAL ====================
+        function openAddModal() {
+            editingIndex = null;
+            document.getElementById('modalTitle').textContent = 'Add New Trainee';
+            document.getElementById('modalBatch').value = '';
+            document.getElementById('modalStaffId').value = '';
+            document.getElementById('modalRank').value = '';
+            document.getElementById('modalFleet').value = '';
+            document.getElementById('modalName').value = '';
+            document.getElementById('modalFirstIOE').value = '';
+            document.getElementById('modalFunctional').value = '';
+            document.getElementById('modalLRC').value = '';
+            document.getElementById('modalInterview').value = '';
+            document.getElementById('modalCommandCheck').value = '';
+            document.getElementById('modalCommandCheckContainer').classList.add('hidden');
+            document.getElementById('modalSectors').value = '';
+            document.getElementById('modalHighlight').value = '';
+            document.getElementById('modalRemarks').value = '';
+            document.getElementById('traineeModal').classList.remove('hidden');
+        }
+
+        function editTrainee(index) {
+            const filteredCadets = filterCadets();
+            const cadet = filteredCadets[index];
+            const originalIndex = cadets.findIndex(c => c.id === cadet.id);
+
+            editingIndex = originalIndex;
+            document.getElementById('modalTitle').textContent = 'Edit Trainee';
+            document.getElementById('modalBatch').value = cadet.batch;
+            document.getElementById('modalStaffId').value = cadet.staffId;
+            document.getElementById('modalRank').value = cadet.rank;
+            document.getElementById('modalFleet').value = cadet.fleet || '';
+            document.getElementById('modalName').value = cadet.name;
+            document.getElementById('modalFirstIOE').value = cadet.firstIOEDate;
+            document.getElementById('modalFunctional').value = cadet.functionalDate;
+            document.getElementById('modalLRC').value = cadet.lrcDate;
+            document.getElementById('modalInterview').value = cadet.interviewDate;
+            document.getElementById('modalSectors').value = cadet.sectorsFlown;
+            document.getElementById('modalHighlight').value = cadet.manualHighlight || '';
+            document.getElementById('modalRemarks').value = cadet.remarks;
+
+            // Show command check date for CUC batches
+            const modalContainer = document.getElementById('modalCommandCheckContainer');
+            if (isCUCBatch(cadet.batch)) {
+                modalContainer.classList.remove('hidden');
+                document.getElementById('modalCommandCheck').value = cadet.commandCheckDate || '';
+            } else {
+                modalContainer.classList.add('hidden');
+                document.getElementById('modalCommandCheck').value = '';
+            }
+
+            document.getElementById('traineeModal').classList.remove('hidden');
+        }
+
+        async function deleteTrainee(index) {
+            const filteredCadets = filterCadets();
+            const cadet = filteredCadets[index];
+
+            if (confirm(`Are you sure you want to delete ${cadet.name}?`)) {
+                const success = await deleteTraineeFromSharePoint(cadet.id);
+                if (success) {
+                    logChange(cadet.staffId, cadet.name, 'delete');
+                    await loadDataFromSharePoint();
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('traineeModal').classList.add('hidden');
+        }
+
+        async function saveModal() {
+            const batch = document.getElementById('modalBatch').value.toUpperCase().trim();
+            const traineeData = {
+                batch: batch,
+                staffId: document.getElementById('modalStaffId').value.toUpperCase().trim(),
+                rank: document.getElementById('modalRank').value.toUpperCase().trim(),
+                fleet: document.getElementById('modalFleet').value.toUpperCase().trim(),
+                name: document.getElementById('modalName').value.toUpperCase().trim(),
+                firstIOEDate: document.getElementById('modalFirstIOE').value,
+                functionalDate: document.getElementById('modalFunctional').value,
+                lrcDate: document.getElementById('modalLRC').value,
+                interviewDate: document.getElementById('modalInterview').value,
+                commandCheckDate: isCUCBatch(batch) ? document.getElementById('modalCommandCheck').value : '',
+                sectorsFlown: parseInt(document.getElementById('modalSectors').value) || 0,
+                remarks: document.getElementById('modalRemarks').value.toUpperCase().trim(),
+                manualHighlight: document.getElementById('modalHighlight').value,
+                sectorHistory: []
+            };
+
+            if (!traineeData.batch || !traineeData.staffId || !traineeData.name) {
+                alert('Warning: Please fill in all required fields (Batch, Staff ID, Name)');
+                return;
+            }
+
+            const isEdit = editingIndex !== null;
+            if (isEdit) {
+                traineeData.id = cadets[editingIndex].id;
+                traineeData.sectorHistory = cadets[editingIndex].sectorHistory || [];
+            }
+
+            const success = await saveTraineeToSharePoint(traineeData, isEdit);
+            if (success) {
+                closeModal();
+            }
+        }
+
+        // ==================== EXPORT ====================
+        function exportToExcel() {
+            if (cadets.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+
+            const filteredCadets = cadets.filter(cadet => {
+                if (selectedYearFilter !== 'all') {
+                    const cadetYear = getYearFromBatch(cadet.batch);
+                    if (cadetYear !== parseInt(selectedYearFilter)) return false;
+                }
+                if (selectedBatchFilter !== 'all' && cadet.batch.trim().toLowerCase() !== selectedBatchFilter.trim().toLowerCase()) return false;
+                if (selectedRankFilter !== 'all' && cadet.rank.toUpperCase() !== selectedRankFilter) return false;
+                if (selectedStatusFilter !== 'all') {
+                    let cadetStatus = getTraineeStatus(cadet);
+                    if (cadetStatus !== selectedStatusFilter) return false;
+                }
+                if (searchQuery && !cadet.name.toUpperCase().includes(searchQuery) && !cadet.staffId.toUpperCase().includes(searchQuery)) return false;
+                return true;
+            });
+
+            if (filteredCadets.length === 0) {
+                alert('No trainees match current filters!');
+                return;
+            }
+
+            const sortedCadets = [...filteredCadets].sort((a, b) => {
+                const batchCompare = a.batch.localeCompare(b.batch);
+                if (batchCompare !== 0) return batchCompare;
+                return a.name.localeCompare(b.name);
+            });
+
+            const formattedData = [];
+            const rowMetadata = [];
+            let currentBatch = '';
+
+            sortedCadets.forEach((cadet) => {
+                if (cadet.batch !== currentBatch) {
+                    currentBatch = cadet.batch;
+
+                    if (formattedData.length > 0) {
+                        formattedData.push({});
+                        rowMetadata.push({ type: 'empty' });
+                    }
+
+                    formattedData.push({
+                        'Batch': `BATCH: ${cadet.batch}`,
+                        'Staff ID': '', 'Rank': '', 'Fleet': '', 'Name': '',
+                        'First IOE': '', 'Functional': '', 'LRC': '', 'Interview': '',
+                        'Sectors': '', 'Status': '', 'Last Updated': '', 'Remarks': ''
+                    });
+                    rowMetadata.push({ type: 'batch' });
+                }
+
+                let status = getTraineeStatusLabel(cadet);
+
+                formattedData.push({
+                    'Batch': cadet.batch,
+                    'Staff ID': cadet.staffId,
+                    'Rank': cadet.rank || '',
+                    'Fleet': cadet.fleet || '',
+                    'Name': cadet.name,
+                    'First IOE': cadet.firstIOEDate || '',
+                    'Functional': cadet.functionalDate || '',
+                    'LRC': cadet.lrcDate || '',
+                    'Interview': cadet.interviewDate || '',
+                    'Sectors': cadet.sectorsFlown,
+                    'Status': status,
+                    'Last Updated': cadet.lastUpdated || '',
+                    'Remarks': cadet.remarks || ''
+                });
+                rowMetadata.push({ type: 'data', cadet: cadet });
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(formattedData);
+            worksheet['!cols'] = [
+                { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 25 },
+                { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 },
+                { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 30 }
+            ];
+
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+            for (let col = range.s.c; col <= range.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                if (!worksheet[cellAddress]) continue;
+
+                worksheet[cellAddress].s = {
+                    font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "2563EB" } },
+                    alignment: { horizontal: "center", vertical: "center" },
+                    border: {
+                        top: { style: "thin", color: { rgb: "000000" } },
+                        bottom: { style: "thin", color: { rgb: "000000" } },
+                        left: { style: "thin", color: { rgb: "000000" } },
+                        right: { style: "thin", color: { rgb: "000000" } }
+                    }
+                };
+            }
+
+            let coloredRows = 0;
+            for (let row = 1; row <= range.e.r; row++) {
+                const metadata = rowMetadata[row - 1];
+                if (!metadata) continue;
+
+                if (metadata.type === 'batch') {
+                    for (let col = range.s.c; col <= range.e.c; col++) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                        if (!worksheet[cellAddress]) worksheet[cellAddress] = { t: 's', v: '' };
+
+                        worksheet[cellAddress].s = {
+                            font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+                            fill: { fgColor: { rgb: "6366F1" } },
+                            alignment: { horizontal: "left", vertical: "center" },
+                            border: {
+                                top: { style: "thin", color: { rgb: "000000" } },
+                                bottom: { style: "thin", color: { rgb: "000000" } },
+                                left: { style: "thin", color: { rgb: "000000" } },
+                                right: { style: "thin", color: { rgb: "000000" } }
+                            }
+                        };
+                    }
+                } else if (metadata.type === 'data') {
+                    const cadet = metadata.cadet;
+                    let bgColor = "FFFFFF";
+
+                    if (cadet.manualHighlight === 'blue') {
+                        bgColor = "DBEAFE";
+                        coloredRows++;
+                    } else if (cadet.manualHighlight === 'green') {
+                        bgColor = "D1FAE5";
+                        coloredRows++;
+                    } else if (cadet.manualHighlight === 'red') {
+                        bgColor = "FEE2E2";
+                        coloredRows++;
+                    } else if (!cadet.manualHighlight) {
+                        const hasFirstIOE = cadet.firstIOEDate && cadet.firstIOEDate.trim() !== '';
+                        const hasFunctional = cadet.functionalDate && cadet.functionalDate.trim() !== '';
+                        const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
+                        const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
+
+                        if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) {
+                            bgColor = "D1FAE5";
+                            coloredRows++;
+                        } else if (hasFirstIOE && hasFunctional && !hasLRC && !hasInterview) {
+                            bgColor = "DBEAFE";
+                            coloredRows++;
+                        }
+                    }
+
+                    for (let col = range.s.c; col <= range.e.c; col++) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                        if (!worksheet[cellAddress]) worksheet[cellAddress] = { t: 's', v: '' };
+
+                        worksheet[cellAddress].s = {
+                            fill: { fgColor: { rgb: bgColor } },
+                            alignment: { horizontal: "left", vertical: "center" },
+                            border: {
+                                top: { style: "thin", color: { rgb: "CCCCCC" } },
+                                bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+                                left: { style: "thin", color: { rgb: "CCCCCC" } },
+                                right: { style: "thin", color: { rgb: "CCCCCC" } }
+                            }
+                        };
+                    }
+                } else if (metadata.type === 'empty') {
+                    for (let col = range.s.c; col <= range.e.c; col++) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                        if (!worksheet[cellAddress]) worksheet[cellAddress] = { t: 's', v: '' };
+
+                        worksheet[cellAddress].s = {
+                            border: {
+                                top: { style: "thin", color: { rgb: "EEEEEE" } },
+                                bottom: { style: "thin", color: { rgb: "EEEEEE" } },
+                                left: { style: "thin", color: { rgb: "EEEEEE" } },
+                                right: { style: "thin", color: { rgb: "EEEEEE" } }
+                            }
+                        };
+                    }
+                }
+            }
+
+            worksheet['!freeze'] = { xSplit: 0, ySplit: 1 };
+            worksheet['!views'] = [{
+                state: 'frozen',
+                xSplit: 0,
+                ySplit: 1,
+                topLeftCell: 'A2',
+                activePane: 'bottomLeft'
+            }];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Training Data');
+
+            if (!workbook.Workbook) workbook.Workbook = {};
+            if (!workbook.Workbook.Views) workbook.Workbook.Views = [{}];
+            workbook.Workbook.Views[0].RTL = false;
+
+            const filename = `Training_Progress_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(workbook, filename, { cellStyles: true });
+        }
+
+        // ==================== VIEW SWITCHING ====================
+        function switchToCadetView() {
+            currentView = 'cadet';
+            document.getElementById('cadetView').classList.remove('hidden');
+            document.getElementById('adminView').classList.add('hidden');
+            document.getElementById('cadetViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg';
+            document.getElementById('adminViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200';
+        }
+
+        function switchToAdminView() {
+            currentView = 'admin';
+            document.getElementById('cadetView').classList.add('hidden');
+            document.getElementById('adminView').classList.remove('hidden');
+            document.getElementById('adminViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md hover:shadow-lg';
+            document.getElementById('cadetViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200';
+
+            // Show login if not authenticated
+            if (!isAdminAuth) {
+                document.getElementById('adminLogin').classList.remove('hidden');
+                document.getElementById('adminDashboard').classList.add('hidden');
+            } else {
+                document.getElementById('adminLogin').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+            }
+        }
+
+        async function handleAdminLogin() {
+            const isAuth = await checkAdminAuth();
+            if (isAuth) {
+                isAdminAuth = true;
+                document.getElementById('adminLogin').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                await loadDataFromSharePoint();
+            }
+        }
+
+        function showAnalyticsDashboard() {
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('analyticsDashboard').classList.remove('hidden');
+            updateAdminAnalytics();
+        }
+
+        function showHistoryDashboard() {
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('historyDashboard').classList.remove('hidden');
+            renderChangeHistory();
+        }
+
+        function backToAdmin() {
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            document.getElementById('analyticsDashboard').classList.add('hidden');
+            document.getElementById('historyDashboard').classList.add('hidden');
+        }
+
+        // ==================== YEAR & TRAINING TYPE FILTERS ====================
+        function getYearFromBatch(batchName) {
+            if (!batchName) return null;
+            const match = batchName.match(/^(\d{2})/);
+            if (match) {
+                const yearShort = parseInt(match[1]);
+                return 2000 + yearShort;
+            }
+            return null;
+        }
+
+        function isCUCBatch(batchName) {
+            if (!batchName) return false;
+            return batchName.toUpperCase().includes('CUC');
+        }
+
+        function updateYearFilter() {
+            const years = [...new Set(cadets.map(c => getYearFromBatch(c.batch)).filter(y => y !== null))].sort((a, b) => b - a);
+            const yearFilter = document.getElementById('yearFilter');
+            const currentYear = yearFilter.value;
+            yearFilter.innerHTML = '<option value="all">All Years</option>' +
+                years.map(y => `<option value="${y}">${y}</option>`).join('');
+            if (currentYear && years.includes(parseInt(currentYear))) {
+                yearFilter.value = currentYear;
+            }
+        }
+
+        function updateBatchFilterByYear() {
+            const batchFilter = document.getElementById('batchFilter');
+            const currentBatchValue = batchFilter.value;
+
+            let filteredBatches = batches;
+
+            if (selectedYearFilter !== 'all') {
+                filteredBatches = batches.filter(batch => {
+                    const batchYear = getYearFromBatch(batch);
+                    return batchYear === parseInt(selectedYearFilter);
+                });
+            }
+
+            batchFilter.innerHTML = '<option value="all">All Batches</option>' +
+                filteredBatches.map(b => `<option value="${b}">${b}</option>`).join('');
+
+            if (currentBatchValue !== 'all' && filteredBatches.includes(currentBatchValue)) {
+                batchFilter.value = currentBatchValue;
+            } else if (currentBatchValue !== 'all') {
+                selectedBatchFilter = 'all';
+                batchFilter.value = 'all';
+            }
+
+            updateExportFilterNotice();
+        }
+
+        function updateExportFilterNotice() {
+            const notice = document.getElementById('exportFilterNotice');
+            if (!notice) return;
+
+            const hasFilters = selectedYearFilter !== 'all' || selectedBatchFilter !== 'all' ||
+                              selectedTrainingTypeFilter !== 'all' || selectedRankFilter !== 'all' ||
+                              selectedStatusFilter !== 'all' || searchQuery !== '';
+
+            if (hasFilters) {
+                notice.classList.remove('hidden');
+            } else {
+                notice.classList.add('hidden');
+            }
+        }
+
+        // ==================== COMMAND CHECK DATE HANDLING ====================
+        function showCommandCheckIfCUC(batchName) {
+            const container = document.getElementById('cadetCommandCheckDateContainer');
+            const modalContainer = document.getElementById('modalCommandCheckContainer');
+
+            if (isCUCBatch(batchName)) {
+                if (container) container.classList.remove('hidden');
+                if (modalContainer) modalContainer.classList.remove('hidden');
+            } else {
+                if (container) container.classList.add('hidden');
+                if (modalContainer) modalContainer.classList.add('hidden');
+            }
+        }
+
+        // ==================== BULK IMPORT ====================
+        function processBulkImportFile() {
+            const file = document.getElementById('bulkImportFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                if (jsonData.length === 0) {
+                    alert('No data found in Excel file!');
+                    return;
+                }
+
+                bulkImportData = jsonData.map(row => ({
+                    batch: (row.Batch || '').toString().toUpperCase(),
+                    staffId: (row.Staff_ID || '').toString().toUpperCase(),
+                    name: (row.Name || '').toString().toUpperCase(),
+                    rank: (row.Rank || '').toString().toUpperCase(),
+                    fleet: (row.Fleet || 'B738').toString().toUpperCase(),
+                    firstIOEDate: formatExcelDate(row.First_IOE_Date),
+                    functionalDate: formatExcelDate(row.Functional_Date),
+                    lrcDate: formatExcelDate(row.LRC_Date),
+                    interviewDate: formatExcelDate(row.Interview_Date),
+                    sectorsFlown: parseInt(row.Sectors_Flown) || 0,
+                    remarks: (row.Remarks || '').toString(),
+                    manualHighlight: '',
+                    lastUpdated: new Date().toISOString(),
+                    commandCheckDate: formatExcelDate(row.Command_Check_Date) || '',
+                    sectorHistory: []
+                }));
+
+                showBulkImportPreview();
+                document.getElementById('processBulkImportBtn').disabled = false;
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function formatExcelDate(excelDate) {
+            if (!excelDate) return '';
+            if (typeof excelDate === 'string' && (excelDate.includes('/') || excelDate.includes('-'))) {
+                return excelDate;
+            }
+            if (typeof excelDate === 'number') {
+                const date = new Date((excelDate - 25569) * 86400 * 1000);
+                return date.toISOString().split('T')[0];
+            }
+            return '';
+        }
+
+        // Format SharePoint date (ISO format like "2024-01-15T00:00:00Z") to YYYY-MM-DD for input fields
+        function formatSharePointDate(isoDate) {
+            if (!isoDate) return '';
+            // If already in YYYY-MM-DD format, return as-is
+            if (typeof isoDate === 'string' && isoDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                return isoDate;
+            }
+            // Extract date portion from ISO string
+            if (typeof isoDate === 'string' && isoDate.includes('T')) {
+                return isoDate.split('T')[0];
+            }
+            return isoDate;
+        }
+
+        // Format date for display as DD/MM/YY
+        function formatDateDisplay(dateStr) {
+            if (!dateStr) return '-';
+            // Handle ISO format with time
+            if (dateStr.includes('T')) {
+                dateStr = dateStr.split('T')[0];
+            }
+            // Parse YYYY-MM-DD format
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                const year = parts[0].slice(-2); // Get last 2 digits of year
+                const month = parts[1];
+                const day = parts[2];
+                return `${day}/${month}/${year}`;
+            }
+            return dateStr;
+        }
+
+        function showBulkImportPreview() {
+            const preview = document.getElementById('bulkImportPreview');
+            const content = document.getElementById('bulkImportPreviewContent');
+
+            let duplicateCount = 0;
+            bulkImportData.forEach(cadet => {
+                const existing = cadets.find(c => c.staffId === cadet.staffId);
+                if (existing) {
+                    cadet.isDuplicate = true;
+                    duplicateCount++;
+                }
+            });
+
+            let html = `<p class="font-semibold mb-2">Found ${bulkImportData.length} trainees`;
+            if (duplicateCount > 0) {
+                html += ` <span class="text-red-600">(${duplicateCount} duplicate${duplicateCount > 1 ? 's' : ''})</span>`;
+            }
+            html += ':</p>';
+            html += '<table class="w-full text-xs"><thead><tr class="bg-gray-100">';
+            html += '<th class="p-1 text-left">Batch</th><th class="p-1 text-left">Staff ID</th><th class="p-1 text-left">Name</th></tr></thead><tbody>';
+
+            bulkImportData.slice(0, 10).forEach(cadet => {
+                const rowClass = cadet.isDuplicate ? 'bg-red-50' : '';
+                const dupIndicator = cadet.isDuplicate ? ' [DUP]' : '';
+                html += `<tr class="${rowClass}"><td class="p-1">${escapeHtml(cadet.batch)}</td><td class="p-1">${escapeHtml(cadet.staffId)}${dupIndicator}</td><td class="p-1">${escapeHtml(cadet.name)}</td></tr>`;
+            });
+
+            if (bulkImportData.length > 10) {
+                html += `<tr><td colspan="3" class="p-1 text-gray-500 italic">...and ${bulkImportData.length - 10} more</td></tr>`;
+            }
+
+            html += '</tbody></table>';
+            content.innerHTML = html;
+            preview.classList.remove('hidden');
+        }
+
+        async function executeBulkImport() {
+            if (!bulkImportData || bulkImportData.length === 0) return;
+
+            if (!confirm(`Import ${bulkImportData.length} trainees?\n\nThis will add them to the database.`)) {
+                return;
+            }
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const cadet of bulkImportData) {
+                if (cadet.isDuplicate) continue;
+
+                try {
+                    const result = await saveTraineeToSharePoint(cadet, false);
+                    if (result) {
+                        successCount++;
+                        logChange('add', cadet);
+                    } else {
+                        errorCount++;
+                    }
+                } catch (error) {
+                    console.error('Error importing:', cadet.staffId, error);
+                    errorCount++;
+                }
+            }
+
+            alert(`Import complete!\n\nSuccess: ${successCount}\nErrors: ${errorCount}\nDuplicates skipped: ${bulkImportData.filter(c => c.isDuplicate).length}`);
+
+            document.getElementById('bulkImportModal').classList.add('hidden');
+            document.getElementById('bulkImportFile').value = '';
+            document.getElementById('bulkImportPreview').classList.add('hidden');
+            bulkImportData = null;
+            document.getElementById('processBulkImportBtn').disabled = true;
+
+            await loadDataFromSharePoint();
+        }
+
+        // ==================== PDF IMPORT ====================
+        async function processPdfImportFile() {
+            const file = document.getElementById('pdfImportFile').files[0];
+            if (!file) return;
+
+            document.getElementById('pdfProcessingStatus').classList.remove('hidden');
+            document.getElementById('pdfImportPreview').classList.add('hidden');
+            document.getElementById('processPdfImportBtn').disabled = true;
+            pdfImportData = [];
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+                let fullText = '';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const items = textContent.items || [];
+                    const pageText = items.map(item => item.str || '').join(' ');
+                    fullText += pageText + '\n';
+                }
+
+                const extractedData = parsePdfTrainingInstructions(fullText);
+
+                if (extractedData.trainees.length === 0) {
+                    alert('Error: No trainee data found in PDF!\n\nPlease ensure the PDF is a Training Joining Instructions document.');
+                    document.getElementById('pdfProcessingStatus').classList.add('hidden');
+                    return;
+                }
+
+                pdfImportData = extractedData.trainees.map((trainee, idx) => ({
+                    id: idx,
+                    batch: extractedData.batch,
+                    staffId: trainee.staffId,
+                    name: trainee.name,
+                    rank: trainee.rank || 'CDT',
+                    fleet: extractedData.fleet || 'B738',
+                    sectorsFlown: 0,
+                    firstIOEDate: '',
+                    functionalDate: '',
+                    lrcDate: '',
+                    interviewDate: '',
+                    remarks: '',
+                    manualHighlight: '',
+                    lastUpdated: new Date().toISOString(),
+                    commandCheckDate: '',
+                    sectorHistory: []
+                }));
+
+                document.getElementById('pdfProcessingStatus').classList.add('hidden');
+                showPdfImportPreview();
+                document.getElementById('processPdfImportBtn').disabled = false;
+
+            } catch (error) {
+                console.error('PDF processing error:', error);
+                alert('Error: Failed to process PDF!\n\n' + error.message);
+                document.getElementById('pdfProcessingStatus').classList.add('hidden');
+            }
+        }
+
+        function parsePdfTrainingInstructions(text) {
+            const courseTypeMatch = text.match(/COURSE TYPE:\s*.*?\((CPC|CUC)\)/i);
+            const isCUC = courseTypeMatch && courseTypeMatch[1].toUpperCase() === 'CUC';
+
+            // Try to extract fleet from text (B738, B738M, A330, A350)
+            let fleet = '';
+            const fleetMatch = text.match(/\b(B738M|B738|A330|A350)\b/i);
+            if (fleetMatch) {
+                fleet = fleetMatch[1].toUpperCase();
+            }
+
+            let batch = '';
+            const courseMatch = text.match(/COURSE NO:\s*MAB[- ]?(\d+)\/(\d+)[- ]?(?:CPC|CUC)?/i);
+
+            if (courseMatch) {
+                const sequence = parseInt(courseMatch[1], 10).toString();
+                const year = courseMatch[2];
+
+                if (isCUC) {
+                    batch = `${year}/${sequence} CUC`;
+                } else {
+                    batch = `${year}/${sequence}`;
+                }
+            }
+
+            let toMatch = -1;
+            let fromMatch = -1;
+
+            const toSearchPattern = /\bTO\b[\s\S]{0,100}?(\d{7})/i;
+            const toResult = toSearchPattern.exec(text);
+            if (toResult) {
+                toMatch = toResult.index;
+            }
+
+            fromMatch = text.search(/\bFROM\b/i);
+
+            if (toMatch === -1 || fromMatch === -1 || toMatch >= fromMatch) {
+                return { batch: batch, fleet: fleet, trainees: [], courseType: isCUC ? 'CUC' : 'CPC' };
+            }
+
+            const traineeSection = text.substring(toMatch, fromMatch);
+            const trainees = [];
+            let matches;
+
+            if (isCUC) {
+                const cucPattern = /(\d{7})\s+(FO|SO|CPT|SFO)\s+([A-Z][A-Z\s]+?)(?=\s*\d{7}\s+(?:FO|SO|CPT|SFO)|FROM|$)/g;
+
+                while ((matches = cucPattern.exec(traineeSection)) !== null) {
+                    const staffId = matches[1];
+                    const rank = matches[2];
+                    let name = matches[3].trim().replace(/\s+/g, ' ').trim();
+                    name = name.replace(/^(FO|SO|CPT|SFO)\s+/, '');
+                    name = name.replace(/\s+(FO|SO|CPT|SFO)\s*$/, '');
+
+                    if (staffId && name) {
+                        trainees.push({ staffId, name, rank });
+                    }
+                }
+            } else {
+                const cpcPattern = /(\d{7})\s+([A-Z][A-Z\s]+?)(?=\s*\d{7}|FROM|$)/g;
+
+                while ((matches = cpcPattern.exec(traineeSection)) !== null) {
+                    const staffId = matches[1];
+                    let name = matches[2].trim().replace(/\s+/g, ' ').trim();
+
+                    if (staffId && name) {
+                        trainees.push({ staffId, name, rank: null });
+                    }
+                }
+            }
+
+            return { batch, fleet, trainees, courseType: isCUC ? 'CUC' : 'CPC' };
+        }
+
+        function showPdfImportPreview() {
+            const preview = document.getElementById('pdfImportPreview');
+            const tbody = document.getElementById('pdfImportPreviewContent');
+            const countEl = document.getElementById('pdfImportCount');
+
+            pdfImportData.forEach(trainee => {
+                const existing = cadets.find(c => c.staffId === trainee.staffId);
+                trainee.isDuplicate = !!existing;
+            });
+
+            countEl.textContent = pdfImportData.length;
+
+            let html = '';
+            pdfImportData.forEach((trainee, idx) => {
+                const rowClass = trainee.isDuplicate ? 'border-b bg-red-50' : 'border-b hover:bg-gray-50';
+                html += `
+                    <tr class="${rowClass}">
+                        <td class="px-3 py-2 text-gray-600">${trainee.isDuplicate ? '[DUP] ' : ''}${idx + 1}</td>
+                        <td class="px-3 py-2">
+                            <input type="text" value="${escapeHtml(trainee.staffId)}"
+                                   class="w-full px-2 py-1 border rounded text-sm ${trainee.isDuplicate ? 'border-red-400' : ''}"
+                                   onchange="pdfImportData[${idx}].staffId = this.value.toUpperCase()">
+                        </td>
+                        <td class="px-3 py-2">
+                            <input type="text" value="${escapeHtml(trainee.name)}"
+                                   class="w-full px-2 py-1 border rounded text-sm"
+                                   onchange="pdfImportData[${idx}].name = this.value.toUpperCase()">
+                        </td>
+                        <td class="px-3 py-2">
+                            <input type="text" value="${escapeHtml(trainee.batch)}"
+                                   class="w-full px-2 py-1 border rounded text-sm"
+                                   onchange="pdfImportData[${idx}].batch = this.value.toUpperCase()">
+                        </td>
+                        <td class="px-3 py-2">
+                            <select class="w-full px-2 py-1 border rounded text-sm"
+                                    onchange="pdfImportData[${idx}].fleet = this.value">
+                                <option value="" ${!trainee.fleet ? 'selected' : ''}>-</option>
+                                <option value="B738" ${trainee.fleet === 'B738' ? 'selected' : ''}>B738</option>
+                                <option value="B738M" ${trainee.fleet === 'B738M' ? 'selected' : ''}>B738M</option>
+                                <option value="A330" ${trainee.fleet === 'A330' ? 'selected' : ''}>A330</option>
+                                <option value="A350" ${trainee.fleet === 'A350' ? 'selected' : ''}>A350</option>
+                            </select>
+                        </td>
+                        <td class="px-3 py-2">
+                            <select class="w-full px-2 py-1 border rounded text-sm"
+                                    onchange="pdfImportData[${idx}].rank = this.value">
+                                <option value="CADET" ${trainee.rank === 'CADET' || trainee.rank === 'CDT' ? 'selected' : ''}>CADET</option>
+                                <option value="SO" ${trainee.rank === 'SO' ? 'selected' : ''}>SO</option>
+                                <option value="FO" ${trainee.rank === 'FO' ? 'selected' : ''}>FO</option>
+                                <option value="CAPTAIN" ${trainee.rank === 'CAPTAIN' || trainee.rank === 'CAPT' || trainee.rank === 'CPT' ? 'selected' : ''}>CAPTAIN</option>
+                            </select>
+                        </td>
+                        <td class="px-3 py-2">
+                            <input type="number" value="${trainee.sectorsFlown}"
+                                   class="w-full px-2 py-1 border rounded text-sm"
+                                   onchange="pdfImportData[${idx}].sectorsFlown = parseInt(this.value) || 0">
+                        </td>
+                        <td class="px-3 py-2 text-center">
+                            <button onclick="removePdfTrainee(${idx})"
+                                    class="text-red-600 hover:text-red-800 font-bold"
+                                    title="Remove this trainee">
+                                X
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            preview.classList.remove('hidden');
+        }
+
+        function removePdfTrainee(index) {
+            pdfImportData.splice(index, 1);
+            showPdfImportPreview();
+
+            if (pdfImportData.length === 0) {
+                document.getElementById('pdfImportPreview').classList.add('hidden');
+                document.getElementById('processPdfImportBtn').disabled = true;
+            }
+        }
+
+        async function executePdfImport() {
+            if (!pdfImportData || pdfImportData.length === 0) return;
+
+            if (!confirm(`Import ${pdfImportData.length} trainees?\n\nThis will add them to the database.`)) {
+                return;
+            }
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const cadet of pdfImportData) {
+                if (cadet.isDuplicate) continue;
+
+                try {
+                    const result = await saveTraineeToSharePoint(cadet, false);
+                    if (result) {
+                        successCount++;
+                        logChange('add', cadet);
+                    } else {
+                        errorCount++;
+                    }
+                } catch (error) {
+                    console.error('Error importing:', cadet.staffId, error);
+                    errorCount++;
+                }
+            }
+
+            alert(`Import complete!\n\nSuccess: ${successCount}\nErrors: ${errorCount}\nDuplicates skipped: ${pdfImportData.filter(c => c.isDuplicate).length}`);
+
+            document.getElementById('pdfImportModal').classList.add('hidden');
+            document.getElementById('pdfImportFile').value = '';
+            document.getElementById('pdfImportPreview').classList.add('hidden');
+            pdfImportData = [];
+            document.getElementById('processPdfImportBtn').disabled = true;
+
+            await loadDataFromSharePoint();
+        }
+
+        // ==================== TEST HIGHLIGHTS ====================
+        function testHighlights() {
+            let report = 'HIGHLIGHT DEBUG REPORT\n\n';
+
+            let blueCount = 0, greenCount = 0, redCount = 0, autoBlue = 0, autoGreen = 0, noHighlight = 0;
+            let blueExamples = [];
+            let notBlueExamples = [];
+
+            cadets.forEach(cadet => {
+                const hasFirstIOE = cadet.firstIOEDate && cadet.firstIOEDate.trim() !== '';
+                const hasFunctional = cadet.functionalDate && cadet.functionalDate.trim() !== '';
+                const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
+                const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
+
+                if (cadet.manualHighlight === 'blue') {
+                    blueCount++;
+                } else if (cadet.manualHighlight === 'green') {
+                    greenCount++;
+                } else if (cadet.manualHighlight === 'red') {
+                    redCount++;
+                } else {
+                    if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) {
+                        autoGreen++;
+                    } else if (hasFirstIOE && hasFunctional && !hasLRC && !hasInterview) {
+                        autoBlue++;
+                        if (blueExamples.length < 3) {
+                            blueExamples.push(`${cadet.name} (IOE:${formatDateDisplay(cadet.firstIOEDate)}, Func:${formatDateDisplay(cadet.functionalDate)})`);
+                        }
+                    } else {
+                        noHighlight++;
+                        if (notBlueExamples.length < 3 && (hasFirstIOE || hasFunctional)) {
+                            notBlueExamples.push(`${cadet.name} - IOE:${hasFirstIOE?'Y':'N'} Func:${hasFunctional?'Y':'N'} LRC:${hasLRC?'Y':'N'} Int:${hasInterview?'Y':'N'}`);
+                        }
+                    }
+                }
+            });
+
+            report += `MANUAL HIGHLIGHTS:\n`;
+            report += `  Blue (Manual): ${blueCount}\n`;
+            report += `  Green (Manual): ${greenCount}\n`;
+            report += `  Red (Manual): ${redCount}\n\n`;
+
+            report += `AUTO HIGHLIGHTS:\n`;
+            report += `  Blue (Auto): ${autoBlue}\n`;
+            report += `  Green (Auto): ${autoGreen}\n`;
+            report += `  No Highlight: ${noHighlight}\n\n`;
+
+            if (blueExamples.length > 0) {
+                report += `BLUE Examples (should be highlighted):\n`;
+                blueExamples.forEach(ex => report += `  - ${ex}\n`);
+                report += `\n`;
+            }
+
+            if (notBlueExamples.length > 0) {
+                report += `NOT Blue (check these):\n`;
+                notBlueExamples.forEach(ex => report += `  - ${ex}\n`);
+                report += `\n`;
+            }
+
+            report += `Total: ${cadets.length} trainees\n`;
+            report += `Highlighted: ${blueCount + greenCount + redCount + autoBlue + autoGreen}\n\n`;
+
+            report += `BLUE Highlight Criteria:\n`;
+            report += `  [Y] Has First IOE date\n`;
+            report += `  [Y] Has Functional date\n`;
+            report += `  [N] No LRC date\n`;
+            report += `  [N] No Interview date\n`;
+
+            alert(report);
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load test mode preference
+            const savedTestMode = localStorage.getItem('testMode');
+            if (savedTestMode === 'true') {
+                testMode = true;
+                document.getElementById('testModeToggle').checked = true;
+                toggleTestMode();
+            }
+
+            // Security: Use hardcoded site URL and list name (not user-configurable)
+            document.getElementById('siteUrl').value = ALLOWED_SITE_URL;
+            document.getElementById('listName').value = ALLOWED_LIST_NAME;
+            sharePointConfig.siteUrl = ALLOWED_SITE_URL;
+            sharePointConfig.listName = ALLOWED_LIST_NAME;
+
+            // Initialize MSAL only if not in test mode
+            if (!testMode) {
+                initializeMSAL();
+            }
+
+            // Session timeout: track user activity
+            ['click', 'keypress', 'mousemove', 'scroll'].forEach(event => {
+                document.addEventListener(event, () => {
+                    lastActivityTime = Date.now();
+                });
+            });
+
+            // Check for session timeout every minute
+            setInterval(() => {
+                if (!testMode && msalInstance && msalInstance.getActiveAccount()) {
+                    const inactiveTime = Date.now() - lastActivityTime;
+                    if (inactiveTime > SESSION_TIMEOUT_MS) {
+                        console.log('⏰ Session timeout due to inactivity');
+                        alert('⏰ Your session has expired due to inactivity. Please sign in again.');
+                        signOut();
+                    }
+                }
+            }, 60000); // Check every minute
+
+            // Test Connection button
+            document.getElementById('testConnectionBtn').addEventListener('click', testSharePointConnection);
+
+            // Test Mode buttons
+            document.getElementById('testModeToggle').addEventListener('change', toggleTestMode);
+            document.getElementById('loadSampleDataBtn').addEventListener('click', loadSampleData);
+            document.getElementById('clearTestDataBtn').addEventListener('click', clearTestData);
+
+            // Auth buttons
+            document.getElementById('signInBtn').addEventListener('click', signIn);
+            document.getElementById('signOutBtn').addEventListener('click', signOut);
+
+            // View toggle
+            document.getElementById('cadetViewBtn').addEventListener('click', switchToCadetView);
+            document.getElementById('adminViewBtn').addEventListener('click', switchToAdminView);
+
+            // User Portal
+            document.getElementById('loadCadetBtn').addEventListener('click', loadCadetInfo);
+            document.getElementById('updateCadetBtn').addEventListener('click', updateCadetInfo);
+
+            // Admin Panel
+            document.getElementById('adminLoginBtn').addEventListener('click', handleAdminLogin);
+            document.getElementById('refreshDataBtn').addEventListener('click', loadDataFromSharePoint);
+            document.getElementById('viewAnalyticsBtn').addEventListener('click', showAnalyticsDashboard);
+            document.getElementById('viewHistoryBtn').addEventListener('click', showHistoryDashboard);
+            document.getElementById('backToAdminBtn').addEventListener('click', backToAdmin);
+            document.getElementById('backToAdminBtn2').addEventListener('click', backToAdmin);
+            document.getElementById('addTraineeBtn').addEventListener('click', openAddModal);
+            document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('exportPowerBIBtn').addEventListener('click', exportToExcel);
+
+            // Modal batch field change - show/hide command check date for CUC batches
+            document.getElementById('modalBatch').addEventListener('input', (e) => {
+                const batch = e.target.value.toUpperCase().trim();
+                const container = document.getElementById('modalCommandCheckContainer');
+                if (isCUCBatch(batch)) {
+                    container.classList.remove('hidden');
+                } else {
+                    container.classList.add('hidden');
+                    document.getElementById('modalCommandCheck').value = '';
+                }
+            });
+
+            // Bulk Import
+            document.getElementById('bulkImportBtn').addEventListener('click', () => {
+                document.getElementById('bulkImportModal').classList.remove('hidden');
+            });
+            document.getElementById('bulkImportFile').addEventListener('change', processBulkImportFile);
+            document.getElementById('processBulkImportBtn').addEventListener('click', executeBulkImport);
+            document.getElementById('cancelBulkImportBtn').addEventListener('click', () => {
+                document.getElementById('bulkImportModal').classList.add('hidden');
+                document.getElementById('bulkImportFile').value = '';
+                document.getElementById('bulkImportPreview').classList.add('hidden');
+                bulkImportData = null;
+                document.getElementById('processBulkImportBtn').disabled = true;
+            });
+
+            // PDF Import
+            document.getElementById('pdfImportBtn').addEventListener('click', () => {
+                document.getElementById('pdfImportModal').classList.remove('hidden');
+            });
+            document.getElementById('pdfImportFile').addEventListener('change', processPdfImportFile);
+            document.getElementById('processPdfImportBtn').addEventListener('click', executePdfImport);
+            document.getElementById('cancelPdfImportBtn').addEventListener('click', () => {
+                document.getElementById('pdfImportModal').classList.add('hidden');
+                document.getElementById('pdfImportFile').value = '';
+                document.getElementById('pdfImportPreview').classList.add('hidden');
+                document.getElementById('pdfProcessingStatus').classList.add('hidden');
+                pdfImportData = [];
+                document.getElementById('processPdfImportBtn').disabled = true;
+            });
+
+            // Test Highlights
+            document.getElementById('testHighlightsBtn').addEventListener('click', testHighlights);
+
+            // Modal buttons
+            document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+            document.getElementById('saveModalBtn').addEventListener('click', saveModal);
+
+            // Filters
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toUpperCase().trim();
+                renderTable();
+            });
+
+            document.getElementById('yearFilter').addEventListener('change', (e) => {
+                selectedYearFilter = e.target.value;
+                updateBatchFilterByYear();
+                renderTable();
+            });
+
+            document.getElementById('batchFilter').addEventListener('change', (e) => {
+                selectedBatchFilter = e.target.value;
+                updateExportFilterNotice();
+                renderTable();
+            });
+
+            document.getElementById('trainingTypeFilter').addEventListener('change', (e) => {
+                selectedTrainingTypeFilter = e.target.value;
+                updateExportFilterNotice();
+                renderTable();
+            });
+
+            document.getElementById('fleetFilter').addEventListener('change', (e) => {
+                selectedFleetFilter = e.target.value;
+                updateExportFilterNotice();
+                renderTable();
+            });
+
+            document.getElementById('rankFilter').addEventListener('change', (e) => {
+                selectedRankFilter = e.target.value;
+                updateExportFilterNotice();
+                renderTable();
+            });
+
+            document.getElementById('statusFilter').addEventListener('change', (e) => {
+                selectedStatusFilter = e.target.value;
+                updateExportFilterNotice();
+                renderTable();
+            });
+
+            // Clear All Filters button
+            document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+                selectedYearFilter = 'all';
+                selectedBatchFilter = 'all';
+                selectedRankFilter = 'all';
+                selectedStatusFilter = 'all';
+                selectedTrainingTypeFilter = 'all';
+                selectedFleetFilter = 'all';
+                searchQuery = '';
+
+                document.getElementById('yearFilter').value = 'all';
+                document.getElementById('batchFilter').value = 'all';
+                document.getElementById('rankFilter').value = 'all';
+                document.getElementById('statusFilter').value = 'all';
+                document.getElementById('trainingTypeFilter').value = 'all';
+                document.getElementById('fleetFilter').value = 'all';
+                document.getElementById('searchInput').value = '';
+
+                updateBatchFilterByYear();
+                updateExportFilterNotice();
+                renderTable();
+
+                // Reset hide completed toggle
+                if (hideCompleted) {
+                    document.getElementById('toggleCompletedBtn').click();
+                }
+            });
+
+            // Toggle completed trainees
+            document.getElementById('toggleCompletedBtn').addEventListener('click', () => {
+                hideCompleted = !hideCompleted;
+                const btn = document.getElementById('toggleCompletedBtn');
+                if (hideCompleted) {
+                    btn.innerHTML = 'Show Completed';
+                    btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    btn.classList.add('bg-gray-600', 'hover:bg-gray-700');
+                } else {
+                    btn.innerHTML = 'Hide Completed';
+                    btn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                }
+                renderTable();
+            });
+
+            document.getElementById('analyticsBatchFilter').addEventListener('change', (e) => {
+                updateAdminAnalytics(e.target.value);
+            });
+
+            // Sortable headers
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.column;
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.column = column;
+                        currentSort.direction = 'asc';
+                    }
+
+                    document.querySelectorAll('.sortable-header').forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    header.classList.add(`sort-${currentSort.direction}`);
+
+                    renderTable();
+                });
+            });
+        });
+
+        // Make functions globally accessible
+        window.editTrainee = editTrainee;
+        window.deleteTrainee = deleteTrainee;
+    </script>
+
+</body>
+</html>

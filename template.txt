@@ -1,0 +1,51 @@
+<div style="font-family: Arial, sans-serif; max-width: 600px;">
+  
+  <div style="background-color: #0066cc; color: white; padding: 15px; margin-bottom: 20px;">
+    <h2 style="margin: 0; font-size: 18px;">Trainee Status Update</h2>
+    <p style="margin: 5px 0 0 0; font-size: 12px;">Flight Operations Training - B737 Program</p>
+  </div>
+  
+  <p style="font-size: 14px;">Dear APCT,</p>
+  
+  <p style="font-size: 14px; line-height: 1.6;">
+    This is to inform you that the following trainee has been assigned a new status:
+  </p>
+  
+  <div style="background-color: #f8f9fa; border-left: 4px solid #0066cc; padding: 15px; margin: 20px 0;">
+    <p style="margin: 0 0 10px 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px;">
+      <strong>Trainee Name</strong>
+    </p>
+    <p style="margin: 0 0 20px 0; font-size: 18px; font-weight: bold; color: #0066cc;">
+      @{outputs('Get_response_details')?['body/rbb051b394b394902b4d2c72cdb2197f5']} 
+      @{outputs('Get_response_details')?['body/r5c5addf1886e4ba7a3858837f05544ec']}
+    </p>
+    
+    <p style="margin: 0 0 10px 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px;">
+      <strong>New Status</strong>
+    </p>
+    <p style="margin: 0; font-size: 20px; font-weight: bold; color: #d9534f;">
+      @{outputs('Get_response_details')?['body/rc44f6063a49342649d954a8858d2819f']}
+    </p>
+  </div>
+  
+  <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; margin: 20px 0;">
+    <p style="margin: 0; font-size: 14px; color: #856404;">
+      ⚠️ <strong>Action Required:</strong> Please update the trainee roster to reflect this current status.
+    </p>
+  </div>
+  
+  <p style="font-size: 14px; line-height: 1.6;">
+    Thank you for your prompt assistance.
+  </p>
+  
+  <div style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #0066cc;">
+    <p style="font-size: 14px; margin: 3px 0;">Regards,</p>
+    <p style="font-size: 14px; margin: 3px 0; font-weight: bold;">O/B Flight Operations Training</p>
+    <p style="font-size: 13px; margin: 3px 0; color: #666;">SIP B737/DSIP B737</p>
+  </div>
+  
+  <div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; font-size: 11px; color: #666; text-align: center;">
+    This is an automated notification from the Flight Operations Training system.
+  </div>
+  
+</div>

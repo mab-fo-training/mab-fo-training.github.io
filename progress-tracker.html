@@ -1616,10 +1616,10 @@
             }
         }
 
-        async function saveTraineeToSharePoint(traineeData, isEdit = false) {
+        async function saveTraineeToSharePoint(traineeData, isEdit = false, skipReload = false) {
             if (testMode) {
                 const result = await saveTraineeToLocalStorage(traineeData, isEdit);
-                if (result && isAdminAuth) {
+                if (result && isAdminAuth && !skipReload) {
                     populateFilters();
                     renderTable();
                     updateStatistics();
@@ -1688,7 +1688,9 @@
                 if (response.ok || response.status === 204) {
                     // Log change to history
                     logChange(traineeData.staffId, traineeData.name, isEdit ? 'update' : 'create');
-                    await loadDataFromSharePoint();
+                    if (!skipReload) {
+                        await loadDataFromSharePoint();
+                    }
                     return true;
                 } else {
                     const errBody = await response.text();
@@ -1857,12 +1859,12 @@
 
             tbody.innerHTML = changeHistory.slice(0, 50).map(change => `
                 <tr class="border-b hover:bg-gray-50">
-                    <td class="px-4 py-3 text-sm">${new Date(change.timestamp).toLocaleString()}</td>
-                    <td class="px-4 py-3 text-sm">${change.user}</td>
-                    <td class="px-4 py-3 text-sm">${change.name} (${change.staffId})</td>
-                    <td class="px-4 py-3 text-sm">${change.field || change.action}</td>
-                    <td class="px-4 py-3 text-sm">${change.oldValue || '-'}</td>
-                    <td class="px-4 py-3 text-sm">${change.newValue || '-'}</td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(new Date(change.timestamp).toLocaleString())}</td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(change.user)}</td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(change.name)} (${escapeHtml(change.staffId)})</td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(change.field || change.action)}</td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(change.oldValue || '-')}</td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(change.newValue || '-')}</td>
                 </tr>
             `).join('');
         }
@@ -2013,7 +2015,7 @@
             }
 
             const avg30Day = last30Days / 30;
-            const weeklyRate = (last7Days / 7) * 7;
+            const weeklyRate = last7Days;
 
             // Batch stats
             const batchCadets = allCadets.filter(c => c.batch === cadet.batch);
@@ -2214,7 +2216,7 @@
                 // Fleet filter
                 if (selectedFleetFilter !== 'all' && (cadet.fleet || '').toUpperCase() !== selectedFleetFilter) return false;
 
-                if (selectedRankFilter !== 'all' && cadet.rank.toUpperCase() !== selectedRankFilter) return false;
+                if (selectedRankFilter !== 'all' && (cadet.rank || '').toUpperCase() !== selectedRankFilter) return false;
                 if (selectedStatusFilter !== 'all') {
                     const status = getTraineeStatus(cadet);
                     if (status !== selectedStatusFilter) return false;
@@ -2267,18 +2269,18 @@
 
                 return `
                     <tr class="${rowClass}">
-                        <td class="px-4 py-3 text-sm">${cadet.batch}</td>
-                        <td class="px-4 py-3 text-sm">${cadet.staffId}</td>
-                        <td class="px-4 py-3 text-sm">${cadet.rank || '-'}</td>
-                        <td class="px-4 py-3 text-sm">${cadet.fleet || '-'}</td>
-                        <td class="px-4 py-3 text-sm font-medium">${cadet.name}</td>
+                        <td class="px-4 py-3 text-sm">${escapeHtml(cadet.batch)}</td>
+                        <td class="px-4 py-3 text-sm">${escapeHtml(cadet.staffId)}</td>
+                        <td class="px-4 py-3 text-sm">${escapeHtml(cadet.rank || '-')}</td>
+                        <td class="px-4 py-3 text-sm">${escapeHtml(cadet.fleet || '-')}</td>
+                        <td class="px-4 py-3 text-sm font-medium">${escapeHtml(cadet.name)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.firstIOEDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.functionalDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.commandCheckDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lrcDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.interviewDate)}</td>
-                        <td class="px-4 py-3 text-sm text-center">${cadet.sectorsFlown || 0}</td>
-                        <td class="px-4 py-3 text-sm">${cadet.remarks || '-'}</td>
+                        <td class="px-4 py-3 text-sm text-center">${parseInt(cadet.sectorsFlown) || 0}</td>
+                        <td class="px-4 py-3 text-sm">${escapeHtml(cadet.remarks || '-')}</td>
                         <td class="px-4 py-3 text-center sticky right-0 ${rowClass || 'bg-white'} shadow-md">
                             <button onclick="editTrainee(${index})" class="text-blue-600 hover:text-blue-800 mx-1 font-bold" title="Edit">
                                 Edit
@@ -2632,20 +2634,7 @@
                 return;
             }
 
-            const filteredCadets = cadets.filter(cadet => {
-                if (selectedYearFilter !== 'all') {
-                    const cadetYear = getYearFromBatch(cadet.batch);
-                    if (cadetYear !== parseInt(selectedYearFilter)) return false;
-                }
-                if (selectedBatchFilter !== 'all' && cadet.batch.trim().toLowerCase() !== selectedBatchFilter.trim().toLowerCase()) return false;
-                if (selectedRankFilter !== 'all' && cadet.rank.toUpperCase() !== selectedRankFilter) return false;
-                if (selectedStatusFilter !== 'all') {
-                    let cadetStatus = getTraineeStatus(cadet);
-                    if (cadetStatus !== selectedStatusFilter) return false;
-                }
-                if (searchQuery && !cadet.name.toUpperCase().includes(searchQuery) && !cadet.staffId.toUpperCase().includes(searchQuery)) return false;
-                return true;
-            });
+            const filteredCadets = filterCadets();
 
             if (filteredCadets.length === 0) {
                 alert('No trainees match current filters!');
@@ -2674,7 +2663,7 @@
                     formattedData.push({
                         'Batch': `BATCH: ${cadet.batch}`,
                         'Staff ID': '', 'Rank': '', 'Fleet': '', 'Name': '',
-                        'First IOE': '', 'Functional': '', 'LRC': '', 'Interview': '',
+                        'First IOE': '', 'Functional': '', 'Cmd Check': '', 'LRC': '', 'Interview': '',
                         'Sectors': '', 'Status': '', 'Last Updated': '', 'Remarks': ''
                     });
                     rowMetadata.push({ type: 'batch' });
@@ -2690,6 +2679,7 @@
                     'Name': cadet.name,
                     'First IOE': cadet.firstIOEDate || '',
                     'Functional': cadet.functionalDate || '',
+                    'Cmd Check': cadet.commandCheckDate || '',
                     'LRC': cadet.lrcDate || '',
                     'Interview': cadet.interviewDate || '',
                     'Sectors': cadet.sectorsFlown,
@@ -2703,7 +2693,7 @@
             const worksheet = XLSX.utils.json_to_sheet(formattedData);
             worksheet['!cols'] = [
                 { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 25 },
-                { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 },
+                { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
                 { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 30 }
             ];
 
@@ -2751,29 +2741,17 @@
                 } else if (metadata.type === 'data') {
                     const cadet = metadata.cadet;
                     let bgColor = "FFFFFF";
+                    const cadetStatus = getTraineeStatus(cadet);
 
-                    if (cadet.manualHighlight === 'blue') {
+                    if (cadetStatus === 'functional') {
                         bgColor = "DBEAFE";
                         coloredRows++;
-                    } else if (cadet.manualHighlight === 'green') {
+                    } else if (cadetStatus === 'completed') {
                         bgColor = "D1FAE5";
                         coloredRows++;
-                    } else if (cadet.manualHighlight === 'red') {
+                    } else if (cadetStatus === 'special') {
                         bgColor = "FEE2E2";
                         coloredRows++;
-                    } else if (!cadet.manualHighlight) {
-                        const hasFirstIOE = cadet.firstIOEDate && cadet.firstIOEDate.trim() !== '';
-                        const hasFunctional = cadet.functionalDate && cadet.functionalDate.trim() !== '';
-                        const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
-                        const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
-
-                        if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) {
-                            bgColor = "D1FAE5";
-                            coloredRows++;
-                        } else if (hasFirstIOE && hasFunctional && !hasLRC && !hasInterview) {
-                            bgColor = "DBEAFE";
-                            coloredRows++;
-                        }
                     }
 
                     for (let col = range.s.c; col <= range.e.c; col++) {
@@ -3099,10 +3077,9 @@
                 if (cadet.isDuplicate) continue;
 
                 try {
-                    const result = await saveTraineeToSharePoint(cadet, false);
+                    const result = await saveTraineeToSharePoint(cadet, false, true);
                     if (result) {
                         successCount++;
-                        logChange('add', cadet);
                     } else {
                         errorCount++;
                     }
@@ -3355,10 +3332,9 @@
                 if (cadet.isDuplicate) continue;
 
                 try {
-                    const result = await saveTraineeToSharePoint(cadet, false);
+                    const result = await saveTraineeToSharePoint(cadet, false, true);
                     if (result) {
                         successCount++;
-                        logChange('add', cadet);
                     } else {
                         errorCount++;
                     }
@@ -3455,7 +3431,7 @@
             // Load test mode preference
             const savedTestMode = localStorage.getItem('testMode');
             if (savedTestMode === 'true') {
-                testMode = true;
+                // testMode starts as false; toggleTestMode() will set it to true
                 document.getElementById('testModeToggle').checked = true;
                 toggleTestMode();
             }
@@ -3489,9 +3465,6 @@
                     }
                 }
             }, 60000); // Check every minute
-
-            // Test Connection button
-            document.getElementById('testConnectionBtn').addEventListener('click', testSharePointConnection);
 
             // Test Mode buttons
             document.getElementById('testModeToggle').addEventListener('change', toggleTestMode);

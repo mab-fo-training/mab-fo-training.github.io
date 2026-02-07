@@ -107,10 +107,10 @@ User Browser → MSAL sign-in popup → Access token
 - **Functional** (blue): Has First IOE + Functional Date
 - **Completed** (green):
   - CPC batches: First IOE + Functional + LRC + Interview
-  - CUC batches: First IOE + Functional + Command Check + LRC
+  - CUC batches: First IOE + Functional + Command Check + LRC + Interview
 - **Special** (red): Manual override via `Manual_Highlight`
 
-`Command_Check_Date` is only required for CUC batches. The `isCUCBatch()` function checks if the batch name contains "CUC".
+`Command_Check_Date` is only required for CUC batches. The `isCUCBatch()` function checks if the batch name contains "CUC". CUC batches require all 5 dates (First IOE, Functional, Command Check, LRC, Interview) to be marked as completed.
 
 Manual highlight takes precedence over automatic status detection.
 
@@ -274,3 +274,24 @@ The flow should be extended to update the `Training_Progress` list automatically
 - Fleet from form (A350/A333/B737) is ignored — the SharePoint list already has this data
 - Only completed stages update date columns; "Cleared for" stages go to Remarks
 - "REFERRED TO SIP" sets the manual highlight to red (flags the trainee in the tracker UI)
+
+## Pending Fixes / Improvements
+
+### Functional
+1. **Admin password field is misleading** — In SharePoint mode, the password field is ignored. Auth checks the signed-in user's email against the `AdminUsers` list. Remove the password field or repurpose it.
+2. **`sectorHistory` never persisted to SharePoint** — Tracked in-memory only; resets to `[]` on every SharePoint reload. Needs a SharePoint column (e.g., Multiple lines of text storing JSON) to persist.
+3. **`getYearFromBatch()` only handles `YY/...` format** — Regex `^(\d{2})` won't match batch names like `CUC-2024-01` or `2024-01`. Year filter won't show these batches.
+
+### UX
+4. **`alert()` used for all notifications** — Blocks the UI. Replace with toast/inline notifications.
+5. **No loading indicators** — No spinner or progress feedback while loading data from SharePoint.
+6. **Power BI button is just Excel export** — `exportPowerBIBtn` calls `exportToExcel()`. Misleading label with no actual Power BI integration.
+
+### Performance
+7. **`escapeHtml()` creates a DOM element per call** — Uses `document.createElement('div')` each time. For large tables (5000 rows), a string-replace approach would be faster.
+
+### Security (minor)
+8. **CSP allows `unsafe-inline` and `unsafe-eval`** — Weakens Content Security Policy, though `unsafe-eval` is required by Tailwind CDN.
+
+### Accessibility
+9. **No ARIA labels or keyboard navigation** — Table rows, modals, and buttons lack screen reader support.

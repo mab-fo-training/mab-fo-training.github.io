@@ -1187,10 +1187,55 @@
             } catch (error) {
                 console.error('[ERROR] Token acquisition failed:', error);
                 if (error instanceof msal.InteractionRequiredAuthError) {
-                    await msalInstance.acquireTokenPopup(loginRequest);
-                    await acquireTokenAndShowApp();
+                    try {
+                        const popupResponse = await msalInstance.acquireTokenPopup(loginRequest);
+                        sharePointConfig.accessToken = popupResponse.accessToken;
+                        showMainApp();
+                    } catch (popupError) {
+                        console.error('[ERROR] Popup token acquisition failed:', popupError);
+                        alert('Authentication failed. Please sign in again.');
+                    }
                 }
             }
+        }
+
+        // Refresh access token silently, falling back to popup
+        async function refreshAccessToken() {
+            const account = msalInstance.getActiveAccount();
+            if (!account) throw new Error('No active account');
+
+            try {
+                const tokenResponse = await msalInstance.acquireTokenSilent({
+                    ...loginRequest,
+                    account: account
+                });
+                sharePointConfig.accessToken = tokenResponse.accessToken;
+                return tokenResponse.accessToken;
+            } catch (error) {
+                if (error instanceof msal.InteractionRequiredAuthError) {
+                    const popupResponse = await msalInstance.acquireTokenPopup(loginRequest);
+                    sharePointConfig.accessToken = popupResponse.accessToken;
+                    return popupResponse.accessToken;
+                }
+                throw error;
+            }
+        }
+
+        // Fetch wrapper: auto-retries once with a fresh token on 401
+        async function authFetch(url, options = {}) {
+            options.headers = options.headers || {};
+            options.headers['Authorization'] = `Bearer ${sharePointConfig.accessToken}`;
+
+            let response = await fetch(url, options);
+
+            if (response.status === 401 && !testMode) {
+                console.log('[INFO] Token expired, refreshing...');
+                const newToken = await refreshAccessToken();
+                options.headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(url, options);
+            }
+
+            return response;
         }
 
         function updateUIForSignedInUser(account) {
@@ -1473,10 +1518,9 @@
                 // First, try to get all lists to see what's available
                 const listsUrl = `${siteUrl}/_api/web/lists?$select=Title,Id`;
 
-                const listsResponse = await fetch(listsUrl, {
+                const listsResponse = await authFetch(listsUrl, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
                         'Accept': 'application/json;odata=verbose'
                     }
                 });
@@ -1508,10 +1552,9 @@
                     apiUrl = `${siteUrl}/_api/web/lists/getbytitle('${listName}')/items?$top=1`;
                 }
 
-                const response = await fetch(apiUrl, {
+                const response = await authFetch(apiUrl, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
                         'Accept': 'application/json;odata=verbose'
                     }
                 });
@@ -1569,10 +1612,9 @@
             try {
                 const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items?$top=5000`;
 
-                const response = await fetch(apiUrl, {
+                const response = await authFetch(apiUrl, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
                         'Accept': 'application/json;odata=verbose'
                     }
                 });
@@ -1669,7 +1711,6 @@
                 }
 
                 const headers = {
-                    'Authorization': `Bearer ${sharePointConfig.accessToken}`,
                     'Accept': 'application/json;odata=verbose',
                     'Content-Type': 'application/json;odata=verbose'
                 };
@@ -1679,7 +1720,7 @@
                     headers['IF-MATCH'] = '*';
                 }
 
-                const response = await fetch(apiUrl, {
+                const response = await authFetch(apiUrl, {
                     method: method,
                     headers: headers,
                     body: JSON.stringify(itemData)
@@ -1730,10 +1771,9 @@
             try {
                 const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items(${itemId})`;
 
-                const response = await fetch(apiUrl, {
+                const response = await authFetch(apiUrl, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
                         'Accept': 'application/json;odata=verbose',
                         'X-HTTP-Method': 'DELETE',
                         'IF-MATCH': '*'
@@ -1761,10 +1801,9 @@
 
             const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')`;
 
-            const response = await fetch(apiUrl, {
+            const response = await authFetch(apiUrl, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${sharePointConfig.accessToken}`,
                     'Accept': 'application/json;odata=verbose'
                 }
             });
@@ -1801,10 +1840,9 @@
             try {
                 // Check if user's email exists in AdminUsers list
                 const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.adminListName}')/items?$filter=Email eq '${currentUser.email}'&$top=1`;
-                const response = await fetch(apiUrl, {
+                const response = await authFetch(apiUrl, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${sharePointConfig.accessToken}`,
                         'Accept': 'application/json;odata=verbose'
                     }
                 });
@@ -2282,10 +2320,10 @@
                         <td class="px-4 py-3 text-sm text-center">${parseInt(cadet.sectorsFlown) || 0}</td>
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.remarks || '-')}</td>
                         <td class="px-4 py-3 text-center sticky right-0 ${rowClass || 'bg-white'} shadow-md">
-                            <button onclick="editTrainee(${index})" class="text-blue-600 hover:text-blue-800 mx-1 font-bold" title="Edit">
+                            <button onclick="editTrainee(${cadet.id})" class="text-blue-600 hover:text-blue-800 mx-1 font-bold" title="Edit">
                                 Edit
                             </button>
-                            <button onclick="deleteTrainee(${index})" class="text-red-600 hover:text-red-800 mx-1 font-bold" title="Delete">
+                            <button onclick="deleteTrainee(${cadet.id})" class="text-red-600 hover:text-red-800 mx-1 font-bold" title="Delete">
                                 Del
                             </button>
                         </td>
@@ -2323,9 +2361,9 @@
             const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
             const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
 
-            // CUC batches: completed when LRC is entered (requires First IOE, Functional, Command Check, LRC)
+            // CUC batches: completed when all 5 dates are entered (First IOE, Functional, Command Check, LRC, Interview)
             if (isCUCBatch(cadet.batch)) {
-                if (hasFirstIOE && hasFunctional && hasCommandCheck && hasLRC) return 'completed';
+                if (hasFirstIOE && hasFunctional && hasCommandCheck && hasLRC && hasInterview) return 'completed';
                 if (hasFirstIOE && hasFunctional) return 'functional';
                 return 'inprogress';
             }
@@ -2482,9 +2520,11 @@
             document.getElementById('avgTotalTime').textContent = avgTotal;
 
             // 5. Monthly Completion Trend
+            // Both CPC and CUC require Interview to complete
             const monthlyCompletions = {};
             filteredCadets.forEach(cadet => {
-                if (cadet.interviewDate) {
+                const status = getTraineeStatus(cadet);
+                if (status === 'completed' && cadet.interviewDate && cadet.interviewDate.length >= 7) {
                     const month = cadet.interviewDate.substring(0, 7); // YYYY-MM
                     monthlyCompletions[month] = (monthlyCompletions[month] || 0) + 1;
                 }
@@ -2541,10 +2581,10 @@
             document.getElementById('traineeModal').classList.remove('hidden');
         }
 
-        function editTrainee(index) {
-            const filteredCadets = filterCadets();
-            const cadet = filteredCadets[index];
-            const originalIndex = cadets.findIndex(c => c.id === cadet.id);
+        function editTrainee(cadetId) {
+            const cadet = cadets.find(c => c.id === cadetId);
+            if (!cadet) return;
+            const originalIndex = cadets.indexOf(cadet);
 
             editingIndex = originalIndex;
             document.getElementById('modalTitle').textContent = 'Edit Trainee';
@@ -2574,9 +2614,9 @@
             document.getElementById('traineeModal').classList.remove('hidden');
         }
 
-        async function deleteTrainee(index) {
-            const filteredCadets = filterCadets();
-            const cadet = filteredCadets[index];
+        async function deleteTrainee(cadetId) {
+            const cadet = cadets.find(c => c.id === cadetId);
+            if (!cadet) return;
 
             if (confirm(`Are you sure you want to delete ${cadet.name}?`)) {
                 const success = await deleteTraineeFromSharePoint(cadet.id);

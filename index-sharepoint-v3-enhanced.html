@@ -700,13 +700,14 @@
                                             <th class="px-4 py-3 text-left text-sm font-semibold">LRC</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold">INTERVIEW</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="sectorsFlown">SECTORS</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">LAST UPDATED</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold">REMARKS</th>
                                             <th class="px-4 py-3 text-center text-sm font-semibold sticky right-0 bg-blue-700 shadow-md">ACTIONS</th>
                                         </tr>
                                     </thead>
                                     <tbody id="dataTableBody">
                                         <tr>
-                                            <td colspan="13" class="px-4 py-8 text-center text-gray-500">
+                                            <td colspan="14" class="px-4 py-8 text-center text-gray-500">
                                                 <p class="text-lg">Sign in and configure SharePoint to load data</p>
                                             </td>
                                         </tr>
@@ -2290,7 +2291,7 @@
             if (filteredCadets.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="13" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="14" class="px-4 py-8 text-center text-gray-500">
                             <p class="text-lg">No trainees found matching your filters</p>
                         </td>
                     </tr>
@@ -2314,7 +2315,7 @@
                     const batchFunctional = batchCadets.filter(c => getTraineeStatus(c) === 'functional').length;
                     const batchSpecial = batchCadets.filter(c => getTraineeStatus(c) === 'special').length;
                     const batchInProgress = batchTotal - batchCompleted - batchFunctional - batchSpecial;
-                    separator = `<tr class="bg-gray-700"><td colspan="13" class="px-4 py-2 text-sm font-bold text-white">${escapeHtml(cadet.batch)} &mdash; <span class="font-normal">${batchTotal} total</span> <span class="mx-2">|</span> <span class="font-normal text-green-300">${batchCompleted} completed</span> <span class="mx-2">|</span> <span class="font-normal text-blue-300">${batchFunctional} functional</span> <span class="mx-2">|</span> <span class="font-normal text-yellow-300">${batchInProgress} not functional</span>${batchSpecial ? ` <span class="mx-2">|</span> <span class="font-normal text-red-300">${batchSpecial} special</span>` : ''}</td></tr>`;
+                    separator = `<tr class="bg-gray-700"><td colspan="14" class="px-4 py-2 text-sm font-bold text-white">${escapeHtml(cadet.batch)} &mdash; <span class="font-normal">${batchTotal} total</span> <span class="mx-2">|</span> <span class="font-normal text-green-300">${batchCompleted} completed</span> <span class="mx-2">|</span> <span class="font-normal text-blue-300">${batchFunctional} functional</span> <span class="mx-2">|</span> <span class="font-normal text-yellow-300">${batchInProgress} not functional</span>${batchSpecial ? ` <span class="mx-2">|</span> <span class="font-normal text-red-300">${batchSpecial} special</span>` : ''}</td></tr>`;
                     lastBatch = cadet.batch;
                 }
 
@@ -2331,6 +2332,7 @@
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lrcDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.interviewDate)}</td>
                         <td class="px-4 py-3 text-sm text-center">${parseInt(cadet.sectorsFlown) || 0}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lastUpdated)}</td>
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.remarks || '-')}</td>
                         <td class="px-4 py-3 text-center sticky right-0 ${rowClass || 'bg-white'} shadow-md">
                             <button onclick="editTrainee(${cadet.id})" class="text-blue-600 hover:text-blue-800 mx-1 font-bold" title="Edit">

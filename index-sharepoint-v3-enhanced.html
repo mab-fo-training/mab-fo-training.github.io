@@ -2227,11 +2227,15 @@
 
         function renderProgressTimeline(cadet) {
             const isCUC = isCUCBatch(cadet.batch);
+            const isConversion = isConversionFleet(cadet.fleet);
+            const isCaptain = cadet.rank && cadet.rank.toUpperCase() === 'CAPTAIN';
             const milestones = [
                 { label: 'First IOE', date: cadet.firstIOEDate },
-                { label: 'Functional', date: cadet.functionalDate },
             ];
-            if (isCUC) {
+            if (!(isConversion && isCaptain)) {
+                milestones.push({ label: 'Functional', date: cadet.functionalDate });
+            }
+            if (isCUC && !isConversion) {
                 milestones.push({ label: 'Cmd Check', date: cadet.commandCheckDate });
             }
             milestones.push(
@@ -2666,6 +2670,20 @@
             const hasCommandCheck = cadet.commandCheckDate && cadet.commandCheckDate.trim() !== '';
             const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
             const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
+
+            // Conversion courses (A330/A350)
+            if (isConversionFleet(cadet.fleet)) {
+                const isCaptain = cadet.rank && cadet.rank.toUpperCase() === 'CAPTAIN';
+                if (isCaptain) {
+                    // Captains: First IOE + LRC + Interview, no Functional status
+                    if (hasFirstIOE && hasLRC && hasInterview) return 'completed';
+                    return 'inprogress';
+                }
+                // FO/SO: First IOE + Functional + LRC + Interview
+                if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) return 'completed';
+                if (hasFirstIOE && hasFunctional) return 'functional';
+                return 'inprogress';
+            }
 
             // CUC batches: completed when all 5 dates are entered (First IOE, Functional, Command Check, LRC, Interview)
             if (isCUCBatch(cadet.batch)) {
@@ -3233,6 +3251,12 @@
             return batchName.toUpperCase().includes('CUC');
         }
 
+        function isConversionFleet(fleet) {
+            if (!fleet) return false;
+            const f = fleet.toUpperCase();
+            return f === 'A330' || f === 'A350';
+        }
+
         function updateYearFilter() {
             const years = [...new Set(cadets.map(c => getYearFromBatch(c.batch)).filter(y => y !== null))].sort((a, b) => b - a);
             const yearFilter = document.getElementById('yearFilter');
@@ -3494,7 +3518,7 @@
                     batch: extractedData.batch,
                     staffId: trainee.staffId,
                     name: trainee.name,
-                    rank: trainee.rank || 'CDT',
+                    rank: trainee.rank || 'CADET',
                     fleet: extractedData.fleet || 'B738',
                     sectorsFlown: 0,
                     firstIOEDate: '',
@@ -3579,13 +3603,24 @@
                 }
             } else {
                 const cpcPattern = /(\d{7})\s+([A-Z][A-Z\s]+?)(?=\s*\d{7}|FROM|$)/g;
+                const rankPrefixes = /^(CAPTAIN|CPT|SFO|FO|SO)\s+/i;
 
                 while ((matches = cpcPattern.exec(traineeSection)) !== null) {
                     const staffId = matches[1];
                     let name = matches[2].trim().replace(/\s+/g, ' ').trim();
+                    let rank = null;
+
+                    const rankMatch = name.match(rankPrefixes);
+                    if (rankMatch) {
+                        const rawRank = rankMatch[1].toUpperCase();
+                        name = name.substring(rankMatch[0].length).trim();
+                        if (rawRank === 'CAPTAIN' || rawRank === 'CPT') rank = 'CAPTAIN';
+                        else if (rawRank === 'SFO') rank = 'FO';
+                        else rank = rawRank;
+                    }
 
                     if (staffId && name) {
-                        trainees.push({ staffId, name, rank: null });
+                        trainees.push({ staffId, name, rank });
                     }
                 }
             }

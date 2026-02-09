@@ -2298,6 +2298,7 @@
                 return;
             }
 
+            let lastBatch = null;
             tbody.innerHTML = filteredCadets.map((cadet, index) => {
                 const status = getTraineeStatus(cadet);
                 let rowClass = '';
@@ -2305,7 +2306,19 @@
                 else if (status === 'completed') rowClass = 'bg-green-50';
                 else if (status === 'special') rowClass = 'bg-red-50';
 
-                return `
+                let separator = '';
+                if (cadet.batch !== lastBatch) {
+                    const batchCadets = filteredCadets.filter(c => c.batch === cadet.batch);
+                    const batchTotal = batchCadets.length;
+                    const batchCompleted = batchCadets.filter(c => getTraineeStatus(c) === 'completed').length;
+                    const batchFunctional = batchCadets.filter(c => getTraineeStatus(c) === 'functional').length;
+                    const batchSpecial = batchCadets.filter(c => getTraineeStatus(c) === 'special').length;
+                    const batchInProgress = batchTotal - batchCompleted - batchFunctional - batchSpecial;
+                    separator = `<tr class="bg-gray-700"><td colspan="13" class="px-4 py-2 text-sm font-bold text-white">${escapeHtml(cadet.batch)} &mdash; <span class="font-normal">${batchTotal} total</span> <span class="mx-2">|</span> <span class="font-normal text-green-300">${batchCompleted} completed</span> <span class="mx-2">|</span> <span class="font-normal text-blue-300">${batchFunctional} functional</span> <span class="mx-2">|</span> <span class="font-normal text-yellow-300">${batchInProgress} not functional</span>${batchSpecial ? ` <span class="mx-2">|</span> <span class="font-normal text-red-300">${batchSpecial} special</span>` : ''}</td></tr>`;
+                    lastBatch = cadet.batch;
+                }
+
+                return separator + `
                     <tr class="${rowClass}">
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.batch)}</td>
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.staffId)}</td>

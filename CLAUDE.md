@@ -173,35 +173,22 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 
 ## Deployment Status
 
-### Current State: Awaiting IT for Hosting
-The app is fully functional locally (`python -m http.server 8000`). Hosting is blocked:
+### Current State: Live on GitHub Pages
+- **Live URL**: `https://mab-fo-training.github.io/`
+- **Hosting repo**: `mab-fo-training/mab-fo-training.github.io` (public, GitHub Pages)
+- **Source repo**: `mr-shzrn/microsoft-training-tracker` (private, source of truth)
+- **Redirect URI**: `https://mab-fo-training.github.io` registered in Azure AD (SPA)
+- **GitHub Pages config**: Deploy from main branch, / (root), `index.html` at root
 
-**SharePoint document library hosting**:
-- `DenyAddAndCustomizePages` set to `Disabled` (confirmed) but HTML still renders as preview
-- Likely a tenant-level `NoScriptSite` policy overriding site-level setting
-- IT email sent requesting tenant-level check
+### Deployment Workflow
+When updating the app:
+1. Edit `index-sharepoint-v3-enhanced.html` in the source repo
+2. Upload the updated file as `index.html` to the `mab-fo-training.github.io` repo
+3. GitHub Pages auto-deploys within 1-2 minutes
 
-**Azure Static Web Apps**:
-- No Azure subscription available (company account shows "Welcome to Azure" with no subscription)
-- Requested IT to provision one as alternative
-
-**GitHub Pages**:
-- Viable fallback (free, no IT needed)
-- Publicly accessible URL but app requires Microsoft sign-in (safe)
-- Client ID and Tenant ID in source are not secrets
-- Private repo possible for source code protection
-- KIV (kept in view) pending IT response
-
-### Hosting Options (in order of preference)
-1. **SharePoint site** — cleanest, needs IT to fix script policy
-2. **Azure Static Web Apps** — free tier, needs Azure subscription from IT
-3. **GitHub Pages** — free, self-service, publicly accessible URL but auth-protected
-
-### After Hosting is Resolved
-1. Upload/deploy `index-sharepoint-v3-enhanced.html`
-2. Add hosting URL as redirect URI in Azure AD app registration (Authentication → SPA)
-3. Verify MSAL sign-in works from hosted URL
-4. Test full flow: sign in → load data → add/edit/delete → admin access
+### Previous Hosting Attempts (Abandoned)
+- **SharePoint document library**: Blocked by tenant-level NoScriptSite policy (IT confirmed `NoScriptSite` blank = default blocked). Modern SharePoint does not render HTML files from document libraries.
+- **Azure Static Web Apps**: No Azure subscription available from IT.
 
 ## Development Notes
 

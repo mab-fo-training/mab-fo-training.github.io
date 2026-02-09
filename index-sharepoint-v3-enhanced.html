@@ -1865,8 +1865,10 @@
         }
 
         let sectorHistoryColumnEnsured = false;
+        let sectorHistoryColumnChecked = false;
         async function ensureSectorHistoryColumn() {
-            if (sectorHistoryColumnEnsured || testMode || !sharePointConfig.accessToken) return;
+            if (sectorHistoryColumnChecked || testMode || !sharePointConfig.accessToken) return;
+            sectorHistoryColumnChecked = true; // Don't retry
             try {
                 // Check if column exists
                 const checkUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/fields?$filter=InternalName eq 'Sector_History'`;
@@ -1875,6 +1877,7 @@
                     const checkData = await checkResp.json();
                     if (checkData.d.results.length > 0) {
                         sectorHistoryColumnEnsured = true;
+                        console.log('[OK] Sector_History column exists');
                         return;
                     }
                 }
@@ -1894,14 +1897,13 @@
                     })
                 });
                 if (createResp.ok) {
+                    sectorHistoryColumnEnsured = true;
                     console.log('[OK] Created Sector_History column');
                 } else {
                     console.warn('[WARN] Could not create Sector_History column:', createResp.status);
                 }
-                sectorHistoryColumnEnsured = true;
             } catch (e) {
                 console.warn('[WARN] ensureSectorHistoryColumn failed:', e.message);
-                sectorHistoryColumnEnsured = true; // Don't retry on failure
             }
         }
 
@@ -1946,9 +1948,13 @@
                     Sectors_Flown: parseInt(traineeData.sectorsFlown) || 0,
                     Remarks: traineeData.remarks,
                     Last_Updated: new Date().toISOString(),
-                    Manual_Highlight: traineeData.manualHighlight,
-                    Sector_History: JSON.stringify(traineeData.sectorHistory || [])
+                    Manual_Highlight: traineeData.manualHighlight
                 };
+
+                // Only include Sector_History if column exists
+                if (sectorHistoryColumnEnsured) {
+                    itemData.Sector_History = JSON.stringify(traineeData.sectorHistory || []);
+                }
 
                 let apiUrl, method;
                 if (isEdit && traineeData.id) {

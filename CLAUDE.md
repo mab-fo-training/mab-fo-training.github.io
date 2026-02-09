@@ -7,17 +7,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This repository contains a **Training Progress Tracker** for managing flight training progress (First IOE, Functional Date, Command Check, LRC, Interview, sectors flown). The active version is a single-page HTML application targeting SharePoint/Microsoft 365.
 
 ### Active Version - SharePoint Enhanced (`index-sharepoint-v3-enhanced.html`)
-- **~3,700 lines** - Full-featured production version
+- **~4,000 lines** - Full-featured production version
 - SharePoint REST API for data storage
 - MSAL.js for Microsoft 365 authentication (delegated)
 - Dual interface: User Portal + Admin Panel
 - Analytics dashboard, change history, PDF import, Excel export
+- Toast notifications (non-blocking) and loading spinner overlay
+- User Portal progress timeline (visual milestone stepper)
+- Sector history persistence via SharePoint column (JSON)
 - Dedicated SharePoint Communication Site as backend
-
-### Legacy Version - Google Sheets Edition (`index.html` / `index-2.html`)
-- Google Sheets API for data storage
-- Google Identity Services for authentication
-- Kept for reference; SharePoint version is the active development target
 
 **Common Technologies:**
 - Pure vanilla JavaScript (no build tooling)
@@ -31,7 +29,7 @@ This repository contains a **Training Progress Tracker** for managing flight tra
 - **Site URL**: `https://mabitdept.sharepoint.com/sites/FlightOpsIOETrainingTracker`
 - **Site Type**: Communication Site (lightweight, no M365 Group overhead)
 - **Site Owner**: mohamadshazreen.sazali@malaysiaairlines.com
-- **Purpose**: Data backend and (pending) app hosting
+- **Purpose**: Data backend
 - **Access**: "Everyone except external users" added as Members with Edit permission
 
 ### Why a Dedicated Site
@@ -93,6 +91,7 @@ User Browser → MSAL sign-in popup → Access token
 | `Remarks` | Multiple lines of text | |
 | `Last_Updated` | Date and time | |
 | `Manual_Highlight` | Choice: `blue`, `green`, `red` | |
+| `Sector_History` | Multiple lines of text | JSON array of sector change records |
 
 **Important**: Name is stored in `Title` (SharePoint built-in field), NOT a custom `Name` column. The code saves to `Title` and reads from `item.Title`.
 
@@ -129,14 +128,14 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 - **Tenant ID**: `8fc3a567-1ee8-4994-809c-49f50cdb6d48`
 - **Delegated permissions granted**: `User.Read`, `Sites.ReadWrite.All`, `Sites.Selected`
 - **Site-level permission**: Write access granted via PowerShell `Grant-PnPAzureADAppSitePermission`
-- **Redirect URI**: Needs to be updated to match final hosting URL
+- **Redirect URI**: `https://mab-fo-training.github.io` registered as SPA type
 
 ## Key Functions
 
 ### Authentication
 - `initializeMSAL()`: Initializes MSAL client, checks for existing sessions
 - `signIn()`: Popup authentication flow
-- `acquireTokenAndLoadData()`: Silent token refresh
+- `acquireTokenAndShowApp()`: Silent token refresh
 - `checkAdminAuth()`: Queries AdminUsers list to verify admin access
 
 ### SharePoint Operations
@@ -145,31 +144,38 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 - `deleteTraineeFromSharePoint()`: POST+DELETE by item ID
 - `getListItemEntityType()`: Gets OData metadata for proper API calls
 - `testSharePointConnection()`: Validates site/list accessibility
+- `ensureSectorHistoryColumn()`: Checks/creates Sector_History column on first load
 
 ### Data Management
 - `filterCadets()`: Applies search, year, batch, rank, fleet, status, training type filters
 - `renderTable()`: Renders filtered/sorted data to DOM
 - `getTraineeStatus()`: Determines status based on date completion and batch type
 - `isCUCBatch()`: Returns true if batch name contains "CUC"
+- `getYearFromBatch()`: Extracts year from batch names (`24/05`, `CUC-2024-01`, `2024-01`)
+
+### UX Functions
+- `showToast(message, type, duration)`: Non-blocking toast notifications (success/warning/error/info)
+- `showLoading(message)` / `hideLoading()`: Full-screen loading spinner overlay
+- `renderProgressTimeline(cadet)`: Visual milestone stepper in User Portal
 
 ### Error Handling
-- Save errors now return the full SharePoint response body for debugging
+- Save errors return the full SharePoint response body for debugging
 - Console logging with `[OK]`, `[ERROR]`, `[DENIED]` prefixes
+- Toast notifications for all user-facing messages (no `alert()` calls)
 
 ## Files
 
 | File | Description | Status |
 |---|---|---|
-| `index-sharepoint-v3-enhanced.html` | SharePoint version, full-featured | **ACTIVE - upload this** |
-| `progress-tracker.html` | Copy of enhanced version (kept in sync) | Mirror |
-| `tracker.html` | Renamed copy for clean URL | For deployment |
-| `index.html` | Google Sheets version (v2.2) | Legacy |
-| `index-2.html` | Google Sheets version (updated) | Legacy |
-| `index-sharepoint.html` | Original SharePoint template | Archived |
+| `index-sharepoint-v3-enhanced.html` | SharePoint version, full-featured | **ACTIVE** |
+| `docs/index.html` | Copy of above for GitHub Pages deployment | **DEPLOYED** |
 | `CLAUDE.md` | This file | |
 | `SETUP_GUIDE.md` | SharePoint/Azure AD setup instructions | |
 | `QUICK_REFERENCE.md` | End-user quick reference | |
-| `EMAIL_TO_IT_SHAREPOINT_SETUP.md` | Latest IT email draft | |
+| `POWER_AUTOMATE_GUIDE.md` | Step-by-step Power Automate flow instructions | |
+
+**Removed files** (no longer in repo):
+- `index.html`, `index-2.html` — Legacy Google Sheets versions, removed due to exposed API key
 
 ## Deployment Status
 
@@ -178,22 +184,26 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 - **Hosting repo**: `mab-fo-training/mab-fo-training.github.io` (public, GitHub Pages)
 - **Source repo**: `mr-shzrn/microsoft-training-tracker` (private, source of truth)
 - **Redirect URI**: `https://mab-fo-training.github.io` registered in Azure AD (SPA)
-- **GitHub Pages config**: Deploy from main branch, / (root), `index.html` at root
+- **GitHub Pages config**: Deploy from main branch, / (root), `docs/index.html`
 
 ### Deployment Workflow
 When updating the app:
 1. Edit `index-sharepoint-v3-enhanced.html` in the source repo
-2. Upload the updated file as `index.html` to the `mab-fo-training.github.io` repo
-3. GitHub Pages auto-deploys within 1-2 minutes
+2. Copy to `docs/index.html`
+3. Commit and push both remotes: `git push origin main && git push pages main`
+
+### Remotes
+- **origin** (HTTPS): `https://github.com/mr-shzrn/microsoft-training-tracker.git`
+- **pages** (SSH): `git@github.com:mab-fo-training/mab-fo-training.github.io.git`
 
 ### Previous Hosting Attempts (Abandoned)
-- **SharePoint document library**: Blocked by tenant-level NoScriptSite policy (IT confirmed `NoScriptSite` blank = default blocked). Modern SharePoint does not render HTML files from document libraries.
-- **Azure Static Web Apps**: No Azure subscription available from IT.
+- **SharePoint document library**: Blocked by tenant-level NoScriptSite policy
+- **Azure Static Web Apps**: No Azure subscription available from IT
 
 ## Development Notes
 
 ### Common Issues Encountered
-- **HTTP 400 on save**: Caused by sending fields that don't exist in SharePoint list (e.g., `Fleet`, `Sector_History`, `Name`). Only send columns that exist.
+- **HTTP 400 on save**: Caused by sending fields that don't exist in SharePoint list (e.g., `Name`, unknown columns). Only send columns that exist. The `Sector_History` field is conditionally included only after confirming the column exists via `sectorHistoryColumnEnsured` flag.
 - **Name field empty**: SharePoint uses `Title` as the built-in name field. Custom `Name` column conflicts with SharePoint internals. Always use `Title` for trainee name.
 - **HTML preview instead of rendering**: SharePoint tenant-level NoScriptSite policy blocks HTML execution even when site-level DenyAddAndCustomizePages is disabled.
 - **Rank mismatches**: SharePoint Choice columns must exactly match the values in the code. Current values: `CADET`, `SO`, `FO`, `CAPTAIN`.
@@ -213,16 +223,19 @@ python -m http.server 8000
 
 ### Security Measures
 - URL validation: All API calls checked against `ALLOWED_SITE_URL`
-- HTML escaping: `escapeHtml()` function prevents XSS
+- HTML escaping: `escapeHtml()` function prevents XSS (string replacement, not DOM-based)
 - Session timeout: 30-minute inactivity timeout
 - Token storage: `sessionStorage` (cleared on browser close)
 - Admin auth: Email checked against AdminUsers SharePoint list
 - Config panel: Hidden in production UI
+- Legacy Google API keys removed; Google Cloud API keys deleted
 
 ## Power Automate Integration
 
 ### Trainer Submission Form
-A Microsoft Forms form (`https://forms.office.com/r/aBkYkEMw1f`) is used by trainers to submit trainee progression updates. An existing Power Automate flow sends email notifications on submission.
+- **Form**: IOE PROGRESS TRACKING FORM (`https://forms.office.com/r/aBkYkEMw1f`)
+- **Flow name**: "IOE Progress"
+- Trainers submit progression updates via the form; Power Automate sends email notifications and updates SharePoint
 
 **Form fields:**
 1. NAME OF TRAINEE (text)
@@ -231,54 +244,54 @@ A Microsoft Forms form (`https://forms.office.com/r/aBkYkEMw1f`) is used by trai
 4. TOTAL SECTORS (number)
 5. DATE (date, M/d/yyyy)
 6. Progression Stage (choice — see mapping below)
+7. REFERRED TO SIP (text)
+8. Referral Reason(s) (text)
 
-### Power Automate → SharePoint List Update
+### Current Flow Structure
+```
+Form Submitted → Get response details → Get items (SharePoint lookup by Staff_ID)
+    → Switch on Progression Stage
+        ├── REFERRED TO SIP           → 3 emails (submitter, APCT, Capt Shazreen)
+        ├── Command Check COMPLETED   → 2 emails + Update Command_Check_Date
+        ├── Cleared Functional        → 2 emails + Update Functional_Date
+        ├── Line Release Check COMPLETED → 2 emails + Update LRC_Date
+        └── Default                   → 2 emails (notification only)
+```
 
-The flow should be extended to update the `Training_Progress` list automatically after the email action.
+### Progression Stage → SharePoint Field Mapping
 
-**Flow steps:**
-1. **Get items** — filter `Training_Progress` by `Staff_ID eq '[Staff Number]'`
-2. **Condition** — check if trainee exists
-3. **If yes** — Switch on Progression Stage to update the correct field
-4. **If no** — send notification (trainee should already exist in list)
-
-**Progression Stage → SharePoint field mapping:**
-
-| Progression Stage | Action |
+| Progression Stage | SharePoint Update |
 |---|---|
-| Cleared Functional | `Functional_Date` = form DATE |
-| Line Release Check COMPLETED | `LRC_Date` = form DATE |
-| Command Check COMPLETED | `Command_Check_Date` = form DATE |
-| Cleared for Line Release Check | `Remarks` = append "Cleared for LRC - [DATE]" |
-| Cleared for Command Check | `Remarks` = append "Cleared for Command Check - [DATE]" |
-| REFERRED TO SIP | `Manual_Highlight` = "red", `Remarks` = append "Referred to SIP - [DATE]" |
+| Cleared Functional | `Functional_Date` = DATE, `Sectors_Flown` = TOTAL SECTORS |
+| Line Release Check COMPLETED | `LRC_Date` = DATE, `Sectors_Flown` = TOTAL SECTORS |
+| Command Check COMPLETED | `Command_Check_Date` = DATE, `Sectors_Flown` = TOTAL SECTORS |
+| REFERRED TO SIP | Email notifications only (manual highlight set via admin) |
+| Default (others) | Email notifications only |
 
-**All submissions also update:**
-- `Sectors_Flown` = form TOTAL SECTORS
+**All SharePoint updates also set:**
 - `Last_Updated` = `utcNow()`
 
 **Notes:**
-- Fleet from form (A350/A333/B737) is ignored — the SharePoint list already has this data
-- Only completed stages update date columns; "Cleared for" stages go to Remarks
-- "REFERRED TO SIP" sets the manual highlight to red (flags the trainee in the tracker UI)
+- Fleet from form is ignored — the SharePoint list already has this data
+- "REFERRED TO SIP" sends 3 emails (submitter ack, APCT alert, referral to Capt Arian/Shazreen)
+- See `POWER_AUTOMATE_GUIDE.md` for detailed setup instructions
+
+### Form Field IDs (for flow expressions)
+| Field | ID |
+|---|---|
+| Progression Stage | `rc44f6063a49342649d954a8858d2819f` |
+| NAME OF TRAINEE (used in subjects) | `r13aa5d088a6d46748fbbd853740d279c` |
+| Name part 1 (used in APCT emails) | `rbb051b394b394902b4d2c72cdb2197f5` |
+| Name part 2 (used in APCT emails) | `r5c5addf1886e4ba7a3858837f05544ec` |
+| Referral Reason(s) | `r02e9c5a816524d259d5703b5e1e05f36` |
 
 ## Pending Fixes / Improvements
 
 ### Functional
 1. **Admin password field is misleading** — In SharePoint mode, the password field is ignored. Auth checks the signed-in user's email against the `AdminUsers` list. Remove the password field or repurpose it.
-2. **`sectorHistory` never persisted to SharePoint** — Tracked in-memory only; resets to `[]` on every SharePoint reload. Needs a SharePoint column (e.g., Multiple lines of text storing JSON) to persist.
-3. **`getYearFromBatch()` only handles `YY/...` format** — Regex `^(\d{2})` won't match batch names like `CUC-2024-01` or `2024-01`. Year filter won't show these batches.
-
-### UX
-4. **`alert()` used for all notifications** — Blocks the UI. Replace with toast/inline notifications.
-5. **No loading indicators** — No spinner or progress feedback while loading data from SharePoint.
-6. **Power BI button is just Excel export** — `exportPowerBIBtn` calls `exportToExcel()`. Misleading label with no actual Power BI integration.
-
-### Performance
-7. **`escapeHtml()` creates a DOM element per call** — Uses `document.createElement('div')` each time. For large tables (5000 rows), a string-replace approach would be faster.
 
 ### Security (minor)
-8. **CSP allows `unsafe-inline` and `unsafe-eval`** — Weakens Content Security Policy, though `unsafe-eval` is required by Tailwind CDN.
+2. **CSP allows `unsafe-inline` and `unsafe-eval`** — Weakens Content Security Policy, though `unsafe-eval` is required by Tailwind CDN.
 
 ### Accessibility
-9. **No ARIA labels or keyboard navigation** — Table rows, modals, and buttons lack screen reader support.
+3. **No ARIA labels or keyboard navigation** — Table rows, modals, and buttons lack screen reader support.

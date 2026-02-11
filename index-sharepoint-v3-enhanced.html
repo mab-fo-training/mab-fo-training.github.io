@@ -168,10 +168,6 @@
             height: 300px;
         }
 
-        .gradient-bg {
-            background: linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
-        }
-
         .card {
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
@@ -402,6 +398,180 @@
         }
 
         .timeline-dot.completed + .timeline-label { color: #16a34a; }
+
+        /* ==================== LOGIN PAGE STYLES ==================== */
+        :root {
+            --mab-navy: #00205B;
+            --mab-navy-dark: #001540;
+            --mab-red: #CC0000;
+            --mab-gold: #C8A951;
+            --mab-gold-light: #D4B96A;
+        }
+
+        .login-hero-bg {
+            background: linear-gradient(160deg, var(--mab-navy) 0%, var(--mab-navy-dark) 60%, #000D2B 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-cloud-1, .login-cloud-2, .login-cloud-3 {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .login-cloud-1 { width: 400px; height: 120px; top: 15%; left: -5%; border-radius: 100px; }
+        .login-cloud-2 { width: 300px; height: 90px; top: 25%; right: -3%; border-radius: 80px; }
+        .login-cloud-3 { width: 250px; height: 80px; bottom: 35%; left: 20%; border-radius: 70px; }
+
+        .login-wave-divider {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0;
+        }
+        .login-wave-divider svg {
+            position: relative;
+            display: block;
+            width: calc(100% + 1.3px);
+            height: 60px;
+        }
+
+        .login-hero-bg::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 1px;
+            height: 200%;
+            background: linear-gradient(180deg, transparent, rgba(200, 169, 81, 0.15), transparent);
+            transform: rotate(25deg);
+        }
+
+        .login-hero-bg::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: 20%;
+            width: 1px;
+            height: 200%;
+            background: linear-gradient(180deg, transparent, rgba(200, 169, 81, 0.08), transparent);
+            transform: rotate(25deg);
+        }
+
+        @keyframes loginHeroFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes loginFloatUp {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes loginFadeOut {
+            to { opacity: 0; transform: scale(0.98); }
+        }
+
+        .login-hero-title {
+            opacity: 0;
+            animation: loginHeroFadeIn 0.7s ease forwards 0.1s;
+        }
+
+        .login-hero-subtitle {
+            opacity: 0;
+            animation: loginHeroFadeIn 0.7s ease forwards 0.3s;
+        }
+
+        .login-hero-icon {
+            animation: loginFloatUp 4s ease-in-out infinite;
+        }
+
+        .login-feature-card {
+            opacity: 0;
+            animation: loginHeroFadeIn 0.6s ease forwards;
+        }
+        .login-feature-card:nth-child(1) { animation-delay: 0.4s; }
+        .login-feature-card:nth-child(2) { animation-delay: 0.55s; }
+        .login-feature-card:nth-child(3) { animation-delay: 0.7s; }
+
+        .login-cta-btn {
+            opacity: 0;
+            animation: loginHeroFadeIn 0.6s ease forwards 0.8s;
+        }
+
+        .login-btn-cta {
+            background: linear-gradient(135deg, var(--mab-gold) 0%, var(--mab-gold-light) 100%);
+            color: var(--mab-navy);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn-cta::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .login-btn-cta:hover::after {
+            left: 100%;
+        }
+
+        .login-btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(200, 169, 81, 0.35);
+        }
+
+        .login-btn-cta:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 400px) {
+            .login-btn-cta {
+                padding: 14px 24px;
+                font-size: 15px;
+            }
+        }
+
+        .login-feature-card-inner {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .login-feature-card-inner:hover {
+            background: rgba(255, 255, 255, 0.09);
+            border-color: rgba(200, 169, 81, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .login-ms-logo {
+            display: inline-grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            width: 18px;
+            height: 18px;
+        }
+        .login-ms-logo span {
+            border-radius: 1px;
+        }
+
+        .login-fade-out {
+            animation: loginFadeOut 0.3s ease forwards;
+        }
+
+        /* Compact post-auth header */
+        .compact-header {
+            background: linear-gradient(135deg, var(--mab-navy) 0%, var(--mab-navy-dark) 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen overflow-x-hidden">
@@ -459,32 +629,121 @@
         </div>
     </div>
 
-    <!-- Main Application -->
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="gradient-bg rounded-2xl shadow-2xl p-6 sm:p-8 mb-8 animate-slide-in">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div class="flex items-center gap-3 sm:gap-4">
-                    <svg class="w-8 h-8 sm:w-12 sm:h-12 text-white flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+    <!-- ==================== LOGIN PAGE ==================== -->
+    <div id="loginPage" class="login-hero-bg min-h-screen flex flex-col items-center justify-center px-4 py-12 relative">
+        <!-- Cloud decorations -->
+        <div class="login-cloud-1"></div>
+        <div class="login-cloud-2"></div>
+        <div class="login-cloud-3"></div>
+
+        <!-- Wave divider -->
+        <div class="login-wave-divider">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" fill="#f8fafc">
+                <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".15"></path>
+                <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".1"></path>
+                <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" opacity=".05"></path>
+            </svg>
+        </div>
+
+        <div class="relative z-10 w-full max-w-4xl text-center">
+            <!-- Plane Icon -->
+            <div class="flex justify-center mb-6">
+                <div class="login-hero-icon w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center" style="background: rgba(200, 169, 81, 0.1); border: 1px solid rgba(200, 169, 81, 0.2);">
+                    <svg class="w-10 h-10 sm:w-12 sm:h-12" fill="#C8A951" viewBox="0 0 24 24">
                         <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
                     </svg>
-                    <div>
-                        <h1 class="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">Training Progress Tracker</h1>
-                        <p class="text-blue-100 text-sm sm:text-lg">Flight Operations Training Management System</p>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <h1 class="login-hero-title text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
+                Training Progress<br><span style="color: var(--mab-gold);">Tracker</span>
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="login-hero-subtitle text-lg sm:text-xl text-blue-200/70 mb-12 max-w-2xl mx-auto">
+                Track, manage, and analyze trainee progression in real time.
+            </p>
+
+            <!-- Feature Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-12 max-w-3xl mx-auto">
+                <div class="login-feature-card">
+                    <div class="login-feature-card-inner rounded-xl p-6 text-left">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style="background: rgba(200, 169, 81, 0.12);">
+                            <svg class="w-5 h-5" fill="#C8A951" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        </div>
+                        <h3 class="text-white font-semibold mb-1">Track Progress</h3>
+                        <p class="text-blue-200/50 text-sm">Monitor IOE milestones, functional dates, and sector counts</p>
                     </div>
                 </div>
-                <div id="authContainer">
-                    <button id="signInBtn" class="bg-white text-blue-700 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-blue-50 transition shadow-lg text-sm sm:text-base">
-                        Sign in with Microsoft
-                    </button>
-                    <div id="userInfo" class="hidden text-white sm:text-right">
-                        <p class="font-semibold text-sm sm:text-base truncate max-w-[250px] sm:max-w-none" id="userName"></p>
-                        <p class="text-xs sm:text-sm truncate max-w-[250px] sm:max-w-none" id="userEmail"></p>
-                        <button id="signOutBtn" class="text-sm text-blue-100 hover:text-white underline mt-1">Sign out</button>
+                <div class="login-feature-card">
+                    <div class="login-feature-card-inner rounded-xl p-6 text-left">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style="background: rgba(200, 169, 81, 0.12);">
+                            <svg class="w-5 h-5" fill="#C8A951" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/></svg>
+                        </div>
+                        <h3 class="text-white font-semibold mb-1">Admin Dashboard</h3>
+                        <p class="text-blue-200/50 text-sm">Comprehensive batch management with analytics and exports</p>
+                    </div>
+                </div>
+                <div class="login-feature-card">
+                    <div class="login-feature-card-inner rounded-xl p-6 text-left">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style="background: rgba(200, 169, 81, 0.12);">
+                            <svg class="w-5 h-5" fill="#C8A951" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                        </div>
+                        <h3 class="text-white font-semibold mb-1">Real-time Analytics</h3>
+                        <p class="text-blue-200/50 text-sm">Visual charts, status breakdowns, and training insights</p>
                     </div>
                 </div>
             </div>
+
+            <!-- CTA Button -->
+            <div class="login-cta-btn">
+                <button id="signInBtn" class="login-btn-cta py-4 px-10 rounded-xl font-bold text-lg inline-flex items-center gap-3 transition-all duration-300">
+                    <div class="login-ms-logo">
+                        <span style="background:#f25022;"></span>
+                        <span style="background:#7fba00;"></span>
+                        <span style="background:#00a4ef;"></span>
+                        <span style="background:#ffb900;"></span>
+                    </div>
+                    Sign in with Microsoft
+                </button>
+                <p class="text-blue-200/40 text-sm mt-4">Uses your organization's Microsoft 365 credentials</p>
+            </div>
         </div>
+
+        <!-- Bottom footer -->
+        <div class="relative mt-8 sm:absolute sm:bottom-4 text-center z-10 w-full">
+            <p class="text-white/20 text-xs">Malaysia Airlines &bull; v3.0 Enhanced &bull; SharePoint Edition</p>
+        </div>
+    </div>
+
+    <!-- ==================== POST-AUTH APP SHELL ==================== -->
+    <div id="appShell" class="hidden">
+        <!-- Compact Sticky Header -->
+        <header class="compact-header sticky top-0 z-50 px-4 py-3">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <svg class="w-7 h-7 flex-shrink-0" fill="#C8A951" viewBox="0 0 24 24">
+                        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                    </svg>
+                    <div>
+                        <h1 class="text-white font-bold text-base sm:text-lg leading-tight">Training Progress Tracker</h1>
+                        <p class="text-blue-200 text-xs hidden sm:block">Training Management System</p>
+                    </div>
+                </div>
+                <div id="userInfo" class="flex items-center gap-2 sm:gap-3">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-white text-sm font-medium" id="userName"></p>
+                        <p class="text-blue-200 text-xs" id="userEmail"></p>
+                    </div>
+                    <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm" id="userAvatar"></div>
+                    <button id="signOutBtn" class="text-blue-200 hover:text-white text-xs underline">Sign out</button>
+                </div>
+            </div>
+        </header>
+
+    <!-- Main Application -->
+    <div class="container mx-auto px-4 py-8">
 
         <!-- View Toggle -->
         <div id="mainApp" class="hidden">
@@ -1195,6 +1454,8 @@
         </div>
     </div>
 
+    </div><!-- /appShell -->
+
     <script>
         // ==================== CONFIGURATION ====================
         let testMode = false; // Toggle between Test Mode (localStorage) and SharePoint Mode
@@ -1231,12 +1492,16 @@
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             const icons = { success: '\u2714', warning: '\u26A0', error: '\u2716', info: '\u2139' };
-            toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${escapeHtml(message)}</span>`;
+            if (duration === 0) {
+                toast.innerHTML = `<span>${icons[type] || icons.info}</span><span style="flex:1">${escapeHtml(message)}</span><button onclick="this.parentElement.classList.add('toast-out');this.parentElement.addEventListener('animationend',()=>this.parentElement.remove())" style="background:none;border:none;color:inherit;font-size:18px;cursor:pointer;padding:0 0 0 12px;line-height:1" title="Dismiss">&times;</button>`;
+            } else {
+                toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${escapeHtml(message)}</span>`;
+                setTimeout(() => {
+                    toast.classList.add('toast-out');
+                    toast.addEventListener('animationend', () => toast.remove());
+                }, duration);
+            }
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.add('toast-out');
-                toast.addEventListener('animationend', () => toast.remove());
-            }, duration);
         }
 
         // ==================== LOADING SPINNER ====================
@@ -1357,12 +1622,11 @@
         async function signOut() {
             try {
                 await msalInstance.logoutPopup();
-                updateUIForSignedOutUser();
                 sharePointConfig.accessToken = null;
                 currentUser = null;
                 isAdminAuth = false;
                 cadets = [];
-                document.getElementById('mainApp').classList.add('hidden');
+                updateUIForSignedOutUser();
             } catch (error) {
                 console.error('[ERROR] Sign out failed:', error);
             }
@@ -1435,20 +1699,39 @@
         }
 
         function updateUIForSignedInUser(account) {
-            document.getElementById('signInBtn').classList.add('hidden');
-            document.getElementById('userInfo').classList.remove('hidden');
-            document.getElementById('userName').textContent = account.name || account.username;
+            const displayName = account.name || account.username;
+            document.getElementById('userName').textContent = displayName;
             document.getElementById('userEmail').textContent = account.username;
             document.getElementById('adminCheckEmail').textContent = account.username;
+            // Set avatar initials
+            const initials = displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            document.getElementById('userAvatar').textContent = initials;
         }
 
         function updateUIForSignedOutUser() {
-            document.getElementById('signInBtn').classList.remove('hidden');
-            document.getElementById('userInfo').classList.add('hidden');
+            // Show login page, hide app shell
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('appShell').classList.add('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            // Re-trigger login page animations
+            const animated = document.querySelectorAll('.login-hero-title, .login-hero-subtitle, .login-feature-card, .login-cta-btn');
+            animated.forEach(function(el) {
+                el.style.animation = 'none';
+                el.offsetHeight;
+                el.style.animation = '';
+            });
         }
 
         function showMainApp() {
-            document.getElementById('mainApp').classList.remove('hidden');
+            // Hide login page, show app shell with compact header
+            var loginPage = document.getElementById('loginPage');
+            loginPage.classList.add('login-fade-out');
+            setTimeout(function() {
+                loginPage.classList.add('hidden');
+                loginPage.classList.remove('login-fade-out');
+                document.getElementById('appShell').classList.remove('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+            }, 300);
         }
 
         // ==================== TEST MODE FUNCTIONS ====================
@@ -1458,6 +1741,7 @@
             const sharepointConfig = document.getElementById('sharepointConfig');
             const testModeConfig = document.getElementById('testModeConfig');
             const signInBtn = document.getElementById('signInBtn');
+            const msLogoHtml = '<div class="login-ms-logo"><span style="background:#f25022;"></span><span style="background:#7fba00;"></span><span style="background:#00a4ef;"></span><span style="background:#ffb900;"></span></div>';
 
             if (testMode) {
                 label.textContent = 'Test Mode';
@@ -1465,18 +1749,18 @@
                 label.classList.add('text-orange-700');
                 sharepointConfig.classList.add('hidden');
                 testModeConfig.classList.remove('hidden');
-                signInBtn.textContent = 'Test Sign In';
-                signInBtn.classList.remove('bg-white', 'text-blue-700', 'hover:bg-blue-50');
-                signInBtn.classList.add('bg-orange-500', 'text-white', 'hover:bg-orange-600');
+                signInBtn.innerHTML = msLogoHtml + ' Test Sign In';
+                signInBtn.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
+                signInBtn.style.color = '#fff';
             } else {
                 label.textContent = 'SharePoint';
                 label.classList.remove('text-orange-700');
                 label.classList.add('text-blue-700');
                 sharepointConfig.classList.remove('hidden');
                 testModeConfig.classList.add('hidden');
-                signInBtn.textContent = 'Sign in with Microsoft';
-                signInBtn.classList.remove('bg-orange-500', 'text-white', 'hover:bg-orange-600');
-                signInBtn.classList.add('bg-white', 'text-blue-700', 'hover:bg-blue-50');
+                signInBtn.innerHTML = msLogoHtml + ' Sign in with Microsoft';
+                signInBtn.style.background = '';
+                signInBtn.style.color = '';
             }
 
             localStorage.setItem('testMode', testMode);
@@ -3853,7 +4137,7 @@
                     const inactiveTime = Date.now() - lastActivityTime;
                     if (inactiveTime > SESSION_TIMEOUT_MS) {
                         console.log('⏰ Session timeout due to inactivity');
-                        showToast('Your session has expired due to inactivity. Please sign in again.', 'warning', 6000);
+                        showToast('Your session has expired due to inactivity. Please sign in again.', 'warning', 0);
                         signOut();
                     }
                 }

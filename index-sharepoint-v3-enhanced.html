@@ -381,6 +381,12 @@
             color: #fff;
         }
 
+        .timeline-dot.scheduled {
+            background: #dbeafe;
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
         .timeline-label {
             margin-top: 8px;
             font-size: 11px;
@@ -774,12 +780,10 @@
                 <div class="max-w-2xl">
                     <div class="mb-8">
                         <label class="block text-gray-700 font-semibold mb-3 text-lg">Staff ID</label>
-                        <div class="flex gap-3">
-                            <input type="text" id="cadetStaffId" class="flex-1 px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all text-lg" placeholder="Enter your Staff ID">
-                            <button id="loadCadetBtn" class="btn-primary px-8 py-3 bg-[#00205B] text-white rounded-xl font-semibold hover:bg-[#001540] shadow-md hover:shadow-lg transition-all">
-                                Load Info
-                            </button>
-                        </div>
+                        <input type="text" id="cadetStaffId" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all text-lg mb-3" placeholder="Enter your Staff ID">
+                        <button id="loadCadetBtn" class="btn-primary w-full sm:w-auto px-8 py-3 bg-[#00205B] text-white rounded-xl font-semibold hover:bg-[#001540] shadow-md hover:shadow-lg transition-all">
+                            Load Info
+                        </button>
                     </div>
 
                     <div id="cadetFormSection" class="hidden">
@@ -1492,6 +1496,32 @@
                 .replace(/'/g, '&#039;');
         }
 
+        // ==================== DATE VALIDATION HELPERS ====================
+        // Check if a date string represents a date that is today or in the past
+        function isDatePastOrToday(dateStr) {
+            if (!dateStr || dateStr.trim() === '') return false;
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            return new Date(dateStr) <= today;
+        }
+
+        // Check if a date string represents a future date
+        function isFutureDate(dateStr) {
+            if (!dateStr || dateStr.trim() === '') return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return new Date(dateStr) > today;
+        }
+
+        // Set the max attribute to today's date on date input elements
+        function setDateInputMaxToday(inputIds) {
+            const today = new Date().toISOString().split('T')[0];
+            inputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.setAttribute('max', today);
+            });
+        }
+
         // ==================== TOAST NOTIFICATIONS ====================
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toastContainer');
@@ -1738,6 +1768,9 @@
                 document.getElementById('appShell').classList.remove('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
             }, 300);
+
+            // Set max date to today for User Portal date inputs (block future dates)
+            setDateInputMaxToday(['cadetFirstIOE', 'cadetFunctional', 'cadetLRC', 'cadetInterview', 'cadetCommandCheck']);
         }
 
         // ==================== TEST MODE FUNCTIONS ====================
@@ -2535,13 +2568,34 @@
 
             const container = document.getElementById('timelineContent');
             container.innerHTML = milestones.map(m => {
-                const done = m.date && m.date.trim() !== '';
+                const hasDate = m.date && m.date.trim() !== '';
+                const isPast = isDatePastOrToday(m.date);
+                const isScheduled = hasDate && !isPast;
+
+                // Determine icon and styling based on date state
+                let dotClass = '';
+                let icon = '\u25CB'; // Empty circle (pending)
+                let labelStyle = '';
+                let dateDisplay = '-';
+
+                if (isPast) {
+                    dotClass = 'completed';
+                    icon = '\u2714'; // Check mark (completed)
+                    labelStyle = 'color:#16a34a';
+                    dateDisplay = formatDateDisplay(m.date);
+                } else if (isScheduled) {
+                    dotClass = 'scheduled';
+                    icon = '\u25F7'; // Clock symbol (scheduled)
+                    labelStyle = 'color:#2563eb';
+                    dateDisplay = formatDateDisplay(m.date) + ' (scheduled)';
+                }
+
                 return `<div class="timeline-step">
-                    <div class="timeline-dot ${done ? 'completed' : ''}">
-                        ${done ? '\u2714' : '\u25CB'}
+                    <div class="timeline-dot ${dotClass}">
+                        ${icon}
                     </div>
-                    <div class="timeline-label" style="${done ? 'color:#16a34a' : ''}">${escapeHtml(m.label)}</div>
-                    <div class="timeline-date">${done ? formatDateDisplay(m.date) : '-'}</div>
+                    <div class="timeline-label" style="${labelStyle}">${escapeHtml(m.label)}</div>
+                    <div class="timeline-date">${dateDisplay}</div>
                 </div>`;
             }).join('');
 
@@ -2591,6 +2645,14 @@
                 sectorsFlown: newSectors,
                 sectorHistory: sectorHistory
             };
+
+            // User Portal: Block future dates (trainees can only report actual completions)
+            const dateFields = ['firstIOEDate', 'functionalDate', 'lrcDate', 'interviewDate', 'commandCheckDate'];
+            const futureDate = dateFields.find(f => isFutureDate(updatedData[f]));
+            if (futureDate) {
+                showToast('Dates cannot be in the future. Please enter actual completion dates only.', 'error');
+                return;
+            }
 
             const success = await saveTraineeToSharePoint(updatedData, true);
 
@@ -2955,11 +3017,13 @@
             if (cadet.manualHighlight === 'green') return 'completed';
             if (cadet.manualHighlight === 'red') return 'special';
 
-            const hasFirstIOE = cadet.firstIOEDate && cadet.firstIOEDate.trim() !== '';
-            const hasFunctional = cadet.functionalDate && cadet.functionalDate.trim() !== '';
-            const hasCommandCheck = cadet.commandCheckDate && cadet.commandCheckDate.trim() !== '';
-            const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
-            const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
+            // Only count dates that are today or in the past for status calculation
+            // Future dates are treated as "scheduled" and don't affect status
+            const hasFirstIOE = isDatePastOrToday(cadet.firstIOEDate);
+            const hasFunctional = isDatePastOrToday(cadet.functionalDate);
+            const hasCommandCheck = isDatePastOrToday(cadet.commandCheckDate);
+            const hasLRC = isDatePastOrToday(cadet.lrcDate);
+            const hasInterview = isDatePastOrToday(cadet.interviewDate);
 
             // Conversion courses (A330/A350)
             if (isConversionFleet(cadet.fleet)) {
@@ -3267,6 +3331,13 @@
             if (!traineeData.batch || !traineeData.staffId || !traineeData.name) {
                 showToast('Please fill in all required fields (Batch, Staff ID, Name)', 'warning');
                 return;
+            }
+
+            // Admin Panel: Warn about future dates (allowed but won't affect status until date passes)
+            const futureFields = ['firstIOEDate', 'functionalDate', 'lrcDate', 'interviewDate', 'commandCheckDate']
+                .filter(f => isFutureDate(traineeData[f]));
+            if (futureFields.length > 0) {
+                showToast('Note: Some dates are in the future. Status will update when dates pass.', 'info', 5000);
             }
 
             const isEdit = editingIndex !== null;

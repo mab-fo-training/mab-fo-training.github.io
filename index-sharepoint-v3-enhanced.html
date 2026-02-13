@@ -178,7 +178,7 @@
         }
 
         input:focus, select:focus, textarea:focus {
-            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+            box-shadow: 0 0 0 3px rgba(0, 32, 91, 0.15);
         }
 
         .sortable-header {
@@ -203,18 +203,18 @@
         .sortable-header.sort-asc::after {
             content: '↑';
             opacity: 1;
-            color: #0078D4;
+            color: #C8A951;
         }
 
         .sortable-header.sort-desc::after {
             content: '↓';
             opacity: 1;
-            color: #0078D4;
+            color: #C8A951;
         }
 
         .config-panel {
             background: #f8f9fa;
-            border: 2px solid #0078D4;
+            border: 2px solid #00205B;
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
@@ -403,6 +403,7 @@
         :root {
             --mab-navy: #00205B;
             --mab-navy-dark: #001540;
+            --mab-navy-light: #1a3a7a;
             --mab-red: #CC0000;
             --mab-gold: #C8A951;
             --mab-gold-light: #D4B96A;
@@ -572,9 +573,14 @@
             background: linear-gradient(135deg, var(--mab-navy) 0%, var(--mab-navy-dark) 100%);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
         }
+
+        /* Modal header gradient - uses MAB Navy */
+        .gradient-bg {
+            background: var(--mab-navy);
+        }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen overflow-x-hidden">
+<body class="bg-white min-h-screen overflow-x-hidden">
 
     <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
@@ -749,10 +755,10 @@
         <div id="mainApp" class="hidden">
             <div class="bg-white rounded-xl shadow-lg p-2 mb-6 animate-fade-in">
                 <div class="flex gap-2">
-                    <button id="cadetViewBtn" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg">
+                    <button id="cadetViewBtn" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-[#00205B] text-white shadow-md hover:shadow-lg">
                         User Portal
                     </button>
-                    <button id="adminViewBtn" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    <button id="adminViewBtn" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-white text-[#00205B] border border-[#00205B] hover:bg-gray-50">
                         Admin Panel
                     </button>
                 </div>
@@ -761,7 +767,7 @@
             <!-- USER PORTAL (Cadet View) -->
             <div id="cadetView" class="bg-white rounded-2xl shadow-xl p-6 md:p-8 animate-fade-in">
                 <div class="flex items-center gap-3 mb-6">
-                    <div class="w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-400 rounded-full"></div>
+                    <div class="w-1 h-8 bg-[#00205B] rounded-full"></div>
                     <h2 class="text-3xl font-bold text-gray-800">Self-Service Portal</h2>
                 </div>
 
@@ -769,23 +775,23 @@
                     <div class="mb-8">
                         <label class="block text-gray-700 font-semibold mb-3 text-lg">Staff ID</label>
                         <div class="flex gap-3">
-                            <input type="text" id="cadetStaffId" class="flex-1 px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg" placeholder="Enter your Staff ID">
-                            <button id="loadCadetBtn" class="btn-primary px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all">
+                            <input type="text" id="cadetStaffId" class="flex-1 px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all text-lg" placeholder="Enter your Staff ID">
+                            <button id="loadCadetBtn" class="btn-primary px-8 py-3 bg-[#00205B] text-white rounded-xl font-semibold hover:bg-[#001540] shadow-md hover:shadow-lg transition-all">
                                 Load Info
                             </button>
                         </div>
                     </div>
 
                     <div id="cadetFormSection" class="hidden">
-                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-5 rounded-xl mb-8 shadow-sm">
+                        <div class="bg-white border-l-4 border-[#00205B] p-5 rounded-xl mb-8 shadow-sm">
                             <div class="flex items-start gap-3">
                                 <div class="text-2xl">ℹ️</div>
                                 <div>
-                                    <p class="text-sm text-blue-900 font-medium mb-1">Important Notes</p>
-                                    <p class="text-sm text-blue-800">• Rank field locks after first selection</p>
-                                    <p class="text-sm text-blue-800">• Date fields use calendar picker</p>
-                                    <p class="text-sm text-blue-800">• All fields can be updated anytime</p>
-                                    <p class="text-sm text-blue-800">• Sectors field is optional</p>
+                                    <p class="text-sm text-gray-800 font-medium mb-1">Important Notes</p>
+                                    <p class="text-sm text-gray-700">• Rank field locks after first selection</p>
+                                    <p class="text-sm text-gray-700">• Date fields use calendar picker</p>
+                                    <p class="text-sm text-gray-700">• All fields can be updated anytime</p>
+                                    <p class="text-sm text-gray-700">• Sectors field is optional</p>
                                 </div>
                             </div>
                         </div>
@@ -793,7 +799,7 @@
                         <div class="space-y-5 mb-8">
                             <div>
                                 <label class="block text-gray-700 font-semibold mb-2">Rank</label>
-                                <select id="cadetRank" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                <select id="cadetRank" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
                                     <option value="">Select your rank...</option>
                                     <option value="CADET">CADET</option>
                                     <option value="SO">SO</option>
@@ -815,39 +821,39 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-gray-700 font-semibold mb-2">First IOE Date</label>
-                                    <input type="date" id="cadetFirstIOE" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                    <input type="date" id="cadetFirstIOE" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 font-semibold mb-2">Functional Date</label>
-                                    <input type="date" id="cadetFunctional" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                    <input type="date" id="cadetFunctional" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 font-semibold mb-2">LRC Date</label>
-                                    <input type="date" id="cadetLRC" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                    <input type="date" id="cadetLRC" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 font-semibold mb-2">Interview Date</label>
-                                    <input type="date" id="cadetInterview" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                    <input type="date" id="cadetInterview" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
                                 </div>
                                 <div id="cadetCommandCheckDateContainer" class="hidden">
                                     <label class="block text-gray-700 font-semibold mb-2">Command Check Date <span class="text-xs text-gray-500">(CUC only)</span></label>
-                                    <input type="date" id="cadetCommandCheck" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                    <input type="date" id="cadetCommandCheck" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
                                 </div>
                             </div>
 
                             <div>
                                 <label class="block text-gray-700 font-semibold mb-2">Total Sectors Flown (Optional)</label>
-                                <input type="number" id="newSectorCount" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg font-bold" placeholder="Enter total sector count" min="0">
-                                <div id="currentSectorsDisplay" class="hidden mt-2 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
-                                    <p class="text-sm text-blue-900">
+                                <input type="number" id="newSectorCount" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all text-lg font-bold" placeholder="Enter total sector count" min="0">
+                                <div id="currentSectorsDisplay" class="hidden mt-2 p-3 bg-white border-l-4 border-[#00205B] rounded shadow-sm">
+                                    <p class="text-sm text-gray-800">
                                         <span class="font-bold">Current sectors:</span>
-                                        <span id="currentSectorsValue" class="text-lg font-black text-blue-700"></span>
+                                        <span id="currentSectorsValue" class="text-lg font-black text-[#00205B]"></span>
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        <button id="updateCadetBtn" class="btn-primary w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all">
+                        <button id="updateCadetBtn" class="btn-primary w-full bg-[#00205B] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#001540] shadow-lg hover:shadow-xl transition-all">
                             Save All Updates
                         </button>
 
@@ -856,10 +862,10 @@
                         <!-- Progress Timeline -->
                         <div id="progressTimeline" class="mt-8 hidden">
                             <div class="flex items-center gap-3 mb-4">
-                                <div class="w-1 h-6 bg-gradient-to-b from-blue-600 to-blue-400 rounded-full"></div>
+                                <div class="w-1 h-6 bg-[#00205B] rounded-full"></div>
                                 <h3 class="text-xl font-bold text-gray-800">Training Progress</h3>
                             </div>
-                            <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
+                            <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                                 <div id="timelineContent" class="timeline-stepper"></div>
                             </div>
                         </div>
@@ -867,23 +873,23 @@
                         <!-- Advanced Analytics Section -->
                         <div id="analyticsSection" class="mt-10 hidden">
                             <div class="flex items-center gap-3 mb-6">
-                                <div class="w-1 h-8 bg-gradient-to-b from-purple-600 to-purple-400 rounded-full"></div>
+                                <div class="w-1 h-8 bg-[#00205B] rounded-full"></div>
                                 <h3 class="text-2xl font-bold text-gray-800">Advanced Analytics</h3>
                             </div>
 
                             <!-- Quick Stats -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200 shadow-sm">
-                                    <div class="text-sm text-blue-700 opacity-80 mb-1">Total Sectors</div>
-                                    <div class="text-3xl font-bold text-blue-900" id="userTotalSectors">0</div>
+                                <div class="bg-white rounded-xl p-6 border-l-4 border-[#00205B] shadow-sm">
+                                    <div class="text-sm text-gray-600 opacity-80 mb-1">Total Sectors</div>
+                                    <div class="text-3xl font-bold text-[#00205B]" id="userTotalSectors">0</div>
                                 </div>
-                                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200 shadow-sm">
-                                    <div class="text-sm text-green-700 opacity-80 mb-1">30-Day Average</div>
-                                    <div class="text-3xl font-bold text-green-900" id="user30DayAvg">0</div>
+                                <div class="bg-white rounded-xl p-6 border-l-4 border-[#00205B] shadow-sm">
+                                    <div class="text-sm text-gray-600 opacity-80 mb-1">30-Day Average</div>
+                                    <div class="text-3xl font-bold text-[#00205B]" id="user30DayAvg">0</div>
                                 </div>
-                                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200 shadow-sm">
-                                    <div class="text-sm text-purple-700 opacity-80 mb-1">Weekly Rate</div>
-                                    <div class="text-3xl font-bold text-purple-900" id="userWeeklyRate">0</div>
+                                <div class="bg-white rounded-xl p-6 border-l-4 border-[#00205B] shadow-sm">
+                                    <div class="text-sm text-gray-600 opacity-80 mb-1">Weekly Rate</div>
+                                    <div class="text-3xl font-bold text-[#00205B]" id="userWeeklyRate">0</div>
                                 </div>
                             </div>
 
@@ -904,20 +910,20 @@
                             </div>
 
                             <!-- Detailed Metrics -->
-                            <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
+                            <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
                                 <h4 class="text-lg font-bold text-gray-800 mb-4">Detailed Metrics</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <div class="text-sm text-gray-600 mb-1">Last 7 Days</div>
-                                        <div class="text-2xl font-bold text-blue-700" id="userLast7Days">0</div>
+                                        <div class="text-2xl font-bold text-[#00205B]" id="userLast7Days">0</div>
                                     </div>
                                     <div>
                                         <div class="text-sm text-gray-600 mb-1">Last 30 Days</div>
-                                        <div class="text-2xl font-bold text-blue-700" id="userLast30Days">0</div>
+                                        <div class="text-2xl font-bold text-[#00205B]" id="userLast30Days">0</div>
                                     </div>
                                     <div>
                                         <div class="text-sm text-gray-600 mb-1">Batch Average</div>
-                                        <div class="text-2xl font-bold text-purple-700" id="userBatchAverage">0</div>
+                                        <div class="text-2xl font-bold text-[#00205B]" id="userBatchAverage">0</div>
                                     </div>
                                     <div>
                                         <div class="text-sm text-gray-600 mb-1">Difference</div>
@@ -935,7 +941,7 @@
                 <!-- Admin Login -->
                 <div id="adminLogin" class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto animate-slide-in">
                     <div class="text-center mb-8">
-                        <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <div class="w-20 h-20 bg-[#00205B] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                             </svg>
@@ -945,9 +951,9 @@
 
                     <div class="mb-6">
                         <label class="block text-gray-700 font-semibold mb-3">Password</label>
-                        <input type="password" id="adminPassword" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all" placeholder="Enter admin password">
+                        <input type="password" id="adminPassword" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all" placeholder="Enter admin password">
                     </div>
-                    <button id="adminLoginBtn" class="btn-primary w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all">
+                    <button id="adminLoginBtn" class="btn-primary w-full bg-gradient-to-r from-[#C8A951] to-[#D4B96A] text-[#00205B] py-4 rounded-xl font-bold text-lg hover:from-[#D4B96A] hover:to-[#E0C57A] shadow-lg hover:shadow-xl transition-all">
                         Verify Access
                     </button>
                     <p id="adminCheckEmail" class="hidden"></p>
@@ -959,31 +965,31 @@
                         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
                             <h2 class="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
                             <div class="flex flex-wrap gap-3">
-                                <button id="refreshDataBtn" class="btn-primary bg-cyan-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-cyan-700 shadow-md">
+                                <button id="refreshDataBtn" class="btn-primary bg-[#0891B2] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#0E7490] shadow-md transition-all">
                                     Refresh
                                 </button>
-                                <button id="viewAnalyticsBtn" class="btn-primary bg-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-purple-700 shadow-md">
+                                <button id="viewAnalyticsBtn" class="btn-primary bg-[#7C3AED] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#6D28D9] shadow-md transition-all">
                                     Analytics
                                 </button>
-                                <button id="viewHistoryBtn" class="btn-primary bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 shadow-md">
+                                <button id="viewHistoryBtn" class="btn-primary bg-[#4F46E5] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#4338CA] shadow-md transition-all">
                                     History
                                 </button>
-                                <button id="exportExcelBtn" class="btn-primary bg-green-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-green-700 shadow-md">
+                                <button id="exportExcelBtn" class="btn-primary bg-[#059669] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#047857] shadow-md transition-all">
                                     Export Excel
                                 </button>
-                                <button id="exportPowerBIBtn" class="btn-primary bg-orange-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-orange-700 shadow-md">
+                                <button id="exportPowerBIBtn" class="btn-primary bg-[#EA580C] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#C2410C] shadow-md transition-all">
                                     Export (Power BI)
                                 </button>
-                                <button id="addTraineeBtn" class="btn-primary bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-700 shadow-md">
+                                <button id="addTraineeBtn" class="btn-primary bg-[#00205B] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#001540] shadow-md transition-all">
                                     + Add Trainee
                                 </button>
-                                <button id="bulkImportBtn" class="btn-primary bg-teal-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-teal-700 shadow-md" title="Import multiple trainees from Excel">
+                                <button id="bulkImportBtn" class="btn-primary bg-[#0D9488] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#0F766E] shadow-md transition-all" title="Import multiple trainees from Excel">
                                     Bulk Import
                                 </button>
-                                <button id="pdfImportBtn" class="btn-primary bg-rose-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-rose-700 shadow-md" title="Import trainees from Training Joining Instructions PDF">
+                                <button id="pdfImportBtn" class="btn-primary bg-[#E11D48] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#BE123C] shadow-md transition-all" title="Import trainees from Training Joining Instructions PDF">
                                     Import PDF
                                 </button>
-                                <button id="testHighlightsBtn" class="btn-primary bg-yellow-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-yellow-700 shadow-md" title="Test highlight visibility">
+                                <button id="testHighlightsBtn" class="btn-primary bg-[#D97706] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#B45309] shadow-md transition-all" title="Test highlight visibility">
                                     Test Colors
                                 </button>
                             </div>
@@ -1000,11 +1006,11 @@
 
                         <!-- Statistics Cards -->
                         <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                            <div class="card bg-blue-50 rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
                                 <div class="flex justify-between items-center">
                                     <div>
-                                        <p class="text-gray-600 text-sm font-medium">TOTAL TRAINEES</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="totalCount">0</p>
+                                        <p class="text-blue-800 text-sm font-medium">TOTAL TRAINEES</p>
+                                        <p class="text-3xl font-bold text-blue-800 mt-2" id="totalCount">0</p>
                                     </div>
                                     <div class="bg-blue-100 p-3 rounded-full">
                                         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -1012,25 +1018,25 @@
                                 </div>
                             </div>
 
-                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+                            <div class="card bg-amber-100 rounded-xl shadow-lg p-6 border-l-4 border-amber-500">
                                 <div class="flex justify-between items-center">
                                     <div>
-                                        <p class="text-gray-600 text-sm font-medium">IN PROGRESS</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="inProgressCount">0</p>
+                                        <p class="text-amber-800 text-sm font-medium">IN PROGRESS</p>
+                                        <p class="text-3xl font-bold text-amber-800 mt-2" id="inProgressCount">0</p>
                                     </div>
-                                    <div class="bg-yellow-100 p-3 rounded-full">
+                                    <div class="bg-amber-200 p-3 rounded-full">
                                         <span class="text-2xl">⏳</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="card bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                            <div class="card bg-green-100 rounded-xl shadow-lg p-6 border-l-4 border-green-500">
                                 <div class="flex justify-between items-center">
                                     <div>
-                                        <p class="text-gray-600 text-sm font-medium">COMPLETED</p>
-                                        <p class="text-3xl font-bold text-gray-800 mt-2" id="completedCount">0</p>
+                                        <p class="text-green-800 text-sm font-medium">COMPLETED</p>
+                                        <p class="text-3xl font-bold text-green-800 mt-2" id="completedCount">0</p>
                                     </div>
-                                    <div class="bg-green-100 p-3 rounded-full">
+                                    <div class="bg-green-200 p-3 rounded-full">
                                         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                         </svg>
@@ -1040,33 +1046,33 @@
                         </div>
 
                         <!-- Filters -->
-                        <div class="mb-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+                        <div class="mb-6 p-6 bg-white rounded-xl border border-gray-200">
                             <h3 class="text-lg font-bold text-gray-800 mb-4">Filters</h3>
 
                             <div class="mb-4">
-                                <input type="text" id="searchInput" placeholder="Search by name or staff ID..." class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                <input type="text" id="searchInput" placeholder="Search by name or staff ID..." class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                                 <div>
-                                    <select id="yearFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                    <select id="yearFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
                                         <option value="all">All Years</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <select id="batchFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                    <select id="batchFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
                                         <option value="all">All Batches</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <select id="trainingTypeFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                    <select id="trainingTypeFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
                                         <option value="all">All Types</option>
                                         <option value="cuc">CUC</option>
                                         <option value="cadet">CADET</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <select id="fleetFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                    <select id="fleetFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
                                         <option value="all">All Fleets</option>
                                         <option value="B738">B738</option>
                                         <option value="B738M">B738M</option>
@@ -1075,7 +1081,7 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <select id="rankFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                    <select id="rankFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
                                         <option value="all">All Ranks</option>
                                         <option value="CADET">CADET</option>
                                         <option value="SO">SO</option>
@@ -1084,7 +1090,7 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <select id="statusFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-semibold">
+                                    <select id="statusFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
                                         <option value="all">All Status</option>
                                         <option value="completed">Completed</option>
                                         <option value="functional">Functional</option>
@@ -1111,7 +1117,7 @@
                         <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                             <div class="overflow-x-auto" style="max-height: 600px; overflow-y: auto;">
                                 <table class="data-table w-full" style="position: relative;">
-                                    <thead class="bg-gradient-to-r from-blue-600 to-blue-700 text-white" style="position: sticky; top: 0; z-index: 20;">
+                                    <thead class="bg-[#00205B] text-white" style="position: sticky; top: 0; z-index: 20;">
                                         <tr>
                                             <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="batch">BATCH</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="staffId">STAFF ID</th>
@@ -1126,7 +1132,7 @@
                                             <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="sectorsFlown">SECTORS</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold">LAST UPDATED</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold">REMARKS</th>
-                                            <th class="px-4 py-3 text-center text-sm font-semibold sticky right-0 bg-blue-700 shadow-md">ACTIONS</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold sticky right-0 bg-[#00205B] shadow-md">ACTIONS</th>
                                         </tr>
                                     </thead>
                                     <tbody id="dataTableBody">
@@ -1153,7 +1159,7 @@
 
                         <div class="mb-6">
                             <label class="block text-gray-700 font-semibold mb-2">Filter by Batch:</label>
-                            <select id="analyticsBatchFilter" class="w-full md:w-64 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-semibold">
+                            <select id="analyticsBatchFilter" class="w-full md:w-64 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
                                 <option value="all">All Batches</option>
                             </select>
                         </div>
@@ -1262,15 +1268,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Batch *</label>
-                        <input type="text" id="modalBatch" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <input type="text" id="modalBatch" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Staff ID *</label>
-                        <input type="text" id="modalStaffId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <input type="text" id="modalStaffId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Rank</label>
-                        <select id="modalRank" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="modalRank" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
                             <option value="">Select Rank</option>
                             <option value="CADET">CADET</option>
                             <option value="SO">SO</option>
@@ -1280,7 +1286,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Fleet</label>
-                        <select id="modalFleet" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="modalFleet" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
                             <option value="">Select Fleet</option>
                             <option value="B738">B738</option>
                             <option value="B738M">B738M</option>
@@ -1290,35 +1296,35 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
-                        <input type="text" id="modalName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <input type="text" id="modalName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">First IOE Date</label>
-                        <input type="date" id="modalFirstIOE" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="date" id="modalFirstIOE" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Functional Date</label>
-                        <input type="date" id="modalFunctional" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="date" id="modalFunctional" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">LRC Date</label>
-                        <input type="date" id="modalLRC" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="date" id="modalLRC" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Interview Date</label>
-                        <input type="date" id="modalInterview" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="date" id="modalInterview" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
                     </div>
                     <div id="modalCommandCheckContainer" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Command Check Date <span class="text-xs text-gray-500">(CUC only)</span></label>
-                        <input type="date" id="modalCommandCheck" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="date" id="modalCommandCheck" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Sectors Flown</label>
-                        <input type="number" id="modalSectors" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" min="0">
+                        <input type="number" id="modalSectors" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" min="0">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Manual Highlight</label>
-                        <select id="modalHighlight" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="modalHighlight" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
                             <option value="">None (Auto)</option>
                             <option value="blue">Functional</option>
                             <option value="green">Completed</option>
@@ -1327,7 +1333,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
-                        <textarea id="modalRemarks" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        <textarea id="modalRemarks" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]"></textarea>
                     </div>
                 </div>
 
@@ -1335,7 +1341,7 @@
                     <button id="cancelModalBtn" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
                         Cancel
                     </button>
-                    <button id="saveModalBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
+                    <button id="saveModalBtn" class="bg-[#00205B] text-white px-6 py-2 rounded-lg hover:bg-[#001540] font-medium">
                         Save to SharePoint
                     </button>
                 </div>
@@ -1366,7 +1372,7 @@
 
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Select Excel File</label>
-                    <input type="file" id="bulkImportFile" accept=".xlsx,.xls" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <input type="file" id="bulkImportFile" accept=".xlsx,.xls" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B]">
                 </div>
 
                 <div id="bulkImportPreview" class="hidden">
@@ -1377,7 +1383,7 @@
                 </div>
 
                 <div class="flex gap-3 pt-4">
-                    <button id="processBulkImportBtn" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <button id="processBulkImportBtn" class="flex-1 bg-[#00205B] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#001540] transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         Import Trainees
                     </button>
                     <button id="cancelBulkImportBtn" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all">
@@ -1408,7 +1414,7 @@
 
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Select PDF File</label>
-                    <input type="file" id="pdfImportFile" accept=".pdf" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
+                    <input type="file" id="pdfImportFile" accept=".pdf" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B]">
                 </div>
 
                 <div id="pdfProcessingStatus" class="hidden">
@@ -1443,7 +1449,7 @@
                 </div>
 
                 <div class="flex gap-3 pt-4">
-                    <button id="processPdfImportBtn" class="flex-1 bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <button id="processPdfImportBtn" class="flex-1 bg-[#00205B] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#001540] transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         Import <span id="pdfImportCount">0</span> Trainees
                     </button>
                     <button id="cancelPdfImportBtn" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all">
@@ -3459,16 +3465,16 @@
             currentView = 'cadet';
             document.getElementById('cadetView').classList.remove('hidden');
             document.getElementById('adminView').classList.add('hidden');
-            document.getElementById('cadetViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg';
-            document.getElementById('adminViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200';
+            document.getElementById('cadetViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-[#00205B] text-white shadow-md hover:shadow-lg';
+            document.getElementById('adminViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-white text-[#00205B] border border-[#00205B] hover:bg-gray-50';
         }
 
         function switchToAdminView() {
             currentView = 'admin';
             document.getElementById('cadetView').classList.add('hidden');
             document.getElementById('adminView').classList.remove('hidden');
-            document.getElementById('adminViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md hover:shadow-lg';
-            document.getElementById('cadetViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200';
+            document.getElementById('adminViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-[#00205B] text-white shadow-md hover:shadow-lg';
+            document.getElementById('cadetViewBtn').className = 'flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-white text-[#00205B] border border-[#00205B] hover:bg-gray-50';
 
             // Show login if not authenticated
             if (!isAdminAuth) {

@@ -3593,8 +3593,8 @@
         // ==================== YEAR & TRAINING TYPE FILTERS ====================
         function getYearFromBatch(batchName) {
             if (!batchName) return null;
-            // Match "24/05" or "25/03 CUC" (2-digit year at start followed by /)
-            const shortMatch = batchName.match(/^(\d{2})\//);
+            // Match "24/05", "25/03 CUC", or "A330-25/07" format (2-digit year followed by /)
+            const shortMatch = batchName.match(/(\d{2})\/\d{2}/);
             if (shortMatch) {
                 return 2000 + parseInt(shortMatch[1]);
             }
@@ -3616,6 +3616,31 @@
             if (!fleet) return false;
             const f = fleet.toUpperCase();
             return f === 'A330' || f === 'A350';
+        }
+
+        // Apply or remove fleet prefix from batch name based on fleet type
+        function applyFleetBatchPrefix(fleet, batch) {
+            if (!batch) return batch;
+            const trimmedBatch = batch.trim();
+
+            // If widebody fleet (A330/A350), add prefix if not already present
+            if (fleet === 'A330' || fleet === 'A350') {
+                if (!trimmedBatch.startsWith('A3')) {
+                    return fleet + '-' + trimmedBatch;
+                }
+                // If already has a different widebody prefix, replace it
+                const prefixMatch = trimmedBatch.match(/^A3\d{2}-(.+)$/);
+                if (prefixMatch && !trimmedBatch.startsWith(fleet)) {
+                    return fleet + '-' + prefixMatch[1];
+                }
+            } else {
+                // If narrowbody fleet, remove widebody prefix if present
+                const prefixMatch = trimmedBatch.match(/^A3\d{2}-(.+)$/);
+                if (prefixMatch) {
+                    return prefixMatch[1];
+                }
+            }
+            return trimmedBatch;
         }
 
         function updateYearFilter() {
@@ -3874,13 +3899,16 @@
                     return;
                 }
 
+                const parsedFleet = extractedData.fleet || 'B738';
+                const parsedBatch = applyFleetBatchPrefix(parsedFleet, extractedData.batch);
+
                 pdfImportData = extractedData.trainees.map((trainee, idx) => ({
                     id: idx,
-                    batch: extractedData.batch,
+                    batch: parsedBatch,
                     staffId: trainee.staffId,
                     name: trainee.name,
                     rank: trainee.rank || 'CADET',
-                    fleet: extractedData.fleet || 'B738',
+                    fleet: parsedFleet,
                     sectorsFlown: 0,
                     firstIOEDate: '',
                     functionalDate: '',
@@ -4020,11 +4048,12 @@
                         <td class="px-3 py-2">
                             <input type="text" value="${escapeHtml(trainee.batch)}"
                                    class="w-full px-2 py-1 border rounded text-sm"
+                                   data-field="batch"
                                    onchange="pdfImportData[${idx}].batch = this.value.toUpperCase()">
                         </td>
                         <td class="px-3 py-2">
                             <select class="w-full px-2 py-1 border rounded text-sm"
-                                    onchange="pdfImportData[${idx}].fleet = this.value">
+                                    onchange="updatePdfTraineeFleet(${idx}, this.value)">
                                 <option value="" ${!trainee.fleet ? 'selected' : ''}>-</option>
                                 <option value="B738" ${trainee.fleet === 'B738' ? 'selected' : ''}>B738</option>
                                 <option value="B738M" ${trainee.fleet === 'B738M' ? 'selected' : ''}>B738M</option>
@@ -4068,6 +4097,18 @@
             if (pdfImportData.length === 0) {
                 document.getElementById('pdfImportPreview').classList.add('hidden');
                 document.getElementById('processPdfImportBtn').disabled = true;
+            }
+        }
+
+        function updatePdfTraineeFleet(idx, fleet) {
+            pdfImportData[idx].fleet = fleet;
+            // Apply fleet prefix to batch
+            const newBatch = applyFleetBatchPrefix(fleet, pdfImportData[idx].batch);
+            pdfImportData[idx].batch = newBatch;
+            // Update the batch input field in the DOM
+            const batchInput = document.querySelector(`#pdfImportPreviewContent tr:nth-child(${idx + 1}) input[data-field="batch"]`);
+            if (batchInput) {
+                batchInput.value = newBatch;
             }
         }
 
@@ -4295,6 +4336,16 @@
             // Modal buttons
             document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
             document.getElementById('saveModalBtn').addEventListener('click', saveModal);
+
+            // Auto-prefix batch name for widebody fleets (A330/A350)
+            document.getElementById('modalFleet').addEventListener('change', function() {
+                const fleet = this.value;
+                const batchInput = document.getElementById('modalBatch');
+                const currentBatch = batchInput.value.trim();
+                if (currentBatch) {
+                    batchInput.value = applyFleetBatchPrefix(fleet, currentBatch);
+                }
+            });
 
             // Filters
             document.getElementById('searchInput').addEventListener('input', (e) => {

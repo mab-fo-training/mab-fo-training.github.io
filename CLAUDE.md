@@ -113,6 +113,27 @@ User Browser → MSAL sign-in popup → Access token
 
 Manual highlight takes precedence over automatic status detection.
 
+### Batch Naming Convention
+
+Batch names are prefixed by fleet to segregate B737 and widebody (A330/A350) trainees:
+
+| Fleet | Format | Example |
+|-------|--------|---------|
+| B738/B738M | `YY/MM` | `25/07` |
+| B738/B738M CUC | `YY/MM CUC` | `25/07 CUC` |
+| A330 | `A330-YY/MM` | `A330-25/07` |
+| A350 | `A350-YY/MM` | `A350-25/07` |
+
+**Why prefixes?** B737 and widebody batches previously used identical names (e.g., `25/07`), causing them to appear together when filtering by batch. B737 batches remain unprefixed as they are the majority.
+
+**Auto-prefix behavior:**
+- Admin modal: Selecting A330/A350 fleet auto-prefixes the batch field
+- PDF import: Batch is auto-prefixed on parse if fleet is A330/A350
+- PDF import preview: Changing fleet dropdown updates batch prefix automatically
+- Switching to B738 removes widebody prefixes
+
+**Note:** No CUC batches exist for A330/A350 (conversion courses).
+
 ## Configuration
 
 ### Security Constants (hardcoded in HTML)
@@ -151,7 +172,8 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 - `renderTable()`: Renders filtered/sorted data to DOM
 - `getTraineeStatus()`: Determines status based on date completion and batch type
 - `isCUCBatch()`: Returns true if batch name contains "CUC"
-- `getYearFromBatch()`: Extracts year from batch names (`24/05`, `CUC-2024-01`, `2024-01`)
+- `getYearFromBatch()`: Extracts year from batch names (`24/05`, `A330-25/07`, `CUC-2024-01`, `2024-01`)
+- `applyFleetBatchPrefix()`: Adds/removes fleet prefix from batch name based on fleet type (A330/A350 get prefixed, B738 unprefixed)
 
 ### UX Functions
 - `showToast(message, type, duration)`: Non-blocking toast notifications (success/warning/error/info)

@@ -20,7 +20,7 @@ desktop.ini
 # Backup files
 *.bak
 *~
-secret.txt
+azure-ad-secret.key
 nul
 tmpclaude-*
 MAS Training Data.xlsx

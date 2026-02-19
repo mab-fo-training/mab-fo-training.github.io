@@ -10,11 +10,13 @@ This repository contains a **Training Progress Tracker** for managing flight tra
 - **~4,000 lines** - Full-featured production version
 - SharePoint REST API for data storage
 - MSAL.js for Microsoft 365 authentication (delegated)
-- Dual interface: User Portal + Admin Panel
+- Triple interface: User Portal + Admin Panel + Instructor Submit
 - Analytics dashboard, change history, PDF import, Excel export
 - Toast notifications (non-blocking) and loading spinner overlay
 - User Portal progress timeline (visual milestone stepper)
 - Sector history persistence via SharePoint column (JSON)
+- Instructor Submit view: iPad-optimized form for instructors to submit trainee progress
+- PWA support: manifest.json for iPad home screen install
 - Dedicated SharePoint Communication Site as backend
 
 **Common Technologies:**
@@ -92,6 +94,8 @@ User Browser → MSAL sign-in popup → Access token
 | `Last_Updated` | Date and time | |
 | `Manual_Highlight` | Choice: `blue`, `green`, `red` | |
 | `Sector_History` | Multiple lines of text | JSON array of sector change records |
+| `Last_Updated_By` | Single line of text | Email of user who last updated (auto-created by app) |
+| `Update_Source` | Single line of text | Source of update: `Instructor_Submit`, `Forms`, `Admin` (auto-created by app) |
 
 **Important**: Name is stored in `Title` (SharePoint built-in field), NOT a custom `Name` column. The code saves to `Title` and reads from `item.Title`.
 
@@ -145,6 +149,7 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 - `getListItemEntityType()`: Gets OData metadata for proper API calls
 - `testSharePointConnection()`: Validates site/list accessibility
 - `ensureSectorHistoryColumn()`: Checks/creates Sector_History column on first load
+- `ensureInstructorColumns()`: Checks/creates Last_Updated_By and Update_Source columns on first load
 
 ### Data Management
 - `filterCadets()`: Applies search, year, batch, rank, fleet, status, training type filters
@@ -157,6 +162,14 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 - `showToast(message, type, duration)`: Non-blocking toast notifications (success/warning/error/info)
 - `showLoading(message)` / `hideLoading()`: Full-screen loading spinner overlay
 - `renderProgressTimeline(cadet)`: Visual milestone stepper in User Portal
+
+### Instructor Submit Functions
+- `instructorLookupTrainee()`: Looks up trainee by Staff ID from `cadets[]` array
+- `instructorReviewSubmission()`: Validates form fields, shows confirmation summary
+- `instructorConfirmSubmission()`: Applies stage-specific updates to SharePoint (same mapping as Power Automate flow)
+- `instructorResetForm()`: Clears form and returns to Staff ID lookup step
+- `updateInstructorStageOptions()`: Shows/hides Command Check option based on batch type (CUC vs CPC)
+- `switchToInstructorView()`: View toggle for the Instructor Submit tab
 
 ### Error Handling
 - Save errors return the full SharePoint response body for debugging
@@ -173,6 +186,9 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 | `SETUP_GUIDE.md` | SharePoint/Azure AD setup instructions | |
 | `QUICK_REFERENCE.md` | End-user quick reference | |
 | `POWER_AUTOMATE_GUIDE.md` | Step-by-step Power Automate flow instructions | |
+| `INSTRUCTOR_IPAD_GUIDE.md` | iPad setup guide for instructors | |
+| `WHATSAPP_INTEGRATION_PROPOSAL.md` | WhatsApp/Twilio integration analysis & alternatives | Reference |
+| `docs/manifest.json` | PWA manifest for home screen install | **ACTIVE** |
 
 **Removed files** (no longer in repo):
 - `index.html`, `index-2.html` — Legacy Google Sheets versions, removed due to exposed API key
@@ -284,6 +300,53 @@ Form Submitted → Get response details → Get items (SharePoint lookup by Staf
 | Name part 1 (used in APCT emails) | `rbb051b394b394902b4d2c72cdb2197f5` |
 | Name part 2 (used in APCT emails) | `r5c5addf1886e4ba7a3858837f05544ec` |
 | Referral Reason(s) | `r02e9c5a816524d259d5703b5e1e05f36` |
+
+## Instructor Submit View
+
+### Purpose
+Allows 30+ instructors to submit trainee progress updates from iPads (post-flight). Runs **alongside** the existing Microsoft Forms + Power Automate flow — both channels write to the same `Training_Progress` list.
+
+### How It Works
+1. Instructor signs in via MSAL (same as admin/user portal)
+2. Enters trainee Staff ID → app looks up trainee from `cadets[]` array
+3. Fills in: Progression Stage, Total Sectors, Date
+4. Reviews confirmation summary → submits
+5. App writes directly to SharePoint via REST API (no Power Automate middleman)
+6. Appends `[Via Instructor Submit - INSTRUCTOR NAME - DATE]` to Remarks
+7. Sets `Last_Updated_By` = instructor email, `Update_Source` = "Instructor_Submit"
+
+### Stage → SharePoint Field Mapping (identical to Power Automate flow)
+| Stage | SharePoint Update |
+|-------|-------------------|
+| Cleared Functional | `Functional_Date` + `Sectors_Flown` |
+| LRC COMPLETED | `LRC_Date` + `Sectors_Flown` |
+| Command Check COMPLETED | `Command_Check_Date` + `Sectors_Flown` |
+| Cleared for LRC | Append to `Remarks` + `Sectors_Flown` |
+| Cleared for Command Check | Append to `Remarks` + `Sectors_Flown` |
+| REFERRED TO SIP | `Manual_Highlight: red` + Append to `Remarks` + `Sectors_Flown` |
+
+### iPad PWA
+- `docs/manifest.json` enables "Add to Home Screen" on iPads
+- Opens full-screen (no Safari chrome) with MAB navy theme
+- Existing `apple-mobile-web-app-capable` meta tags support standalone mode
+- See `INSTRUCTOR_IPAD_GUIDE.md` for instructor setup steps
+
+### Design
+- Amber/gold tab color (distinct from User Portal blue and Admin green)
+- All inputs `min-h-[56px]` for iPad touch targets
+- `font-size: 16px` on mobile to prevent iOS Safari zoom-on-focus
+- `max-w-2xl` centered form layout
+- Multi-step flow: Lookup → Info → Form → Review → Confirm → Success
+
+### WhatsApp Alternative (Evaluated, Deferred)
+A WhatsApp-via-Twilio approach was evaluated (see `WHATSAPP_INTEGRATION_PROPOSAL.md`). The PWA approach was chosen because:
+- Zero cost (vs ~$5/month for Twilio)
+- Full M365 authentication (vs phone+PIN, which is weaker)
+- No third-party dependencies
+- Instructors have iPads with Safari (no need for WhatsApp workaround)
+- Reuses existing `saveTraineeToSharePoint()` code
+
+WhatsApp remains a viable Phase 2 option if iPad adoption is low.
 
 ## Pending Fixes / Improvements
 

@@ -176,22 +176,46 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 - Console logging with `[OK]`, `[ERROR]`, `[DENIED]` prefixes
 - Toast notifications for all user-facing messages (no `alert()` calls)
 
-## Files
+## Project Structure
 
-| File | Description | Status |
-|---|---|---|
-| `index-sharepoint-v3-enhanced.html` | SharePoint version, full-featured | **ACTIVE** |
-| `docs/index.html` | Copy of above for GitHub Pages deployment | **DEPLOYED** |
-| `CLAUDE.md` | This file | |
-| `SETUP_GUIDE.md` | SharePoint/Azure AD setup instructions | |
-| `QUICK_REFERENCE.md` | End-user quick reference | |
-| `POWER_AUTOMATE_GUIDE.md` | Step-by-step Power Automate flow instructions | |
-| `INSTRUCTOR_IPAD_GUIDE.md` | iPad setup guide for instructors | |
-| `WHATSAPP_INTEGRATION_PROPOSAL.md` | WhatsApp/Twilio integration analysis & alternatives | Reference |
-| `docs/manifest.json` | PWA manifest for home screen install | **ACTIVE** |
-
-**Removed files** (no longer in repo):
-- `index.html`, `index-2.html` — Legacy Google Sheets versions, removed due to exposed API key
+```
+├── index-sharepoint-v3-enhanced.html   # Active source file
+├── CLAUDE.md                           # This file
+├── docs/
+│   └── index.html                      # GitHub Pages deployment (copy of source)
+├── guides/
+│   ├── POWER_AUTOMATE_GUIDE.md         # Power Automate flow setup instructions
+│   ├── QUICK_REFERENCE.md              # End-user quick reference
+│   ├── QUICK_START_GUIDE.md            # Getting started guide
+│   ├── WHATSAPP_INTEGRATION_PROPOSAL.md# WhatsApp/Twilio analysis (deferred)
+│   ├── DEPLOYMENT_CHECKLIST.md         # Deployment steps checklist
+│   ├── MIGRATION_GUIDE.md             # Data migration guide
+│   ├── TEST_MODE_GUIDE.md             # Test mode documentation
+│   ├── SETUP_STATUS.md                # Setup progress tracking
+│   ├── CONTINUE_HERE.md               # Dev resumption notes
+│   └── CHANGELOG_2025-01-16.md        # Historical changelog
+├── scripts/
+│   ├── check-modules.ps1              # Check PowerShell module availability
+│   ├── grant-site-access.ps1          # Grant SharePoint site access
+│   ├── grant-site-permission.ps1      # Grant Azure AD app site permission
+│   ├── migrate-to-sharepoint.ps1      # Data migration script
+│   ├── test-sharepoint-setup.ps1      # SharePoint setup validation
+│   ├── test-sharepoint-devicecode.ps1 # Device code auth test
+│   ├── test-read-only.ps1            # Read-only access test
+│   ├── test-sharepoint.py            # Python SharePoint test
+│   └── verify-install.ps1            # Module install verification
+├── correspondence/
+│   ├── EMAIL_TO_IT_*.md               # IT email drafts (6 files)
+│   ├── IT_CORRESPONDENCE_LOG.md       # IT communication history
+│   └── IT_DEPARTMENT_REQUEST.md       # IT department request
+└── archive/
+    ├── Backup_2025-11-26/             # Pre-migration backup
+    ├── preview-design-{1,2,3}.html    # Sign-in page design previews
+    ├── progress-tracker.html          # Legacy tracker copy
+    ├── tracker.html                   # Legacy tracker copy
+    ├── template.txt                   # Power Automate email template
+    └── WhatsApp-to-SharePoint.txt     # WhatsApp integration notes
+```
 
 ## Deployment Status
 
@@ -290,7 +314,7 @@ Form Submitted → Get response details → Get items (SharePoint lookup by Staf
 **Notes:**
 - Fleet from form is ignored — the SharePoint list already has this data
 - "REFERRED TO SIP" sends 3 emails (submitter ack, APCT alert, referral to Capt Arian/Shazreen)
-- See `POWER_AUTOMATE_GUIDE.md` for detailed setup instructions
+- See `guides/POWER_AUTOMATE_GUIDE.md` for detailed setup instructions
 
 ### Form Field IDs (for flow expressions)
 | Field | ID |
@@ -329,7 +353,7 @@ Allows 30+ instructors to submit trainee progress updates from iPads (post-fligh
 - `docs/manifest.json` enables "Add to Home Screen" on iPads
 - Opens full-screen (no Safari chrome) with MAB navy theme
 - Existing `apple-mobile-web-app-capable` meta tags support standalone mode
-- See `INSTRUCTOR_IPAD_GUIDE.md` for instructor setup steps
+- See `INSTRUCTOR_IPAD_GUIDE.md` for instructor setup steps (not yet created)
 
 ### Design
 - Amber/gold tab color (distinct from User Portal blue and Admin green)
@@ -339,7 +363,7 @@ Allows 30+ instructors to submit trainee progress updates from iPads (post-fligh
 - Multi-step flow: Lookup → Info → Form → Review → Confirm → Success
 
 ### WhatsApp Alternative (Evaluated, Deferred)
-A WhatsApp-via-Twilio approach was evaluated (see `WHATSAPP_INTEGRATION_PROPOSAL.md`). The PWA approach was chosen because:
+A WhatsApp-via-Twilio approach was evaluated (see `guides/WHATSAPP_INTEGRATION_PROPOSAL.md`). The PWA approach was chosen because:
 - Zero cost (vs ~$5/month for Twilio)
 - Full M365 authentication (vs phone+PIN, which is weaker)
 - No third-party dependencies

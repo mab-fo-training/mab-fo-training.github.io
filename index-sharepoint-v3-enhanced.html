@@ -1771,7 +1771,8 @@
             }, 300);
 
             // Set max date to today for User Portal date inputs (block future dates)
-            setDateInputMaxToday(['cadetFirstIOE', 'cadetFunctional', 'cadetLRC', 'cadetInterview', 'cadetCommandCheck']);
+            // First IOE is excluded — trainees may enter a scheduled future IOE date
+            setDateInputMaxToday(['cadetFunctional', 'cadetLRC', 'cadetInterview', 'cadetCommandCheck']);
         }
 
         // ==================== TEST MODE FUNCTIONS ====================
@@ -2647,11 +2648,12 @@
                 sectorHistory: sectorHistory
             };
 
-            // User Portal: Block future dates (trainees can only report actual completions)
-            const dateFields = ['firstIOEDate', 'functionalDate', 'lrcDate', 'interviewDate', 'commandCheckDate'];
+            // User Portal: Block future dates for completion milestones
+            // First IOE is excluded — trainees may schedule it ahead of the actual date
+            const dateFields = ['functionalDate', 'lrcDate', 'interviewDate', 'commandCheckDate'];
             const futureDate = dateFields.find(f => isFutureDate(updatedData[f]));
             if (futureDate) {
-                showToast('Dates cannot be in the future. Please enter actual completion dates only.', 'error');
+                showToast('Only First IOE date can be set in the future. Other dates must be actual completion dates.', 'error');
                 return;
             }
 

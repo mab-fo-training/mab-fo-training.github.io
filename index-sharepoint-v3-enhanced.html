@@ -1515,7 +1515,8 @@
 
         // Set the max attribute to today's date on date input elements
         function setDateInputMaxToday(inputIds) {
-            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             inputIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.setAttribute('max', today);
@@ -3738,15 +3739,20 @@
         }
 
         // Format SharePoint date (ISO format like "2024-01-15T00:00:00Z") to YYYY-MM-DD for input fields
+        // Uses local Date getters to avoid UTC-to-local shift (e.g. UTC midnight = prev day in UTC+8)
         function formatSharePointDate(isoDate) {
             if (!isoDate) return '';
             // If already in YYYY-MM-DD format, return as-is
             if (typeof isoDate === 'string' && isoDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 return isoDate;
             }
-            // Extract date portion from ISO string
+            // Parse ISO string and extract LOCAL date components to avoid timezone offset
             if (typeof isoDate === 'string' && isoDate.includes('T')) {
-                return isoDate.split('T')[0];
+                const d = new Date(isoDate);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
             }
             return isoDate;
         }

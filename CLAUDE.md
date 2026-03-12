@@ -182,9 +182,15 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 ├── index-sharepoint-v3-enhanced.html   # Active source file
 ├── CLAUDE.md                           # This file
 ├── docs/
-│   └── index.html                      # GitHub Pages deployment (copy of source)
+│   ├── index.html                      # GitHub Pages deployment (copy of source)
+│   └── pwa/                            # Standalone PWA instructor submit app
+│       ├── index.html                  # PWA app (single HTML file)
+│       ├── manifest.json               # PWA manifest for iPad home screen
+│       ├── sw.js                       # Service worker (cache static assets)
+│       └── icons/                      # App icons (192x192, 512x512)
 ├── guides/
 │   ├── POWER_AUTOMATE_GUIDE.md         # Power Automate flow setup instructions
+│   ├── POWER_AUTOMATE_PWA_GUIDE.md     # Parent/child flow restructure guide
 │   ├── QUICK_REFERENCE.md              # End-user quick reference
 │   ├── QUICK_START_GUIDE.md            # Getting started guide
 │   ├── WHATSAPP_INTEGRATION_PROPOSAL.md# WhatsApp/Twilio analysis (deferred)
@@ -349,11 +355,10 @@ Allows 30+ instructors to submit trainee progress updates from iPads (post-fligh
 | Cleared for Command Check | Append to `Remarks` + `Sectors_Flown` |
 | REFERRED TO SIP | `Manual_Highlight: red` + Append to `Remarks` + `Sectors_Flown` |
 
-### iPad PWA
+### iPad PWA (Embedded — in main app)
 - `docs/manifest.json` enables "Add to Home Screen" on iPads
 - Opens full-screen (no Safari chrome) with MAB navy theme
 - Existing `apple-mobile-web-app-capable` meta tags support standalone mode
-- See `INSTRUCTOR_IPAD_GUIDE.md` for instructor setup steps (not yet created)
 
 ### Design
 - Amber/gold tab color (distinct from User Portal blue and Admin green)
@@ -371,6 +376,37 @@ A WhatsApp-via-Twilio approach was evaluated (see `guides/WHATSAPP_INTEGRATION_P
 - Reuses existing `saveTraineeToSharePoint()` code
 
 WhatsApp remains a viable Phase 2 option if iPad adoption is low.
+
+## Standalone PWA Instructor Submit (In Progress)
+
+### Overview
+A **separate standalone PWA** at `docs/pwa/` for instructors to submit trainee progress from iPads. Independent from the main Training Tracker app — no admin panel, no tables, just a focused submission form.
+
+### Files
+- `docs/pwa/index.html` — Standalone app (MSAL auth, SharePoint lookup, multi-step form)
+- `docs/pwa/manifest.json` — PWA manifest for iPad home screen install
+- `docs/pwa/sw.js` — Service worker (cache static assets)
+- `docs/pwa/icons/` — App icons (192x192, 512x512 placeholders)
+- `guides/POWER_AUTOMATE_PWA_GUIDE.md` — Power Automate restructure guide (Premium approach)
+
+### URL
+- Will be served at `https://mab-fo-training.github.io/pwa/`
+- Azure AD redirect URI already covers this (`window.location.origin`)
+
+### Current Status: Blocked — Submission Backend
+The PWA UI is built. The submission backend needs one of:
+
+1. **SharePoint Queue approach (free tier)** — PWA writes to a `Submission_Queue` list, a standard Power Automate flow ("When an item is created") processes it, updates Training_Progress, and sends emails. Plan saved at `.claude/plans/dreamy-shimmying-blossom.md`.
+
+2. **HTTP trigger approach (Premium required)** — PWA POSTs JSON to a Power Automate HTTP trigger, which calls a child flow. Requires Power Automate Premium license. Child flow `IOE Progress - Process Submission` already created in Power Automate (turned off). Guide at `guides/POWER_AUTOMATE_PWA_GUIDE.md`.
+
+### Power Automate Email Templates (Verified)
+5 email templates used across 4 switch cases:
+- **Submitter ack**: Static body, no dynamic expressions
+- **APCT "Positive Progress"**: Used for Cleared Functional + LRC COMPLETED
+- **APCT "Command Check COMPLETED"**: Unique "CLEARED FOR LRC" banner
+- **APCT "Referred to SIP"**: Yellow warning box, red status color
+- **Capt Referral**: Trainee name + referral reasons + submitter email
 
 ## Pending Fixes / Improvements
 

@@ -2747,7 +2747,7 @@
             const sectors = [];
             const sectorHistory = cadet.sectorHistory || [];
 
-            if (sectorHistory.length > 1) {
+            if (sectorHistory.length > 0) {
                 // Use actual history
                 const sortedHistory = [...sectorHistory].sort((a, b) =>
                     new Date(a.date) - new Date(b.date)
@@ -2759,15 +2759,12 @@
                     sectors.push(entry.count);
                 });
             } else {
-                // Generate mock 30-day data
-                let cumulative = 0;
+                // No history — show a flat line at the actual sector count
                 for (let i = 29; i >= 0; i--) {
                     const date = new Date();
                     date.setDate(date.getDate() - i);
                     days.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
-                    const dailySectors = Math.floor(Math.random() * 3);
-                    cumulative += dailySectors;
-                    sectors.push(cumulative);
+                    sectors.push(cadet.sectorsFlown || 0);
                 }
             }
 

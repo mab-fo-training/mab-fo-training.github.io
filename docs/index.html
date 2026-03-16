@@ -1483,6 +1483,22 @@
                     </div>
                 </div>
 
+                <div id="pdfExtractedInfo" class="hidden">
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-3">Extracted from PDF</h4>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Batch Name</label>
+                                <input type="text" id="pdfBatchNameInput"
+                                       placeholder="e.g. 25/7 or 25/5 CUC"
+                                       class="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00205B] w-48"
+                                       oninput="applyPdfBatchToAll(this.value)">
+                            </div>
+                            <p class="text-xs text-gray-500 self-end pb-2">Edit once — updates all rows below.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="pdfImportPreview" class="hidden">
                     <h4 class="font-bold text-gray-800 mb-2">Preview & Edit Before Import:</h4>
                     <div class="border border-gray-300 rounded-lg overflow-auto max-h-96">
@@ -1831,7 +1847,7 @@
 
             // Set max date to today for User Portal date inputs (block future dates)
             // First IOE is excluded — trainees may enter a scheduled future IOE date
-            setDateInputMaxToday(['cadetFunctional', 'cadetLRC', 'cadetInterview', 'cadetCommandCheck']);
+            setDateInputMaxToday(['cadetFunctional', 'cadetLRC', 'cadetInterview', 'cadetCommandCheck', 'cadetCBT', 'cadetSim', 'cadetLIFUS']);
         }
 
         // ==================== TEST MODE FUNCTIONS ====================
@@ -2775,7 +2791,10 @@
                 : ['functionalDate', 'lrcDate', 'interviewDate', 'commandCheckDate'];
             const futureDate = dateFields.find(f => isFutureDate(updatedData[f]));
             if (futureDate) {
-                showToast('Only First IOE date can be set in the future. Other dates must be actual completion dates.', 'error');
+                const msg = isDIF
+                    ? 'CBT, Simulator and LIFUS dates must be actual completion dates, not future dates.'
+                    : 'Only First IOE date can be set in the future. Other dates must be actual completion dates.';
+                showToast(msg, 'error');
                 return;
             }
 
@@ -4123,6 +4142,7 @@
 
             document.getElementById('pdfProcessingStatus').classList.remove('hidden');
             document.getElementById('pdfImportPreview').classList.add('hidden');
+            document.getElementById('pdfExtractedInfo').classList.add('hidden');
             document.getElementById('processPdfImportBtn').disabled = true;
             pdfImportData = [];
 
@@ -4172,6 +4192,9 @@
 
                 document.getElementById('pdfProcessingStatus').classList.add('hidden');
                 showPdfImportPreview();
+                // Show extracted batch summary above preview
+                document.getElementById('pdfBatchNameInput').value = extractedData.batch || '';
+                document.getElementById('pdfExtractedInfo').classList.remove('hidden');
                 document.getElementById('processPdfImportBtn').disabled = false;
 
             } catch (error) {
@@ -4199,14 +4222,14 @@
 
             let batch = '';
             if (isDIFCourse) {
-                const difCourseMatch = text.match(/COURSE NO:\s*MAB[- ]?(\d+)\/(\d{4})[- ]?DIF/i);
+                const difCourseMatch = text.match(/COURSE\s+NO[:\s]+MAB[\s\-]?(\d+)[\/\-](\d{4})[\s\-]?DIF/i);
                 if (difCourseMatch) {
                     const sequence = parseInt(difCourseMatch[1], 10).toString().padStart(2, '0');
                     const year = difCourseMatch[2].slice(-2); // last 2 digits
                     batch = `${year}/${sequence} DIF`;
                 }
             } else {
-                const courseMatch = text.match(/COURSE NO:\s*MAB[- ]?(\d+)\/(\d+)[- ]?(?:CPC|CUC)?/i);
+                const courseMatch = text.match(/COURSE\s+NO[:\s]+MAB[\s\-]?(\d+)[\/\-](\d+)[\s\-]?(?:CPC|CUC)?/i);
                 if (courseMatch) {
                     const sequence = parseInt(courseMatch[1], 10).toString();
                     const year = courseMatch[2];
@@ -4290,6 +4313,12 @@
             }
 
             return { batch, fleet, trainees, courseType: isDIFCourse ? 'DIF' : (isCUC ? 'CUC' : 'CPC') };
+        }
+
+        function applyPdfBatchToAll(value) {
+            const batch = value.trim().toUpperCase();
+            pdfImportData.forEach(t => t.batch = batch);
+            showPdfImportPreview();
         }
 
         function showPdfImportPreview() {
@@ -4410,6 +4439,7 @@
             document.getElementById('pdfImportModal').classList.add('hidden');
             document.getElementById('pdfImportFile').value = '';
             document.getElementById('pdfImportPreview').classList.add('hidden');
+            document.getElementById('pdfExtractedInfo').classList.add('hidden');
             pdfImportData = [];
             document.getElementById('processPdfImportBtn').disabled = true;
 
@@ -4595,6 +4625,7 @@
                 document.getElementById('pdfImportModal').classList.add('hidden');
                 document.getElementById('pdfImportFile').value = '';
                 document.getElementById('pdfImportPreview').classList.add('hidden');
+                document.getElementById('pdfExtractedInfo').classList.add('hidden');
                 document.getElementById('pdfProcessingStatus').classList.add('hidden');
                 pdfImportData = [];
                 document.getElementById('processPdfImportBtn').disabled = true;

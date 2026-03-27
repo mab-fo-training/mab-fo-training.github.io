@@ -3195,7 +3195,6 @@
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lrcDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.interviewDate)}</td>
                         <td class="px-4 py-3 text-sm text-center">${parseInt(cadet.sectorsFlown) || 0}</td>
-                        <td class="px-4 py-3 text-sm">${escapeHtml(cadet.remarks || '-')}</td>
                 `;
                 return separator + `
                     <tr class="${rowClass}">
@@ -3206,6 +3205,7 @@
                         <td class="px-4 py-3 text-sm font-medium">${escapeHtml(cadet.name)}</td>
                         ${dateCells}
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lastUpdated)}</td>
+                        <td class="px-4 py-3 text-sm">${escapeHtml(cadet.remarks || '-')}</td>
                         <td class="px-4 py-3 text-center sticky right-0 ${rowClass || 'bg-white'} shadow-md">
                             <button onclick="editTrainee(${cadet.id})" class="text-blue-600 hover:text-blue-800 mx-1 font-bold" title="Edit">
                                 Edit

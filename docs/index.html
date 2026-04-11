@@ -822,30 +822,52 @@
                                 <input type="text" id="cadetBatchDisplay" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl bg-gray-50" disabled>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label class="block text-gray-700 font-semibold mb-2">First IOE Date</label>
-                                    <input type="date" id="cadetFirstIOE" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 font-semibold mb-2">Functional Date</label>
-                                    <input type="date" id="cadetFunctional" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 font-semibold mb-2">LRC Date</label>
-                                    <input type="date" id="cadetLRC" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 font-semibold mb-2">Interview Date</label>
-                                    <input type="date" id="cadetInterview" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
-                                </div>
-                                <div id="cadetCommandCheckDateContainer" class="hidden">
-                                    <label class="block text-gray-700 font-semibold mb-2">Command Check Date <span class="text-xs text-gray-500">(CUC only)</span></label>
-                                    <input type="date" id="cadetCommandCheck" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
+                            <div id="cadetIOEDatesContainer">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">First IOE Date</label>
+                                        <input type="date" id="cadetFirstIOE" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">Functional Date</label>
+                                        <input type="date" id="cadetFunctional" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">LRC Date</label>
+                                        <input type="date" id="cadetLRC" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">Interview Date</label>
+                                        <input type="date" id="cadetInterview" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
+                                    </div>
+                                    <div id="cadetCommandCheckDateContainer" class="hidden">
+                                        <label class="block text-gray-700 font-semibold mb-2">Command Check Date <span class="text-xs text-gray-500">(CUC only)</span></label>
+                                        <input type="date" id="cadetCommandCheck" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
+                                    </div>
                                 </div>
                             </div>
 
-                            <div>
+                            <div id="cadetDIFDateContainer" class="hidden">
+                                <div class="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                                    <p class="text-sm text-amber-800 font-medium">DIF batch — IOE / LRC / Interview / Sectors not applicable.</p>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">CBT Date</label>
+                                        <input type="date" id="cadetCBT" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">Simulator Date</label>
+                                        <input type="date" id="cadetSim" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">LIFUS Date</label>
+                                        <input type="date" id="cadetLIFUS" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="sectorsInputContainer">
                                 <label class="block text-gray-700 font-semibold mb-2">Total Sectors Flown (Optional)</label>
                                 <input type="number" id="newSectorCount" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all text-lg font-bold" placeholder="Enter total sector count" min="0">
                                 <div id="currentSectorsDisplay" class="hidden mt-2 p-3 bg-white border-l-4 border-[#00205B] rounded shadow-sm">
@@ -1072,7 +1094,8 @@
                                     <select id="trainingTypeFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
                                         <option value="all">All Types</option>
                                         <option value="cuc">CUC</option>
-                                        <option value="cadet">CADET</option>
+                                        <option value="cadet">CADET / CPC</option>
+                                        <option value="dif">DIF (B737-8 MAX)</option>
                                     </select>
                                 </div>
                                 <div>
@@ -1117,11 +1140,25 @@
                             </div>
                         </div>
 
+                        <!-- Column View Toggle -->
+                        <div class="flex items-center gap-2 mb-3 px-1">
+                            <span class="text-sm font-semibold text-gray-600 mr-1">Date columns:</span>
+                            <button id="showIOEColumnsBtn" onclick="setColumnView('ioe')"
+                                class="px-4 py-1.5 rounded-lg text-sm font-semibold bg-[#00205B] text-white shadow-sm transition-all">
+                                IOE Dates
+                            </button>
+                            <button id="showDIFColumnsBtn" onclick="setColumnView('dif')"
+                                class="px-4 py-1.5 rounded-lg text-sm font-semibold bg-white text-[#00205B] border border-[#00205B] hover:bg-gray-50 transition-all">
+                                DIF Dates
+                            </button>
+                            <span class="text-xs text-gray-400 ml-2">BATCH · STAFF ID · RANK · FLEET · NAME · LAST UPDATED always visible</span>
+                        </div>
+
                         <!-- Data Table -->
                         <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                             <div class="overflow-x-auto" style="max-height: 600px; overflow-y: auto;">
                                 <table class="data-table w-full" style="position: relative;">
-                                    <thead class="bg-[#00205B] text-white" style="position: sticky; top: 0; z-index: 20;">
+                                    <thead id="dataTableHead" class="bg-[#00205B] text-white" style="position: sticky; top: 0; z-index: 20;">
                                         <tr>
                                             <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="batch">BATCH</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="staffId">STAFF ID</th>
@@ -1302,29 +1339,48 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
                         <input type="text" id="modalName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" required>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">First IOE Date</label>
-                        <input type="date" id="modalFirstIOE" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
+                    <div id="modalIOEDatesContainer">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">First IOE Date</label>
+                            <input type="date" id="modalFirstIOE" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Functional Date</label>
+                            <input type="date" id="modalFunctional" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">LRC Date</label>
+                            <input type="date" id="modalLRC" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Interview Date</label>
+                            <input type="date" id="modalInterview" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
+                        </div>
+                        <div id="modalCommandCheckContainer" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Command Check Date <span class="text-xs text-gray-500">(CUC only)</span></label>
+                            <input type="date" id="modalCommandCheck" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Sectors Flown</label>
+                            <input type="number" id="modalSectors" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" min="0">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Functional Date</label>
-                        <input type="date" id="modalFunctional" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">LRC Date</label>
-                        <input type="date" id="modalLRC" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Interview Date</label>
-                        <input type="date" id="modalInterview" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
-                    </div>
-                    <div id="modalCommandCheckContainer" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Command Check Date <span class="text-xs text-gray-500">(CUC only)</span></label>
-                        <input type="date" id="modalCommandCheck" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Sectors Flown</label>
-                        <input type="number" id="modalSectors" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" min="0">
+                    <div id="modalDIFContainer" class="hidden">
+                        <div class="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p class="text-sm text-amber-800 font-medium">DIF batch — IOE / LRC / Interview / Sectors not applicable.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">CBT Date</label>
+                            <input type="date" id="modalCBT" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Simulator Date</label>
+                            <input type="date" id="modalSim" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">LIFUS Date</label>
+                            <input type="date" id="modalLIFUS" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Manual Highlight</label>
@@ -1427,6 +1483,22 @@
                     </div>
                 </div>
 
+                <div id="pdfExtractedInfo" class="hidden">
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-3">Extracted from PDF</h4>
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Batch Name</label>
+                                <input type="text" id="pdfBatchNameInput"
+                                       placeholder="e.g. 25/7 or 25/5 CUC"
+                                       class="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00205B] w-48"
+                                       oninput="applyPdfBatchToAll(this.value)">
+                            </div>
+                            <p class="text-xs text-gray-500 self-end pb-2">Edit once — updates all rows below.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="pdfImportPreview" class="hidden">
                     <h4 class="font-bold text-gray-800 mb-2">Preview & Edit Before Import:</h4>
                     <div class="border border-gray-300 rounded-lg overflow-auto max-h-96">
@@ -1515,7 +1587,8 @@
 
         // Set the max attribute to today's date on date input elements
         function setDateInputMaxToday(inputIds) {
-            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             inputIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.setAttribute('max', today);
@@ -1600,6 +1673,9 @@
         let currentUser = null;
         let bulkImportData = null;
         let pdfImportData = [];
+        let difColumnsEnsured = false;
+        let difColumnsChecked = false;
+        let activeColumnSet = 'ioe'; // 'ioe' | 'dif'
         let batches = [];
 
         // Initialize PDF.js worker
@@ -1770,7 +1846,8 @@
             }, 300);
 
             // Set max date to today for User Portal date inputs (block future dates)
-            setDateInputMaxToday(['cadetFirstIOE', 'cadetFunctional', 'cadetLRC', 'cadetInterview', 'cadetCommandCheck']);
+            // First IOE is excluded — trainees may enter a scheduled future IOE date
+            setDateInputMaxToday(['cadetFunctional', 'cadetLRC', 'cadetInterview', 'cadetCommandCheck', 'cadetCBT', 'cadetSim', 'cadetLIFUS']);
         }
 
         // ==================== TEST MODE FUNCTIONS ====================
@@ -2131,6 +2208,7 @@
             showLoading('Loading trainees...');
             try {
                 await ensureSectorHistoryColumn();
+                await ensureDIFColumns();
                 const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items?$top=5000`;
 
                 const response = await authFetch(apiUrl, {
@@ -2159,6 +2237,9 @@
                     lrcDate: formatSharePointDate(item.LRC_Date),
                     interviewDate: formatSharePointDate(item.Interview_Date),
                     commandCheckDate: formatSharePointDate(item.Command_Check_Date),
+                    cbtDate: formatSharePointDate(item.CBT_Date),
+                    simDate: formatSharePointDate(item.Sim_Date),
+                    lifusDate: formatSharePointDate(item.LIFUS_Date),
                     sectorsFlown: item.Sectors_Flown || 0,
                     remarks: item.Remarks || '',
                     lastUpdated: item.Last_Updated || new Date().toISOString(),
@@ -2230,6 +2311,32 @@
             }
         }
 
+        async function ensureDIFColumns() {
+            if (difColumnsChecked || !sharePointConfig.accessToken) return;
+            difColumnsChecked = true;
+            const cols = ['CBT_Date', 'Sim_Date', 'LIFUS_Date'];
+            let allExist = true;
+            try {
+                for (const colName of cols) {
+                    const checkUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/fields?$filter=InternalName eq '${colName}'`;
+                    const checkResp = await authFetch(checkUrl, { method: 'GET', headers: { 'Accept': 'application/json;odata=verbose' } });
+                    if (checkResp.ok) {
+                        const checkData = await checkResp.json();
+                        if (checkData.d.results.length === 0) {
+                            allExist = false;
+                            console.warn(`[WARN] DIF column ${colName} not found in SharePoint. Add it manually to Training_Progress list.`);
+                        }
+                    }
+                }
+                if (allExist) {
+                    difColumnsEnsured = true;
+                    console.log('[OK] DIF columns (CBT_Date, Sim_Date, LIFUS_Date) confirmed');
+                }
+            } catch (e) {
+                console.warn('[WARN] ensureDIFColumns failed:', e.message);
+            }
+        }
+
         async function saveTraineeToSharePoint(traineeData, isEdit = false, skipReload = false) {
             if (testMode) {
                 const result = await saveTraineeToLocalStorage(traineeData, isEdit);
@@ -2277,6 +2384,13 @@
                 // Only include Sector_History if column exists
                 if (sectorHistoryColumnEnsured) {
                     itemData.Sector_History = JSON.stringify(traineeData.sectorHistory || []);
+                }
+
+                // Only include DIF columns if confirmed
+                if (difColumnsEnsured) {
+                    itemData.CBT_Date = traineeData.cbtDate || null;
+                    itemData.Sim_Date = traineeData.simDate || null;
+                    itemData.LIFUS_Date = traineeData.lifusDate || null;
                 }
 
                 let apiUrl, method;
@@ -2520,6 +2634,15 @@
             document.getElementById('cadetFunctional').value = cadet.functionalDate;
             document.getElementById('cadetLRC').value = cadet.lrcDate;
             document.getElementById('cadetInterview').value = cadet.interviewDate;
+
+            // DIF fields
+            if (document.getElementById('cadetCBT')) document.getElementById('cadetCBT').value = cadet.cbtDate || '';
+            if (document.getElementById('cadetSim')) document.getElementById('cadetSim').value = cadet.simDate || '';
+            if (document.getElementById('cadetLIFUS')) document.getElementById('cadetLIFUS').value = cadet.lifusDate || '';
+
+            // Show/hide DIF or IOE fields based on batch
+            showDIFFieldsIfDIF(cadet.batch);
+
             document.getElementById('newSectorCount').value = '';
 
             // Show current sectors
@@ -2535,10 +2658,12 @@
 
             document.getElementById('cadetFormSection').classList.remove('hidden');
 
-            // Show command check date field for CUC batches
-            showCommandCheckIfCUC(cadet.batch);
-            if (isCUCBatch(cadet.batch) && cadet.commandCheckDate) {
-                document.getElementById('cadetCommandCheck').value = cadet.commandCheckDate;
+            // Show command check date field for CUC batches (DIF handled above)
+            if (!isDIFBatch(cadet.batch)) {
+                showCommandCheckIfCUC(cadet.batch);
+                if (isCUCBatch(cadet.batch) && cadet.commandCheckDate) {
+                    document.getElementById('cadetCommandCheck').value = cadet.commandCheckDate;
+                }
             }
 
             // Update progress timeline
@@ -2549,22 +2674,31 @@
         }
 
         function renderProgressTimeline(cadet) {
-            const isCUC = isCUCBatch(cadet.batch);
-            const isConversion = isConversionFleet(cadet.fleet);
-            const isCaptain = cadet.rank && cadet.rank.toUpperCase() === 'CAPTAIN';
-            const milestones = [
-                { label: 'First IOE', date: cadet.firstIOEDate },
-            ];
-            if (!(isConversion && isCaptain)) {
-                milestones.push({ label: 'Functional', date: cadet.functionalDate });
+            let milestones;
+            if (isDIFBatch(cadet.batch)) {
+                milestones = [
+                    { label: 'CBT', date: cadet.cbtDate },
+                    { label: 'Simulator', date: cadet.simDate },
+                    { label: 'LIFUS (min. 4 sectors)', date: cadet.lifusDate },
+                ];
+            } else {
+                const isCUC = isCUCBatch(cadet.batch);
+                const isConversion = isConversionFleet(cadet.fleet);
+                const isCaptain = cadet.rank && cadet.rank.toUpperCase() === 'CAPTAIN';
+                milestones = [
+                    { label: 'First IOE', date: cadet.firstIOEDate },
+                ];
+                if (!(isConversion && isCaptain)) {
+                    milestones.push({ label: 'Functional', date: cadet.functionalDate });
+                }
+                if (isCUC && !isConversion) {
+                    milestones.push({ label: 'Cmd Check', date: cadet.commandCheckDate });
+                }
+                milestones.push(
+                    { label: 'LRC', date: cadet.lrcDate },
+                    { label: 'Interview', date: cadet.interviewDate }
+                );
             }
-            if (isCUC && !isConversion) {
-                milestones.push({ label: 'Cmd Check', date: cadet.commandCheckDate });
-            }
-            milestones.push(
-                { label: 'LRC', date: cadet.lrcDate },
-                { label: 'Interview', date: cadet.interviewDate }
-            );
 
             const container = document.getElementById('timelineContent');
             container.innerHTML = milestones.map(m => {
@@ -2634,23 +2768,33 @@
             const commandCheckDate = isCUCBatch(currentUserRecord.batch) ?
                 document.getElementById('cadetCommandCheck').value : currentUserRecord.commandCheckDate;
 
+            const isDIF = isDIFBatch(currentUserRecord.batch);
             const updatedData = {
                 ...currentUserRecord,
                 rank: rank,
-                firstIOEDate: document.getElementById('cadetFirstIOE').value,
-                functionalDate: document.getElementById('cadetFunctional').value,
-                lrcDate: document.getElementById('cadetLRC').value,
-                interviewDate: document.getElementById('cadetInterview').value,
-                commandCheckDate: commandCheckDate,
-                sectorsFlown: newSectors,
-                sectorHistory: sectorHistory
+                firstIOEDate: isDIF ? currentUserRecord.firstIOEDate : document.getElementById('cadetFirstIOE').value,
+                functionalDate: isDIF ? currentUserRecord.functionalDate : document.getElementById('cadetFunctional').value,
+                lrcDate: isDIF ? currentUserRecord.lrcDate : document.getElementById('cadetLRC').value,
+                interviewDate: isDIF ? currentUserRecord.interviewDate : document.getElementById('cadetInterview').value,
+                commandCheckDate: isDIF ? '' : commandCheckDate,
+                sectorsFlown: isDIF ? currentUserRecord.sectorsFlown : newSectors,
+                sectorHistory: isDIF ? currentUserRecord.sectorHistory : sectorHistory,
+                cbtDate: isDIF ? (document.getElementById('cadetCBT') ? document.getElementById('cadetCBT').value : currentUserRecord.cbtDate) : currentUserRecord.cbtDate,
+                simDate: isDIF ? (document.getElementById('cadetSim') ? document.getElementById('cadetSim').value : currentUserRecord.simDate) : currentUserRecord.simDate,
+                lifusDate: isDIF ? (document.getElementById('cadetLIFUS') ? document.getElementById('cadetLIFUS').value : currentUserRecord.lifusDate) : currentUserRecord.lifusDate
             };
 
-            // User Portal: Block future dates (trainees can only report actual completions)
-            const dateFields = ['firstIOEDate', 'functionalDate', 'lrcDate', 'interviewDate', 'commandCheckDate'];
+            // User Portal: Block future dates for completion milestones
+            // First IOE is excluded — trainees may schedule it ahead of the actual date
+            const dateFields = isDIF
+                ? ['cbtDate', 'simDate', 'lifusDate']
+                : ['functionalDate', 'lrcDate', 'interviewDate', 'commandCheckDate'];
             const futureDate = dateFields.find(f => isFutureDate(updatedData[f]));
             if (futureDate) {
-                showToast('Dates cannot be in the future. Please enter actual completion dates only.', 'error');
+                const msg = isDIF
+                    ? 'CBT, Simulator and LIFUS dates must be actual completion dates, not future dates.'
+                    : 'Only First IOE date can be set in the future. Other dates must be actual completion dates.';
+                showToast(msg, 'error');
                 return;
             }
 
@@ -2744,7 +2888,7 @@
             const sectors = [];
             const sectorHistory = cadet.sectorHistory || [];
 
-            if (sectorHistory.length > 1) {
+            if (sectorHistory.length > 0) {
                 // Use actual history
                 const sortedHistory = [...sectorHistory].sort((a, b) =>
                     new Date(a.date) - new Date(b.date)
@@ -2756,15 +2900,12 @@
                     sectors.push(entry.count);
                 });
             } else {
-                // Generate mock 30-day data
-                let cumulative = 0;
+                // No history — show a flat line at the actual sector count
                 for (let i = 29; i >= 0; i--) {
                     const date = new Date();
                     date.setDate(date.getDate() - i);
                     days.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
-                    const dailySectors = Math.floor(Math.random() * 3);
-                    cumulative += dailySectors;
-                    sectors.push(cumulative);
+                    sectors.push(cadet.sectorsFlown || 0);
                 }
             }
 
@@ -2892,11 +3033,13 @@
                 }
                 if (selectedBatchFilter !== 'all' && cadet.batch.trim().toLowerCase() !== selectedBatchFilter.trim().toLowerCase()) return false;
 
-                // Training type filter (CUC vs CADET)
+                // Training type filter (CUC vs CADET/CPC vs DIF)
                 if (selectedTrainingTypeFilter !== 'all') {
                     const isCUC = isCUCBatch(cadet.batch);
+                    const isDIF = isDIFBatch(cadet.batch);
                     if (selectedTrainingTypeFilter === 'cuc' && !isCUC) return false;
-                    if (selectedTrainingTypeFilter === 'cadet' && isCUC) return false;
+                    if (selectedTrainingTypeFilter === 'dif' && !isDIF) return false;
+                    if (selectedTrainingTypeFilter === 'cadet' && (isCUC || isDIF)) return false;
                 }
 
                 // Fleet filter
@@ -2912,8 +3055,83 @@
             });
         }
 
+        function attachSortListeners() {
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.column;
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.column = column;
+                        currentSort.direction = 'asc';
+                    }
+                    document.querySelectorAll('.sortable-header').forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    header.classList.add(`sort-${currentSort.direction}`);
+                    renderTable();
+                });
+            });
+        }
+
+        function setColumnView(view) {
+            activeColumnSet = view;
+            const ioeBtn = document.getElementById('showIOEColumnsBtn');
+            const difBtn = document.getElementById('showDIFColumnsBtn');
+            if (ioeBtn && difBtn) {
+                if (view === 'ioe') {
+                    ioeBtn.className = 'px-4 py-1.5 rounded-lg text-sm font-semibold bg-[#00205B] text-white shadow-sm transition-all';
+                    difBtn.className = 'px-4 py-1.5 rounded-lg text-sm font-semibold bg-white text-[#00205B] border border-[#00205B] hover:bg-gray-50 transition-all';
+                } else {
+                    ioeBtn.className = 'px-4 py-1.5 rounded-lg text-sm font-semibold bg-white text-[#00205B] border border-[#00205B] hover:bg-gray-50 transition-all';
+                    difBtn.className = 'px-4 py-1.5 rounded-lg text-sm font-semibold bg-[#00205B] text-white shadow-sm transition-all';
+                }
+            }
+            renderTable();
+        }
+
         function renderTable() {
             const tbody = document.getElementById('dataTableBody');
+            const thead = document.getElementById('dataTableHead');
+            const isDIF = activeColumnSet === 'dif';
+            const colCount = isDIF ? 10 : 14;
+
+            // Render thead dynamically
+            if (thead) {
+                if (isDIF) {
+                    thead.innerHTML = `<tr>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="batch">BATCH</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="staffId">STAFF ID</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="rank">RANK</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="fleet">FLEET</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="name">NAME</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">CBT</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">SIMULATOR</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">LIFUS</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">LAST UPDATED</th>
+                        <th class="px-4 py-3 text-center text-sm font-semibold sticky right-0 bg-[#00205B] shadow-md">ACTIONS</th>
+                    </tr>`;
+                } else {
+                    thead.innerHTML = `<tr>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="batch">BATCH</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="staffId">STAFF ID</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="rank">RANK</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="fleet">FLEET</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="name">NAME</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">FIRST IOE</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">FUNCTIONAL</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">CMD CHECK</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">LRC</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">INTERVIEW</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="sectorsFlown">SECTORS</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">LAST UPDATED</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">REMARKS</th>
+                        <th class="px-4 py-3 text-center text-sm font-semibold sticky right-0 bg-[#00205B] shadow-md">ACTIONS</th>
+                    </tr>`;
+                }
+                attachSortListeners();
+            }
+
             let filteredCadets = filterCadets();
 
             if (currentSort.column) {
@@ -2938,7 +3156,7 @@
             if (filteredCadets.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="14" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="${colCount}" class="px-4 py-8 text-center text-gray-500">
                             <p class="text-lg">No trainees found matching your filters</p>
                         </td>
                     </tr>
@@ -2962,10 +3180,22 @@
                     const batchFunctional = batchCadets.filter(c => getTraineeStatus(c) === 'functional').length;
                     const batchSpecial = batchCadets.filter(c => getTraineeStatus(c) === 'special').length;
                     const batchInProgress = batchTotal - batchCompleted - batchFunctional - batchSpecial;
-                    separator = `<tr class="bg-gray-700"><td colspan="14" class="px-4 py-2 text-sm font-bold text-white">${escapeHtml(cadet.batch)} &mdash; <span class="font-normal">${batchTotal} total</span> <span class="mx-2">|</span> <span class="font-normal text-green-300">${batchCompleted} completed</span> <span class="mx-2">|</span> <span class="font-normal text-blue-300">${batchFunctional} functional</span> <span class="mx-2">|</span> <span class="font-normal text-yellow-300">${batchInProgress} not functional</span>${batchSpecial ? ` <span class="mx-2">|</span> <span class="font-normal text-red-300">${batchSpecial} special</span>` : ''}</td></tr>`;
+                    separator = `<tr class="bg-gray-700"><td colspan="${colCount}" class="px-4 py-2 text-sm font-bold text-white">${escapeHtml(cadet.batch)} &mdash; <span class="font-normal">${batchTotal} total</span> <span class="mx-2">|</span> <span class="font-normal text-green-300">${batchCompleted} completed</span> <span class="mx-2">|</span> <span class="font-normal text-blue-300">${batchFunctional} functional</span> <span class="mx-2">|</span> <span class="font-normal text-yellow-300">${batchInProgress} not functional</span>${batchSpecial ? ` <span class="mx-2">|</span> <span class="font-normal text-red-300">${batchSpecial} special</span>` : ''}</td></tr>`;
                     lastBatch = cadet.batch;
                 }
 
+                const dateCells = isDIF ? `
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.cbtDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.simDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lifusDate)}</td>
+                ` : `
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.firstIOEDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.functionalDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.commandCheckDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lrcDate)}</td>
+                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.interviewDate)}</td>
+                        <td class="px-4 py-3 text-sm text-center">${parseInt(cadet.sectorsFlown) || 0}</td>
+                `;
                 return separator + `
                     <tr class="${rowClass}">
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.batch)}</td>
@@ -2973,12 +3203,7 @@
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.rank || '-')}</td>
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.fleet || '-')}</td>
                         <td class="px-4 py-3 text-sm font-medium">${escapeHtml(cadet.name)}</td>
-                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.firstIOEDate)}</td>
-                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.functionalDate)}</td>
-                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.commandCheckDate)}</td>
-                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lrcDate)}</td>
-                        <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.interviewDate)}</td>
-                        <td class="px-4 py-3 text-sm text-center">${parseInt(cadet.sectorsFlown) || 0}</td>
+                        ${dateCells}
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lastUpdated)}</td>
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.remarks || '-')}</td>
                         <td class="px-4 py-3 text-center sticky right-0 ${rowClass || 'bg-white'} shadow-md">
@@ -3036,6 +3261,13 @@
                 // FO/SO: First IOE + Functional + LRC + Interview
                 if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) return 'completed';
                 if (hasFirstIOE && hasFunctional) return 'functional';
+                return 'inprogress';
+            }
+
+            // DIF batches: CBT + Sim = functional, LIFUS = completed
+            if (isDIFBatch(cadet.batch)) {
+                if (isDatePastOrToday(cadet.lifusDate)) return 'completed';
+                if (isDatePastOrToday(cadet.cbtDate) || isDatePastOrToday(cadet.simDate)) return 'functional';
                 return 'inprogress';
             }
 
@@ -3254,6 +3486,10 @@
             document.getElementById('modalCommandCheck').value = '';
             document.getElementById('modalCommandCheckContainer').classList.add('hidden');
             document.getElementById('modalSectors').value = '';
+            document.getElementById('modalCBT').value = '';
+            document.getElementById('modalSim').value = '';
+            document.getElementById('modalLIFUS').value = '';
+            showDIFFieldsIfDIF('');
             document.getElementById('modalHighlight').value = '';
             document.getElementById('modalRemarks').value = '';
             document.getElementById('traineeModal').classList.remove('hidden');
@@ -3279,14 +3515,25 @@
             document.getElementById('modalHighlight').value = cadet.manualHighlight || '';
             document.getElementById('modalRemarks').value = cadet.remarks;
 
-            // Show command check date for CUC batches
-            const modalContainer = document.getElementById('modalCommandCheckContainer');
-            if (isCUCBatch(cadet.batch)) {
-                modalContainer.classList.remove('hidden');
-                document.getElementById('modalCommandCheck').value = cadet.commandCheckDate || '';
+            // Show DIF or IOE fields based on batch type
+            showDIFFieldsIfDIF(cadet.batch);
+            if (isDIFBatch(cadet.batch)) {
+                document.getElementById('modalCBT').value = cadet.cbtDate || '';
+                document.getElementById('modalSim').value = cadet.simDate || '';
+                document.getElementById('modalLIFUS').value = cadet.lifusDate || '';
             } else {
-                modalContainer.classList.add('hidden');
-                document.getElementById('modalCommandCheck').value = '';
+                document.getElementById('modalCBT').value = '';
+                document.getElementById('modalSim').value = '';
+                document.getElementById('modalLIFUS').value = '';
+                // Show command check date for CUC batches
+                const modalContainer = document.getElementById('modalCommandCheckContainer');
+                if (isCUCBatch(cadet.batch)) {
+                    modalContainer.classList.remove('hidden');
+                    document.getElementById('modalCommandCheck').value = cadet.commandCheckDate || '';
+                } else {
+                    modalContainer.classList.add('hidden');
+                    document.getElementById('modalCommandCheck').value = '';
+                }
             }
 
             document.getElementById('traineeModal').classList.remove('hidden');
@@ -3311,20 +3558,24 @@
 
         async function saveModal() {
             const batch = document.getElementById('modalBatch').value.toUpperCase().trim();
+            const isDIF = isDIFBatch(batch);
             const traineeData = {
                 batch: batch,
                 staffId: document.getElementById('modalStaffId').value.toUpperCase().trim(),
                 rank: document.getElementById('modalRank').value.toUpperCase().trim(),
                 fleet: document.getElementById('modalFleet').value.toUpperCase().trim(),
                 name: document.getElementById('modalName').value.toUpperCase().trim(),
-                firstIOEDate: document.getElementById('modalFirstIOE').value,
-                functionalDate: document.getElementById('modalFunctional').value,
-                lrcDate: document.getElementById('modalLRC').value,
-                interviewDate: document.getElementById('modalInterview').value,
-                commandCheckDate: isCUCBatch(batch) ? document.getElementById('modalCommandCheck').value : '',
-                sectorsFlown: parseInt(document.getElementById('modalSectors').value) || 0,
+                firstIOEDate: isDIF ? '' : document.getElementById('modalFirstIOE').value,
+                functionalDate: isDIF ? '' : document.getElementById('modalFunctional').value,
+                lrcDate: isDIF ? '' : document.getElementById('modalLRC').value,
+                interviewDate: isDIF ? '' : document.getElementById('modalInterview').value,
+                commandCheckDate: (!isDIF && isCUCBatch(batch)) ? document.getElementById('modalCommandCheck').value : '',
+                sectorsFlown: isDIF ? 0 : (parseInt(document.getElementById('modalSectors').value) || 0),
                 remarks: document.getElementById('modalRemarks').value.toUpperCase().trim(),
                 manualHighlight: document.getElementById('modalHighlight').value,
+                cbtDate: isDIF ? document.getElementById('modalCBT').value : '',
+                simDate: isDIF ? document.getElementById('modalSim').value : '',
+                lifusDate: isDIF ? document.getElementById('modalLIFUS').value : '',
                 sectorHistory: []
             };
 
@@ -3389,12 +3640,14 @@
                         'Batch': `BATCH: ${cadet.batch}`,
                         'Staff ID': '', 'Rank': '', 'Fleet': '', 'Name': '',
                         'First IOE': '', 'Functional': '', 'Cmd Check': '', 'LRC': '', 'Interview': '',
-                        'Sectors': '', 'Status': '', 'Last Updated': '', 'Remarks': ''
+                        'Sectors': '', 'CBT': '', 'Simulator': '', 'LIFUS': '',
+                        'Status': '', 'Last Updated': '', 'Remarks': ''
                     });
                     rowMetadata.push({ type: 'batch' });
                 }
 
                 let status = getTraineeStatusLabel(cadet);
+                const isCadetDIF = isDIFBatch(cadet.batch);
 
                 formattedData.push({
                     'Batch': cadet.batch,
@@ -3402,12 +3655,15 @@
                     'Rank': cadet.rank || '',
                     'Fleet': cadet.fleet || '',
                     'Name': cadet.name,
-                    'First IOE': cadet.firstIOEDate || '',
-                    'Functional': cadet.functionalDate || '',
-                    'Cmd Check': cadet.commandCheckDate || '',
-                    'LRC': cadet.lrcDate || '',
-                    'Interview': cadet.interviewDate || '',
-                    'Sectors': cadet.sectorsFlown,
+                    'First IOE': isCadetDIF ? 'N/A' : (cadet.firstIOEDate || ''),
+                    'Functional': isCadetDIF ? 'N/A' : (cadet.functionalDate || ''),
+                    'Cmd Check': isCadetDIF ? 'N/A' : (cadet.commandCheckDate || ''),
+                    'LRC': isCadetDIF ? 'N/A' : (cadet.lrcDate || ''),
+                    'Interview': isCadetDIF ? 'N/A' : (cadet.interviewDate || ''),
+                    'Sectors': isCadetDIF ? 'N/A' : cadet.sectorsFlown,
+                    'CBT': isCadetDIF ? (cadet.cbtDate || '') : 'N/A',
+                    'Simulator': isCadetDIF ? (cadet.simDate || '') : 'N/A',
+                    'LIFUS': isCadetDIF ? (cadet.lifusDate || '') : 'N/A',
                     'Status': status,
                     'Last Updated': cadet.lastUpdated || '',
                     'Remarks': cadet.remarks || ''
@@ -3419,7 +3675,8 @@
             worksheet['!cols'] = [
                 { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 25 },
                 { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
-                { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 30 }
+                { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+                { wch: 15 }, { wch: 12 }, { wch: 30 }
             ];
 
             const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -3612,6 +3869,11 @@
             return batchName.toUpperCase().includes('CUC');
         }
 
+        function isDIFBatch(batchName) {
+            if (!batchName) return false;
+            return batchName.toUpperCase().includes('DIF');
+        }
+
         function isConversionFleet(fleet) {
             if (!fleet) return false;
             const f = fleet.toUpperCase();
@@ -3709,6 +3971,32 @@
             }
         }
 
+        function showDIFFieldsIfDIF(batchName) {
+            const difContainer = document.getElementById('modalDIFContainer');
+            const ioeContainer = document.getElementById('modalIOEDatesContainer');
+            const cadetDIFContainer = document.getElementById('cadetDIFDateContainer');
+            const cadetIOEContainer = document.getElementById('cadetIOEDatesContainer');
+            const cadetCommandCheckContainer = document.getElementById('cadetCommandCheckDateContainer');
+            const sectorsContainer = document.getElementById('sectorsInputContainer');
+            const dif = isDIFBatch(batchName);
+
+            // Modal DIF fields
+            if (difContainer) difContainer.classList.toggle('hidden', !dif);
+            if (ioeContainer) ioeContainer.classList.toggle('hidden', dif);
+
+            // User Portal DIF fields
+            if (cadetDIFContainer) cadetDIFContainer.classList.toggle('hidden', !dif);
+            if (cadetIOEContainer) cadetIOEContainer.classList.toggle('hidden', dif);
+            if (cadetCommandCheckContainer) cadetCommandCheckContainer.classList.toggle('hidden', true);
+            if (sectorsContainer) sectorsContainer.classList.toggle('hidden', dif);
+
+            if (!dif) {
+                // Restore CUC check for non-DIF batches
+                showCommandCheckIfCUC(batchName);
+                if (sectorsContainer) sectorsContainer.classList.remove('hidden');
+            }
+        }
+
         // ==================== BULK IMPORT ====================
         function processBulkImportFile() {
             const file = document.getElementById('bulkImportFile').files[0];
@@ -3763,15 +4051,20 @@
         }
 
         // Format SharePoint date (ISO format like "2024-01-15T00:00:00Z") to YYYY-MM-DD for input fields
+        // Uses local Date getters to avoid UTC-to-local shift (e.g. UTC midnight = prev day in UTC+8)
         function formatSharePointDate(isoDate) {
             if (!isoDate) return '';
             // If already in YYYY-MM-DD format, return as-is
             if (typeof isoDate === 'string' && isoDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 return isoDate;
             }
-            // Extract date portion from ISO string
+            // Parse ISO string and extract LOCAL date components to avoid timezone offset
             if (typeof isoDate === 'string' && isoDate.includes('T')) {
-                return isoDate.split('T')[0];
+                const d = new Date(isoDate);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
             }
             return isoDate;
         }
@@ -3874,6 +4167,7 @@
 
             document.getElementById('pdfProcessingStatus').classList.remove('hidden');
             document.getElementById('pdfImportPreview').classList.add('hidden');
+            document.getElementById('pdfExtractedInfo').classList.add('hidden');
             document.getElementById('processPdfImportBtn').disabled = true;
             pdfImportData = [];
 
@@ -3918,11 +4212,17 @@
                     manualHighlight: '',
                     lastUpdated: new Date().toISOString(),
                     commandCheckDate: '',
+                    cbtDate: '',
+                    simDate: '',
+                    lifusDate: '',
                     sectorHistory: []
                 }));
 
                 document.getElementById('pdfProcessingStatus').classList.add('hidden');
                 showPdfImportPreview();
+                // Show extracted batch summary above preview
+                document.getElementById('pdfBatchNameInput').value = extractedData.batch || '';
+                document.getElementById('pdfExtractedInfo').classList.remove('hidden');
                 document.getElementById('processPdfImportBtn').disabled = false;
 
             } catch (error) {
@@ -3933,27 +4233,39 @@
         }
 
         function parsePdfTrainingInstructions(text) {
-            const courseTypeMatch = text.match(/COURSE TYPE:\s*.*?\((CPC|CUC)\)/i);
-            const isCUC = courseTypeMatch && courseTypeMatch[1].toUpperCase() === 'CUC';
+            const isDIFCourse = /B737.?8 DIFFERENCES COURSE/i.test(text) || /COURSE NO:.*DIF/i.test(text);
+            const courseTypeMatch = !isDIFCourse && text.match(/COURSE TYPE:\s*.*?\((CPC|CUC)\)/i);
+            const isCUC = !isDIFCourse && courseTypeMatch && courseTypeMatch[1].toUpperCase() === 'CUC';
 
             // Try to extract fleet from text (B738, B738M, A330, A350)
             let fleet = '';
-            const fleetMatch = text.match(/\b(B738M|B738|A330|A350)\b/i);
-            if (fleetMatch) {
-                fleet = fleetMatch[1].toUpperCase();
+            if (isDIFCourse) {
+                fleet = 'B738M';
+            } else {
+                const fleetMatch = text.match(/\b(B738M|B738|A330|A350)\b/i);
+                if (fleetMatch) {
+                    fleet = fleetMatch[1].toUpperCase();
+                }
             }
 
             let batch = '';
-            const courseMatch = text.match(/COURSE NO:\s*MAB[- ]?(\d+)\/(\d+)[- ]?(?:CPC|CUC)?/i);
-
-            if (courseMatch) {
-                const sequence = parseInt(courseMatch[1], 10).toString();
-                const year = courseMatch[2];
-
-                if (isCUC) {
-                    batch = `${year}/${sequence} CUC`;
-                } else {
-                    batch = `${year}/${sequence}`;
+            if (isDIFCourse) {
+                const difCourseMatch = text.match(/COURSE\s+NO[:\s]+MAB[\s\-]?(\d+)[\/\-](\d{4})[\s\-]?DIF/i);
+                if (difCourseMatch) {
+                    const sequence = parseInt(difCourseMatch[1], 10).toString().padStart(2, '0');
+                    const year = difCourseMatch[2].slice(-2); // last 2 digits
+                    batch = `${year}/${sequence} DIF`;
+                }
+            } else {
+                const courseMatch = text.match(/COURSE\s+NO[:\s]+MAB[\s\-]?(\d+)[\/\-](\d+)[\s\-]?(?:CPC|CUC)?/i);
+                if (courseMatch) {
+                    const sequence = parseInt(courseMatch[1], 10).toString();
+                    const year = courseMatch[2];
+                    if (isCUC) {
+                        batch = `${year}/${sequence} CUC`;
+                    } else {
+                        batch = `${year}/${sequence}`;
+                    }
                 }
             }
 
@@ -3969,15 +4281,29 @@
             fromMatch = text.search(/\bFROM\b/i);
 
             if (toMatch === -1 || fromMatch === -1 || toMatch >= fromMatch) {
-                return { batch: batch, fleet: fleet, trainees: [], courseType: isCUC ? 'CUC' : 'CPC' };
+                return { batch: batch, fleet: fleet, trainees: [], courseType: isDIFCourse ? 'DIF' : (isCUC ? 'CUC' : 'CPC') };
             }
 
             const traineeSection = text.substring(toMatch, fromMatch);
             const trainees = [];
             let matches;
 
-            if (isCUC) {
-                const cucPattern = /(\d{7})\s+(FO|SO|CPT|SFO)\s+([A-Z][A-Z\s]+?)(?=\s*\d{7}\s+(?:FO|SO|CPT|SFO)|FROM|$)/g;
+            if (isDIFCourse) {
+                const difPattern = /(\d{7})\s+(CAPT|SO|FO|CPT)\s+([A-Z][A-Z\s\/]+?)(?=\s*\d{7}\s+(?:CAPT|SO|FO|CPT)|FROM|$)/g;
+                while ((matches = difPattern.exec(traineeSection)) !== null) {
+                    const staffId = matches[1];
+                    const rawRank = matches[2].toUpperCase();
+                    let rank = rawRank;
+                    if (rawRank === 'CAPT' || rawRank === 'CPT') rank = 'CAPTAIN';
+                    let name = matches[3].trim().replace(/\s+/g, ' ').trim();
+                    name = name.replace(/^(CAPT|SO|FO|CPT)\s+/, '');
+                    name = name.replace(/\s+(CAPT|SO|FO|CPT)\s*$/, '');
+                    if (staffId && name) {
+                        trainees.push({ staffId, name, rank });
+                    }
+                }
+            } else if (isCUC) {
+                const cucPattern = /(\d{7})\s+(FO|SO|CPT|SFO)\s+([A-Z][A-Z\s\/]+?)(?=\s*\d{7}\s+(?:FO|SO|CPT|SFO)|FROM|$)/g;
 
                 while ((matches = cucPattern.exec(traineeSection)) !== null) {
                     const staffId = matches[1];
@@ -3991,7 +4317,7 @@
                     }
                 }
             } else {
-                const cpcPattern = /(\d{7})\s+([A-Z][A-Z\s]+?)(?=\s*\d{7}|FROM|$)/g;
+                const cpcPattern = /(\d{7})\s+([A-Z][A-Z\s\/]+?)(?=\s*\d{7}|FROM|$)/g;
                 const rankPrefixes = /^(CAPTAIN|CPT|SFO|FO|SO)\s+/i;
 
                 while ((matches = cpcPattern.exec(traineeSection)) !== null) {
@@ -4014,7 +4340,13 @@
                 }
             }
 
-            return { batch, fleet, trainees, courseType: isCUC ? 'CUC' : 'CPC' };
+            return { batch, fleet, trainees, courseType: isDIFCourse ? 'DIF' : (isCUC ? 'CUC' : 'CPC') };
+        }
+
+        function applyPdfBatchToAll(value) {
+            const batch = value.trim().toUpperCase();
+            pdfImportData.forEach(t => t.batch = batch);
+            showPdfImportPreview();
         }
 
         function showPdfImportPreview() {
@@ -4071,9 +4403,12 @@
                             </select>
                         </td>
                         <td class="px-3 py-2">
-                            <input type="number" value="${trainee.sectorsFlown}"
+                            ${isDIFBatch(trainee.batch)
+                                ? `<span class="text-gray-400 text-sm">N/A</span>`
+                                : `<input type="number" value="${trainee.sectorsFlown}"
                                    class="w-full px-2 py-1 border rounded text-sm"
-                                   onchange="pdfImportData[${idx}].sectorsFlown = parseInt(this.value) || 0">
+                                   onchange="pdfImportData[${idx}].sectorsFlown = parseInt(this.value) || 0">`
+                            }
                         </td>
                         <td class="px-3 py-2 text-center">
                             <button onclick="removePdfTrainee(${idx})"
@@ -4119,6 +4454,8 @@
                 return;
             }
 
+            document.getElementById('processPdfImportBtn').disabled = true;
+
             let successCount = 0;
             let errorCount = 0;
 
@@ -4143,6 +4480,7 @@
             document.getElementById('pdfImportModal').classList.add('hidden');
             document.getElementById('pdfImportFile').value = '';
             document.getElementById('pdfImportPreview').classList.add('hidden');
+            document.getElementById('pdfExtractedInfo').classList.add('hidden');
             pdfImportData = [];
             document.getElementById('processPdfImportBtn').disabled = true;
 
@@ -4289,15 +4627,18 @@
             document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
             document.getElementById('exportPowerBIBtn').addEventListener('click', exportToExcel);
 
-            // Modal batch field change - show/hide command check date for CUC batches
+            // Modal batch field change - show/hide command check date for CUC batches, DIF fields for DIF batches
             document.getElementById('modalBatch').addEventListener('input', (e) => {
                 const batch = e.target.value.toUpperCase().trim();
-                const container = document.getElementById('modalCommandCheckContainer');
-                if (isCUCBatch(batch)) {
-                    container.classList.remove('hidden');
-                } else {
-                    container.classList.add('hidden');
-                    document.getElementById('modalCommandCheck').value = '';
+                showDIFFieldsIfDIF(batch);
+                if (!isDIFBatch(batch)) {
+                    const container = document.getElementById('modalCommandCheckContainer');
+                    if (isCUCBatch(batch)) {
+                        container.classList.remove('hidden');
+                    } else {
+                        container.classList.add('hidden');
+                        document.getElementById('modalCommandCheck').value = '';
+                    }
                 }
             });
 
@@ -4325,6 +4666,7 @@
                 document.getElementById('pdfImportModal').classList.add('hidden');
                 document.getElementById('pdfImportFile').value = '';
                 document.getElementById('pdfImportPreview').classList.add('hidden');
+                document.getElementById('pdfExtractedInfo').classList.add('hidden');
                 document.getElementById('pdfProcessingStatus').classList.add('hidden');
                 pdfImportData = [];
                 document.getElementById('processPdfImportBtn').disabled = true;
@@ -4437,25 +4779,7 @@
                 updateAdminAnalytics(e.target.value);
             });
 
-            // Sortable headers
-            document.querySelectorAll('.sortable-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    const column = header.dataset.column;
-                    if (currentSort.column === column) {
-                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        currentSort.column = column;
-                        currentSort.direction = 'asc';
-                    }
-
-                    document.querySelectorAll('.sortable-header').forEach(h => {
-                        h.classList.remove('sort-asc', 'sort-desc');
-                    });
-                    header.classList.add(`sort-${currentSort.direction}`);
-
-                    renderTable();
-                });
-            });
+            // Sortable headers - now handled by attachSortListeners() called from renderTable()
         });
 
         // Make functions globally accessible

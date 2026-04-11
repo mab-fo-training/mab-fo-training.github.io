@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IOE Submit">
+    <title>IOE Progress Submit</title>
+
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://alcdn.msauth.net https://cdn.tailwindcss.com;
+        connect-src 'self' https://mabitdept.sharepoint.com https://login.microsoftonline.com https://*.microsoftonline.com https://*.msauth.net https://prod-*.logic.azure.com;
+        style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+        font-src 'self' data:;
+        img-src 'self' data: https:;
+        worker-src 'self' blob:;
+    ">
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --mab-navy: #00205B;
+            --mab-navy-dark: #001540;
+            --mab-gold: #C8A951;
+            --mab-gold-light: #D4B96A;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            background: #f0f2f5;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Prevent iOS zoom on input focus */
+        input, select, textarea { font-size: 16px !important; }
+
+        /* Sign-in page */
+        .signin-bg {
+            background: linear-gradient(160deg, var(--mab-navy) 0%, var(--mab-navy-dark) 60%, #000D2B 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .signin-bg::before {
+            content: '';
+            position: absolute;
+            top: -50%; right: -10%;
+            width: 1px; height: 200%;
+            background: linear-gradient(180deg, transparent, rgba(200,169,81,0.15), transparent);
+            transform: rotate(25deg);
+        }
+
+        .signin-btn {
+            background: linear-gradient(135deg, var(--mab-gold) 0%, var(--mab-gold-light) 100%);
+            color: var(--mab-navy);
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .signin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(200,169,81,0.4);
+        }
+
+        .signin-btn:active {
+            transform: translateY(0);
+        }
+
+        .ms-logo { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 16px; height: 16px; }
+        .ms-logo span { display: block; width: 7px; height: 7px; }
+
+        /* App header */
+        .app-header {
+            background: linear-gradient(135deg, var(--mab-navy) 0%, var(--mab-navy-dark) 100%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Step indicators */
+        .step-indicator {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #d1d5db;
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active { background: var(--mab-gold); transform: scale(1.3); }
+        .step-dot.completed { background: #22c55e; }
+
+        /* Card */
+        .form-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 2rem;
+            max-width: 32rem;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Inputs */
+        .form-input {
+            width: 100%;
+            min-height: 56px;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: white;
+        }
+
+        .form-input:focus {
+            border-color: var(--mab-gold);
+            box-shadow: 0 0 0 3px rgba(200,169,81,0.15);
+        }
+
+        .form-input::placeholder { text-transform: none; }
+
+        /* Radio buttons */
+        .stage-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 56px;
+        }
+
+        .stage-option:hover { border-color: #d1d5db; background: #f9fafb; }
+        .stage-option.selected { border-color: var(--mab-gold); background: #fffbeb; }
+
+        .stage-radio {
+            width: 22px; height: 22px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .stage-option.selected .stage-radio {
+            border-color: var(--mab-gold);
+        }
+
+        .stage-option.selected .stage-radio::after {
+            content: '';
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: var(--mab-gold);
+        }
+
+        /* Primary button */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--mab-navy) 0%, var(--mab-navy-dark) 100%);
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            padding: 0.875rem 2rem;
+            border-radius: 0.75rem;
+            min-height: 56px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,32,91,0.3); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-secondary {
+            background: white;
+            color: #374151;
+            font-weight: 600;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            padding: 0.875rem 2rem;
+            border-radius: 0.75rem;
+            min-height: 56px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            padding: 0.875rem 1.25rem;
+            border-radius: 0.75rem;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: toastSlideIn 0.3s ease;
+            max-width: 360px;
+        }
+
+        .toast-success { background: #16a34a; }
+        .toast-error { background: #dc2626; }
+        .toast-warning { background: #d97706; }
+        .toast-info { background: #2563eb; }
+
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastSlideOut {
+            to { opacity: 0; transform: translateX(100%); }
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+        }
+
+        .loading-spinner {
+            width: 48px; height: 48px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: var(--mab-gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Summary row */
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .summary-row:last-child { border-bottom: none; }
+
+        /* Stage color dots */
+        .stage-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+
+        /* Fade transitions */
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Success checkmark */
+        .success-circle {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: #dcfce7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .success-circle svg {
+            width: 40px; height: 40px;
+            color: #16a34a;
+        }
+
+        /* Trainee info card */
+        .info-card {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 0.75rem;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Loading overlay (hidden by default) -->
+    <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+        <div class="loading-spinner"></div>
+        <p id="loadingMessage" class="text-white mt-4 font-medium">Loading...</p>
+    </div>
+
+    <!-- ==================== SIGN IN PAGE ==================== -->
+    <div id="signinPage" class="signin-bg">
+        <div class="relative z-10 text-center w-full max-w-md px-4">
+            <!-- Icon -->
+            <div class="flex justify-center mb-6">
+                <div class="w-20 h-20 rounded-2xl flex items-center justify-center" style="background: rgba(200,169,81,0.1); border: 1px solid rgba(200,169,81,0.2); animation: loginFloat 4s ease-in-out infinite;">
+                    <svg class="w-10 h-10" fill="#C8A951" viewBox="0 0 24 24">
+                        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">IOE Progress<br><span style="color: var(--mab-gold);">Submit</span></h1>
+            <p class="text-blue-200/60 text-base mb-10">Instructor submission portal for trainee progress updates</p>
+
+            <button id="signInBtn" class="signin-btn py-4 px-10 rounded-xl text-lg inline-flex items-center gap-3 mx-auto transition-all duration-300">
+                <div class="ms-logo">
+                    <span style="background:#f25022;"></span>
+                    <span style="background:#7fba00;"></span>
+                    <span style="background:#00a4ef;"></span>
+                    <span style="background:#ffb900;"></span>
+                </div>
+                Sign in with Microsoft
+            </button>
+            <p class="text-blue-200/30 text-sm mt-4">Uses your organization's Microsoft 365 credentials</p>
+        </div>
+
+        <div class="absolute bottom-4 text-center w-full">
+            <p class="text-white/20 text-xs">Malaysia Airlines &bull; IOE Progress Submit &bull; PWA</p>
+        </div>
+    </div>
+
+    <!-- ==================== APP ==================== -->
+    <div id="appShell" class="hidden min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="app-header sticky top-0 z-50 px-4 py-3">
+            <div class="max-w-lg mx-auto flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 flex-shrink-0" fill="#C8A951" viewBox="0 0 24 24">
+                        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                    </svg>
+                    <div>
+                        <h1 class="text-white font-bold text-sm leading-tight">IOE Progress Submit</h1>
+                        <p class="text-blue-200/60 text-xs" id="headerUserName"></p>
+                    </div>
+                </div>
+                <button id="signOutBtn" class="text-blue-200/60 hover:text-white text-xs transition-colors px-3 py-2 rounded-lg hover:bg-white/10">
+                    Sign Out
+                </button>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <main class="flex-1 px-4 py-6">
+            <!-- Step indicators -->
+            <div class="step-indicator" id="stepIndicator">
+                <div class="step-dot active" data-step="1"></div>
+                <div class="step-dot" data-step="2"></div>
+                <div class="step-dot" data-step="3"></div>
+                <div class="step-dot" data-step="4"></div>
+            </div>
+
+            <!-- STEP 1: Trainee Lookup -->
+            <div id="step1" class="form-card fade-in">
+                <h2 class="text-xl font-bold text-gray-800 mb-1">Trainee Lookup</h2>
+                <p class="text-gray-500 text-sm mb-6">Enter the trainee's staff number to begin</p>
+
+                <label class="block text-sm font-medium text-gray-700 mb-2">Staff Number</label>
+                <input type="text" id="staffIdInput" class="form-input mb-4" placeholder="e.g. 12345" autocomplete="off" inputmode="numeric">
+
+                <button id="lookupBtn" class="btn-primary">
+                    Look Up Trainee
+                </button>
+            </div>
+
+            <!-- STEP 2: Submission Form -->
+            <div id="step2" class="form-card fade-in hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-1">Submit Progress</h2>
+                <p class="text-gray-500 text-sm mb-4">Fill in the training update details</p>
+
+                <!-- Trainee info -->
+                <div class="info-card mb-6" id="traineeInfoCard">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-gray-800" id="infoName"></p>
+                            <p class="text-sm text-gray-500" id="infoDetails"></p>
+                        </div>
+                        <button id="changeLookupBtn" class="text-xs text-blue-600 hover:text-blue-800 font-medium">Change</button>
+                    </div>
+                </div>
+
+                <!-- Total Sectors -->
+                <label class="block text-sm font-medium text-gray-700 mb-2">Total Sectors</label>
+                <input type="number" id="sectorsInput" class="form-input mb-4" placeholder="Enter total sectors" min="0" inputmode="numeric">
+
+                <!-- Date -->
+                <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <input type="date" id="dateInput" class="form-input mb-4">
+
+                <!-- Progression Stage -->
+                <label class="block text-sm font-medium text-gray-700 mb-4">Progression Stage</label>
+                <div class="flex flex-col gap-3 mb-4" id="stageOptions">
+                    <div class="stage-option" data-stage="Cleared Functional" onclick="selectStage(this)">
+                        <div class="stage-radio"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="stage-dot" style="background: #3b82f6;"></span>
+                            <span class="font-medium text-gray-700">Cleared Functional</span>
+                        </div>
+                    </div>
+                    <div class="stage-option" data-stage="Cleared for Line Release Check" onclick="selectStage(this)">
+                        <div class="stage-radio"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="stage-dot" style="background: #8b5cf6;"></span>
+                            <span class="font-medium text-gray-700">Cleared for Line Release Check</span>
+                        </div>
+                    </div>
+                    <div class="stage-option" data-stage="Line Release Check COMPLETED" onclick="selectStage(this)">
+                        <div class="stage-radio"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="stage-dot" style="background: #22c55e;"></span>
+                            <span class="font-medium text-gray-700">Line Release Check COMPLETED</span>
+                        </div>
+                    </div>
+                    <div class="stage-option cuc-only hidden" data-stage="Cleared for Command Check" onclick="selectStage(this)">
+                        <div class="stage-radio"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="stage-dot" style="background: #f59e0b;"></span>
+                            <span class="font-medium text-gray-700">Cleared for Command Check</span>
+                        </div>
+                    </div>
+                    <div class="stage-option cuc-only hidden" data-stage="Command Check COMPLETED" onclick="selectStage(this)">
+                        <div class="stage-radio"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="stage-dot" style="background: #10b981;"></span>
+                            <span class="font-medium text-gray-700">Command Check COMPLETED</span>
+                        </div>
+                    </div>
+                    <div class="stage-option dif-only hidden" data-stage="LIFUS COMPLETED" onclick="selectStage(this)">
+                        <div class="stage-radio"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="stage-dot" style="background: #0891b2;"></span>
+                            <span class="font-medium text-gray-700">LIFUS COMPLETED</span>
+                        </div>
+                    </div>
+                    <div class="stage-option" data-stage="REFERRED TO SIP" onclick="selectStage(this)">
+                        <div class="stage-radio"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="stage-dot" style="background: #ef4444;"></span>
+                            <span class="font-medium text-gray-700">REFERRED TO SIP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Referral Reasons (shown only for SIP) -->
+                <div id="referralSection" class="hidden mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Referral Reason(s)</label>
+                    <textarea id="referralInput" class="form-input" rows="3" placeholder="Enter reason(s) for referral"></textarea>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button id="backToLookupBtn" class="btn-secondary" style="width: auto; flex: 0 0 auto; padding: 0.875rem 1.5rem;">
+                        Back
+                    </button>
+                    <button id="reviewBtn" class="btn-primary" style="flex: 1;">
+                        Review Submission
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Review & Confirm -->
+            <div id="step3" class="form-card fade-in hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-1">Review Submission</h2>
+                <p class="text-gray-500 text-sm mb-6">Please verify all details before submitting</p>
+
+                <div id="reviewSummary" class="mb-6"></div>
+
+                <div class="flex gap-3">
+                    <button id="backToFormBtn" class="btn-secondary" style="width: auto; flex: 0 0 auto; padding: 0.875rem 1.5rem;">
+                        Back
+                    </button>
+                    <button id="confirmBtn" class="btn-primary" style="flex: 1; background: linear-gradient(135deg, #16a34a, #15803d);">
+                        Confirm & Submit
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 4: Success -->
+            <div id="step4" class="form-card fade-in hidden text-center">
+                <div class="success-circle">
+                    <svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800 mb-2">Submitted Successfully</h2>
+                <p class="text-gray-500 text-sm mb-6" id="successMessage">The progress update has been submitted and emails will be sent shortly.</p>
+
+                <button id="submitAnotherBtn" class="btn-primary">
+                    Submit Another
+                </button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="text-center py-4 text-xs text-gray-400">
+            Malaysia Airlines &bull; IOE Progress Submit
+        </footer>
+    </div>
+
+    <script>
+        // ==================== CONSTANTS ====================
+        const SHAREPOINT_SITE_URL = 'https://mabitdept.sharepoint.com/sites/FlightOpsIOETrainingTracker';
+        const SHAREPOINT_LIST_NAME = 'Training_Progress';
+
+        // IMPORTANT: Paste the HTTP trigger URL from Power Automate here after creating the flow
+        const POWER_AUTOMATE_URL = '';
+
+        // ==================== MSAL CONFIG ====================
+        let msalInstance;
+        const msalConfig = {
+            auth: {
+                clientId: '82a4ec5a-d90d-4957-8021-3093e60a4d70',
+                authority: 'https://login.microsoftonline.com/8fc3a567-1ee8-4994-809c-49f50cdb6d48',
+                redirectUri: window.location.origin
+            },
+            cache: {
+                cacheLocation: 'sessionStorage',
+                storeAuthStateInCookie: false
+            }
+        };
+
+        const loginRequest = {
+            scopes: ['https://mabitdept.sharepoint.com/.default']
+        };
+
+        // ==================== STATE ====================
+        let currentUser = null;
+        let accessToken = null;
+        let traineeData = null;
+        let selectedStage = null;
+        let currentStep = 1;
+
+        // ==================== INITIALIZATION ====================
+        function init() {
+            try {
+                msalInstance = new msal.PublicClientApplication(msalConfig);
+                console.log('[OK] MSAL initialized');
+
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length > 0) {
+                    msalInstance.setActiveAccount(accounts[0]);
+                    currentUser = { name: accounts[0].name, email: accounts[0].username };
+                    acquireTokenAndShowApp();
+                }
+            } catch (error) {
+                console.error('[ERROR] MSAL init failed:', error);
+                showToast('Authentication setup failed. Please reload.', 'error');
+            }
+
+            // Event listeners
+            document.getElementById('signInBtn').addEventListener('click', signIn);
+            document.getElementById('signOutBtn').addEventListener('click', signOut);
+            document.getElementById('lookupBtn').addEventListener('click', lookupTrainee);
+            document.getElementById('changeLookupBtn').addEventListener('click', () => goToStep(1));
+            document.getElementById('backToLookupBtn').addEventListener('click', () => goToStep(1));
+            document.getElementById('reviewBtn').addEventListener('click', reviewSubmission);
+            document.getElementById('backToFormBtn').addEventListener('click', () => goToStep(2));
+            document.getElementById('confirmBtn').addEventListener('click', confirmSubmission);
+            document.getElementById('submitAnotherBtn').addEventListener('click', resetForm);
+
+            // Enter key on staff ID input
+            document.getElementById('staffIdInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') lookupTrainee();
+            });
+
+            // Set default date to today
+            document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+
+            // Register service worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(err => {
+                    console.log('[INFO] SW registration skipped:', err.message);
+                });
+            }
+        }
+
+        // ==================== AUTHENTICATION ====================
+        async function signIn() {
+            showLoading('Signing in...');
+            try {
+                const loginResponse = await msalInstance.loginPopup(loginRequest);
+                msalInstance.setActiveAccount(loginResponse.account);
+                currentUser = { name: loginResponse.account.name, email: loginResponse.account.username };
+                accessToken = loginResponse.accessToken;
+                showApp();
+            } catch (error) {
+                console.error('[ERROR] Sign in failed:', error);
+                if (error.errorCode !== 'user_cancelled') {
+                    showToast('Sign in failed. Please try again.', 'error');
+                }
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function signOut() {
+            try {
+                await msalInstance.logoutPopup();
+                currentUser = null;
+                accessToken = null;
+                traineeData = null;
+                selectedStage = null;
+                document.getElementById('signinPage').classList.remove('hidden');
+                document.getElementById('appShell').classList.add('hidden');
+            } catch (error) {
+                console.error('[ERROR] Sign out failed:', error);
+            }
+        }
+
+        async function acquireTokenAndShowApp() {
+            try {
+                const account = msalInstance.getActiveAccount();
+                if (!account) throw new Error('No active account');
+
+                const tokenResponse = await msalInstance.acquireTokenSilent({
+                    ...loginRequest,
+                    account: account
+                });
+                accessToken = tokenResponse.accessToken;
+                showApp();
+            } catch (error) {
+                if (error instanceof msal.InteractionRequiredAuthError) {
+                    try {
+                        const popupResponse = await msalInstance.acquireTokenPopup(loginRequest);
+                        accessToken = popupResponse.accessToken;
+                        showApp();
+                    } catch (popupError) {
+                        console.error('[ERROR] Token popup failed:', popupError);
+                    }
+                }
+            }
+        }
+
+        async function refreshAccessToken() {
+            const account = msalInstance.getActiveAccount();
+            if (!account) throw new Error('No active account');
+
+            try {
+                const tokenResponse = await msalInstance.acquireTokenSilent({
+                    ...loginRequest,
+                    account: account
+                });
+                accessToken = tokenResponse.accessToken;
+                return accessToken;
+            } catch (error) {
+                if (error instanceof msal.InteractionRequiredAuthError) {
+                    const popupResponse = await msalInstance.acquireTokenPopup(loginRequest);
+                    accessToken = popupResponse.accessToken;
+                    return accessToken;
+                }
+                throw error;
+            }
+        }
+
+        // Fetch wrapper with auto token refresh on 401
+        async function authFetch(url, options = {}) {
+            options.headers = options.headers || {};
+            options.headers['Authorization'] = `Bearer ${accessToken}`;
+
+            let response = await fetch(url, options);
+
+            if (response.status === 401) {
+                console.log('[INFO] Token expired, refreshing...');
+                const newToken = await refreshAccessToken();
+                options.headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(url, options);
+            }
+
+            return response;
+        }
+
+        // ==================== UI HELPERS ====================
+        function showApp() {
+            document.getElementById('signinPage').classList.add('hidden');
+            document.getElementById('appShell').classList.remove('hidden');
+            document.getElementById('headerUserName').textContent = currentUser.name || currentUser.email;
+            resetForm();
+        }
+
+        function goToStep(step) {
+            currentStep = step;
+            document.querySelectorAll('#step1, #step2, #step3, #step4').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step${step}`).classList.remove('hidden');
+
+            // Update step indicators
+            document.querySelectorAll('.step-dot').forEach((dot, i) => {
+                dot.classList.remove('active', 'completed');
+                if (i + 1 === step) dot.classList.add('active');
+                else if (i + 1 < step) dot.classList.add('completed');
+            });
+
+            // Focus appropriate input
+            if (step === 1) {
+                setTimeout(() => document.getElementById('staffIdInput').focus(), 100);
+            }
+        }
+
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        function showLoading(message = 'Loading...') {
+            document.getElementById('loadingMessage').textContent = message;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function isCUCBatch(batch) {
+            return batch && batch.toUpperCase().includes('CUC');
+        }
+
+        function isDIFBatch(batch) {
+            return batch && batch.toUpperCase().includes('DIF');
+        }
+
+        // ==================== TRAINEE LOOKUP ====================
+        async function lookupTrainee() {
+            const staffId = document.getElementById('staffIdInput').value.trim();
+            if (!staffId) {
+                showToast('Please enter a staff number.', 'warning');
+                return;
+            }
+
+            showLoading('Looking up trainee...');
+            try {
+                const url = `${SHAREPOINT_SITE_URL}/_api/web/lists/getbytitle('${SHAREPOINT_LIST_NAME}')/items?$filter=Staff_ID eq '${encodeURIComponent(staffId)}'&$select=Id,Title,Staff_ID,Fleet,Batch,Rank&$top=1`;
+                const response = await authFetch(url, {
+                    headers: { 'Accept': 'application/json;odata=verbose' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`SharePoint returned ${response.status}`);
+                }
+
+                const data = await response.json();
+                const items = data.d.results;
+
+                if (items.length === 0) {
+                    showToast('No trainee found with that staff number.', 'error');
+                    hideLoading();
+                    return;
+                }
+
+                const item = items[0];
+                traineeData = {
+                    id: item.Id,
+                    name: item.Title,
+                    staffId: item.Staff_ID,
+                    fleet: item.Fleet || 'N/A',
+                    batch: item.Batch || '',
+                    rank: item.Rank || ''
+                };
+
+                // Update info card
+                document.getElementById('infoName').textContent = traineeData.name;
+                document.getElementById('infoDetails').textContent = `Staff ID: ${traineeData.staffId} | Fleet: ${traineeData.fleet} | Batch: ${traineeData.batch}`;
+
+                // Show/hide CUC and DIF options
+                const isCUC = isCUCBatch(traineeData.batch);
+                const isDIF = isDIFBatch(traineeData.batch);
+                document.querySelectorAll('.cuc-only').forEach(el => {
+                    el.classList.toggle('hidden', !isCUC);
+                });
+                document.querySelectorAll('.dif-only').forEach(el => {
+                    el.classList.toggle('hidden', !isDIF);
+                });
+                // For DIF trainees, hide IOE-specific stages
+                const ioeOnlyStages = ['Cleared Functional', 'Cleared for Line Release Check', 'Line Release Check COMPLETED'];
+                document.querySelectorAll('.stage-option').forEach(el => {
+                    const stage = el.dataset.stage;
+                    if (isDIF && ioeOnlyStages.includes(stage) && !el.classList.contains('dif-only')) {
+                        el.classList.add('hidden');
+                    } else if (!el.classList.contains('cuc-only') && !el.classList.contains('dif-only')) {
+                        el.classList.remove('hidden');
+                    }
+                });
+
+                // Clear previous stage selection
+                selectedStage = null;
+                document.querySelectorAll('.stage-option').forEach(opt => opt.classList.remove('selected'));
+                document.getElementById('referralSection').classList.add('hidden');
+
+                goToStep(2);
+            } catch (error) {
+                console.error('[ERROR] Lookup failed:', error);
+                showToast('Failed to look up trainee. Please try again.', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== STAGE SELECTION ====================
+        function selectStage(element) {
+            document.querySelectorAll('.stage-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedStage = element.dataset.stage;
+
+            // Show/hide referral reasons
+            const showReferral = selectedStage === 'REFERRED TO SIP';
+            document.getElementById('referralSection').classList.toggle('hidden', !showReferral);
+        }
+
+        // ==================== REVIEW ====================
+        function reviewSubmission() {
+            const sectors = document.getElementById('sectorsInput').value;
+            const date = document.getElementById('dateInput').value;
+
+            if (!sectors) { showToast('Please enter total sectors.', 'warning'); return; }
+            if (!date) { showToast('Please select a date.', 'warning'); return; }
+            if (!selectedStage) { showToast('Please select a progression stage.', 'warning'); return; }
+
+            // Future date validation
+            const selectedDate = new Date(date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate > today) {
+                showToast('Date cannot be in the future.', 'warning');
+                return;
+            }
+
+            if (selectedStage === 'REFERRED TO SIP' && !document.getElementById('referralInput').value.trim()) {
+                showToast('Please enter referral reason(s).', 'warning');
+                return;
+            }
+
+            // Build summary
+            const referralReasons = document.getElementById('referralInput').value.trim();
+            const stageColors = {
+                'Cleared Functional': '#3b82f6',
+                'Cleared for Line Release Check': '#8b5cf6',
+                'Line Release Check COMPLETED': '#22c55e',
+                'Cleared for Command Check': '#f59e0b',
+                'Command Check COMPLETED': '#10b981',
+                'LIFUS COMPLETED': '#0891b2',
+                'REFERRED TO SIP': '#ef4444'
+            };
+
+            const summaryHtml = `
+                <div class="summary-row"><span class="text-gray-500">Trainee</span><span class="font-medium text-gray-800">${escapeHtml(traineeData.name)}</span></div>
+                <div class="summary-row"><span class="text-gray-500">Staff ID</span><span class="font-medium text-gray-800">${escapeHtml(traineeData.staffId)}</span></div>
+                <div class="summary-row"><span class="text-gray-500">Fleet</span><span class="font-medium text-gray-800">${escapeHtml(traineeData.fleet)}</span></div>
+                <div class="summary-row"><span class="text-gray-500">Total Sectors</span><span class="font-medium text-gray-800">${escapeHtml(sectors)}</span></div>
+                <div class="summary-row"><span class="text-gray-500">Date</span><span class="font-medium text-gray-800">${escapeHtml(date)}</span></div>
+                <div class="summary-row"><span class="text-gray-500">Stage</span><span class="font-medium text-gray-800 flex items-center"><span class="stage-dot" style="background: ${stageColors[selectedStage] || '#6b7280'};"></span>${escapeHtml(selectedStage)}</span></div>
+                ${referralReasons ? `<div class="summary-row"><span class="text-gray-500">Referral Reasons</span><span class="font-medium text-gray-800">${escapeHtml(referralReasons)}</span></div>` : ''}
+                <div class="summary-row"><span class="text-gray-500">Submitted By</span><span class="font-medium text-gray-800">${escapeHtml(currentUser.name || currentUser.email)}</span></div>
+            `;
+
+            document.getElementById('reviewSummary').innerHTML = summaryHtml;
+            goToStep(3);
+        }
+
+        // ==================== SUBMIT ====================
+        async function confirmSubmission() {
+            const sectors = document.getElementById('sectorsInput').value;
+            const date = document.getElementById('dateInput').value;
+            const referralReasons = document.getElementById('referralInput').value.trim();
+
+            // Check if Power Automate URL is configured
+            if (!POWER_AUTOMATE_URL) {
+                showToast('Power Automate URL not configured. Contact admin.', 'error');
+                return;
+            }
+
+            showLoading('Submitting progress update...');
+
+            const payload = {
+                submitterEmail: currentUser.email,
+                traineeName: traineeData.name,
+                staffNumber: traineeData.staffId,
+                fleet: traineeData.fleet,
+                totalSectors: parseInt(sectors, 10),
+                submissionDate: date,
+                progressionStage: selectedStage,
+                referralReasons: referralReasons || ''
+            };
+
+            try {
+                const response = await fetch(POWER_AUTOMATE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                document.getElementById('successMessage').textContent =
+                    `Progress update for ${traineeData.name} (${selectedStage}) has been submitted. Email notifications will be sent shortly.`;
+                goToStep(4);
+            } catch (error) {
+                console.error('[ERROR] Submission failed:', error);
+                showToast('Submission failed. Please try again or use the Microsoft Form as a backup.', 'error', 6000);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== RESET ====================
+        function resetForm() {
+            traineeData = null;
+            selectedStage = null;
+
+            document.getElementById('staffIdInput').value = '';
+            document.getElementById('sectorsInput').value = '';
+            document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+            document.getElementById('referralInput').value = '';
+            document.getElementById('referralSection').classList.add('hidden');
+
+            document.querySelectorAll('.stage-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (!opt.classList.contains('cuc-only') && !opt.classList.contains('dif-only')) {
+                    opt.classList.remove('hidden');
+                }
+            });
+            document.querySelectorAll('.cuc-only').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.dif-only').forEach(el => el.classList.add('hidden'));
+
+            goToStep(1);
+        }
+
+        // ==================== FLOAT ANIMATION ====================
+        // Add CSS animation for sign-in icon
+        const floatStyle = document.createElement('style');
+        floatStyle.textContent = `@keyframes loginFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }`;
+        document.head.appendChild(floatStyle);
+
+        // ==================== START ====================
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

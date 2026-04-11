@@ -10,11 +10,13 @@ This repository contains a **Training Progress Tracker** for managing flight tra
 - **~4,000 lines** - Full-featured production version
 - SharePoint REST API for data storage
 - MSAL.js for Microsoft 365 authentication (delegated)
-- Dual interface: User Portal + Admin Panel
+- Triple interface: User Portal + Admin Panel + Instructor Submit
 - Analytics dashboard, change history, PDF import, Excel export
 - Toast notifications (non-blocking) and loading spinner overlay
 - User Portal progress timeline (visual milestone stepper)
 - Sector history persistence via SharePoint column (JSON)
+- Instructor Submit view: iPad-optimized form for instructors to submit trainee progress
+- PWA support: manifest.json for iPad home screen install
 - Dedicated SharePoint Communication Site as backend
 
 **Common Technologies:**
@@ -92,6 +94,8 @@ User Browser → MSAL sign-in popup → Access token
 | `Last_Updated` | Date and time | |
 | `Manual_Highlight` | Choice: `blue`, `green`, `red` | |
 | `Sector_History` | Multiple lines of text | JSON array of sector change records |
+| `Last_Updated_By` | Single line of text | Email of user who last updated (auto-created by app) |
+| `Update_Source` | Single line of text | Source of update: `Instructor_Submit`, `Forms`, `Admin` (auto-created by app) |
 
 **Important**: Name is stored in `Title` (SharePoint built-in field), NOT a custom `Name` column. The code saves to `Title` and reads from `item.Title`.
 
@@ -166,6 +170,7 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 - `getListItemEntityType()`: Gets OData metadata for proper API calls
 - `testSharePointConnection()`: Validates site/list accessibility
 - `ensureSectorHistoryColumn()`: Checks/creates Sector_History column on first load
+- `ensureInstructorColumns()`: Checks/creates Last_Updated_By and Update_Source columns on first load
 
 ### Data Management
 - `filterCadets()`: Applies search, year, batch, rank, fleet, status, training type filters
@@ -180,24 +185,65 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 - `showLoading(message)` / `hideLoading()`: Full-screen loading spinner overlay
 - `renderProgressTimeline(cadet)`: Visual milestone stepper in User Portal
 
+### Instructor Submit Functions
+- `instructorLookupTrainee()`: Looks up trainee by Staff ID from `cadets[]` array
+- `instructorReviewSubmission()`: Validates form fields, shows confirmation summary
+- `instructorConfirmSubmission()`: Applies stage-specific updates to SharePoint (same mapping as Power Automate flow)
+- `instructorResetForm()`: Clears form and returns to Staff ID lookup step
+- `updateInstructorStageOptions()`: Shows/hides Command Check option based on batch type (CUC vs CPC)
+- `switchToInstructorView()`: View toggle for the Instructor Submit tab
+
 ### Error Handling
 - Save errors return the full SharePoint response body for debugging
 - Console logging with `[OK]`, `[ERROR]`, `[DENIED]` prefixes
 - Toast notifications for all user-facing messages (no `alert()` calls)
 
-## Files
+## Project Structure
 
-| File | Description | Status |
-|---|---|---|
-| `index-sharepoint-v3-enhanced.html` | SharePoint version, full-featured | **ACTIVE** |
-| `docs/index.html` | Copy of above for GitHub Pages deployment | **DEPLOYED** |
-| `CLAUDE.md` | This file | |
-| `SETUP_GUIDE.md` | SharePoint/Azure AD setup instructions | |
-| `QUICK_REFERENCE.md` | End-user quick reference | |
-| `POWER_AUTOMATE_GUIDE.md` | Step-by-step Power Automate flow instructions | |
-
-**Removed files** (no longer in repo):
-- `index.html`, `index-2.html` — Legacy Google Sheets versions, removed due to exposed API key
+```
+├── index-sharepoint-v3-enhanced.html   # Active source file
+├── CLAUDE.md                           # This file
+├── docs/
+│   ├── index.html                      # GitHub Pages deployment (copy of source)
+│   └── pwa/                            # Standalone PWA instructor submit app
+│       ├── index.html                  # PWA app (single HTML file)
+│       ├── manifest.json               # PWA manifest for iPad home screen
+│       ├── sw.js                       # Service worker (cache static assets)
+│       └── icons/                      # App icons (192x192, 512x512)
+├── guides/
+│   ├── POWER_AUTOMATE_GUIDE.md         # Power Automate flow setup instructions
+│   ├── POWER_AUTOMATE_PWA_GUIDE.md     # Parent/child flow restructure guide
+│   ├── QUICK_REFERENCE.md              # End-user quick reference
+│   ├── QUICK_START_GUIDE.md            # Getting started guide
+│   ├── WHATSAPP_INTEGRATION_PROPOSAL.md# WhatsApp/Twilio analysis (deferred)
+│   ├── DEPLOYMENT_CHECKLIST.md         # Deployment steps checklist
+│   ├── MIGRATION_GUIDE.md             # Data migration guide
+│   ├── TEST_MODE_GUIDE.md             # Test mode documentation
+│   ├── SETUP_STATUS.md                # Setup progress tracking
+│   ├── CONTINUE_HERE.md               # Dev resumption notes
+│   └── CHANGELOG_2025-01-16.md        # Historical changelog
+├── scripts/
+│   ├── check-modules.ps1              # Check PowerShell module availability
+│   ├── grant-site-access.ps1          # Grant SharePoint site access
+│   ├── grant-site-permission.ps1      # Grant Azure AD app site permission
+│   ├── migrate-to-sharepoint.ps1      # Data migration script
+│   ├── test-sharepoint-setup.ps1      # SharePoint setup validation
+│   ├── test-sharepoint-devicecode.ps1 # Device code auth test
+│   ├── test-read-only.ps1            # Read-only access test
+│   ├── test-sharepoint.py            # Python SharePoint test
+│   └── verify-install.ps1            # Module install verification
+├── correspondence/
+│   ├── EMAIL_TO_IT_*.md               # IT email drafts (6 files)
+│   ├── IT_CORRESPONDENCE_LOG.md       # IT communication history
+│   └── IT_DEPARTMENT_REQUEST.md       # IT department request
+└── archive/
+    ├── Backup_2025-11-26/             # Pre-migration backup
+    ├── preview-design-{1,2,3}.html    # Sign-in page design previews
+    ├── progress-tracker.html          # Legacy tracker copy
+    ├── tracker.html                   # Legacy tracker copy
+    ├── template.txt                   # Power Automate email template
+    └── WhatsApp-to-SharePoint.txt     # WhatsApp integration notes
+```
 
 ## Deployment Status
 
@@ -296,7 +342,7 @@ Form Submitted → Get response details → Get items (SharePoint lookup by Staf
 **Notes:**
 - Fleet from form is ignored — the SharePoint list already has this data
 - "REFERRED TO SIP" sends 3 emails (submitter ack, APCT alert, referral to Capt Arian/Shazreen)
-- See `POWER_AUTOMATE_GUIDE.md` for detailed setup instructions
+- See `guides/POWER_AUTOMATE_GUIDE.md` for detailed setup instructions
 
 ### Form Field IDs (for flow expressions)
 | Field | ID |
@@ -306,6 +352,83 @@ Form Submitted → Get response details → Get items (SharePoint lookup by Staf
 | Name part 1 (used in APCT emails) | `rbb051b394b394902b4d2c72cdb2197f5` |
 | Name part 2 (used in APCT emails) | `r5c5addf1886e4ba7a3858837f05544ec` |
 | Referral Reason(s) | `r02e9c5a816524d259d5703b5e1e05f36` |
+
+## Instructor Submit View
+
+### Purpose
+Allows 30+ instructors to submit trainee progress updates from iPads (post-flight). Runs **alongside** the existing Microsoft Forms + Power Automate flow — both channels write to the same `Training_Progress` list.
+
+### How It Works
+1. Instructor signs in via MSAL (same as admin/user portal)
+2. Enters trainee Staff ID → app looks up trainee from `cadets[]` array
+3. Fills in: Progression Stage, Total Sectors, Date
+4. Reviews confirmation summary → submits
+5. App writes directly to SharePoint via REST API (no Power Automate middleman)
+6. Appends `[Via Instructor Submit - INSTRUCTOR NAME - DATE]` to Remarks
+7. Sets `Last_Updated_By` = instructor email, `Update_Source` = "Instructor_Submit"
+
+### Stage → SharePoint Field Mapping (identical to Power Automate flow)
+| Stage | SharePoint Update |
+|-------|-------------------|
+| Cleared Functional | `Functional_Date` + `Sectors_Flown` |
+| LRC COMPLETED | `LRC_Date` + `Sectors_Flown` |
+| Command Check COMPLETED | `Command_Check_Date` + `Sectors_Flown` |
+| Cleared for LRC | Append to `Remarks` + `Sectors_Flown` |
+| Cleared for Command Check | Append to `Remarks` + `Sectors_Flown` |
+| REFERRED TO SIP | `Manual_Highlight: red` + Append to `Remarks` + `Sectors_Flown` |
+
+### iPad PWA (Embedded — in main app)
+- `docs/manifest.json` enables "Add to Home Screen" on iPads
+- Opens full-screen (no Safari chrome) with MAB navy theme
+- Existing `apple-mobile-web-app-capable` meta tags support standalone mode
+
+### Design
+- Amber/gold tab color (distinct from User Portal blue and Admin green)
+- All inputs `min-h-[56px]` for iPad touch targets
+- `font-size: 16px` on mobile to prevent iOS Safari zoom-on-focus
+- `max-w-2xl` centered form layout
+- Multi-step flow: Lookup → Info → Form → Review → Confirm → Success
+
+### WhatsApp Alternative (Evaluated, Deferred)
+A WhatsApp-via-Twilio approach was evaluated (see `guides/WHATSAPP_INTEGRATION_PROPOSAL.md`). The PWA approach was chosen because:
+- Zero cost (vs ~$5/month for Twilio)
+- Full M365 authentication (vs phone+PIN, which is weaker)
+- No third-party dependencies
+- Instructors have iPads with Safari (no need for WhatsApp workaround)
+- Reuses existing `saveTraineeToSharePoint()` code
+
+WhatsApp remains a viable Phase 2 option if iPad adoption is low.
+
+## Standalone PWA Instructor Submit (In Progress)
+
+### Overview
+A **separate standalone PWA** at `docs/pwa/` for instructors to submit trainee progress from iPads. Independent from the main Training Tracker app — no admin panel, no tables, just a focused submission form.
+
+### Files
+- `docs/pwa/index.html` — Standalone app (MSAL auth, SharePoint lookup, multi-step form)
+- `docs/pwa/manifest.json` — PWA manifest for iPad home screen install
+- `docs/pwa/sw.js` — Service worker (cache static assets)
+- `docs/pwa/icons/` — App icons (192x192, 512x512 placeholders)
+- `guides/POWER_AUTOMATE_PWA_GUIDE.md` — Power Automate restructure guide (Premium approach)
+
+### URL
+- Will be served at `https://mab-fo-training.github.io/pwa/`
+- Azure AD redirect URI already covers this (`window.location.origin`)
+
+### Current Status: Blocked — Submission Backend
+The PWA UI is built. The submission backend needs one of:
+
+1. **SharePoint Queue approach (free tier)** — PWA writes to a `Submission_Queue` list, a standard Power Automate flow ("When an item is created") processes it, updates Training_Progress, and sends emails. Plan saved at `.claude/plans/dreamy-shimmying-blossom.md`.
+
+2. **HTTP trigger approach (Premium required)** — PWA POSTs JSON to a Power Automate HTTP trigger, which calls a child flow. Requires Power Automate Premium license. Child flow `IOE Progress - Process Submission` already created in Power Automate (turned off). Guide at `guides/POWER_AUTOMATE_PWA_GUIDE.md`.
+
+### Power Automate Email Templates (Verified)
+5 email templates used across 4 switch cases:
+- **Submitter ack**: Static body, no dynamic expressions
+- **APCT "Positive Progress"**: Used for Cleared Functional + LRC COMPLETED
+- **APCT "Command Check COMPLETED"**: Unique "CLEARED FOR LRC" banner
+- **APCT "Referred to SIP"**: Yellow warning box, red status color
+- **Capt Referral**: Trainee name + referral reasons + submitter email
 
 ## Pending Fixes / Improvements
 

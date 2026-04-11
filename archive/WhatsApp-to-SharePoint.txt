@@ -1,0 +1,87 @@
+# PROJECT: WhatsApp-to-SharePoint Automation Guide
+
+## 1. ARCHITECTURE
+- **Frontend:** WhatsApp (via Twilio)
+- **Middleware:** Twilio Studio (Chat Logic)
+- **Backend:** Power Automate (Business Logic)
+- **Database:** SharePoint Online
+
+## 2. REQUIRED SHAREPOINT LISTS
+Create these before building anything.
+
+1. LIST: "Authorized_Instructors"
+   - Column: Name (Text)
+   - Column: Phone_Number (Text) -> Format: +60123456789
+
+2. LIST: "Trainees"
+   - Column: Staff_ID (Text, Unique)
+   - Column: Trainee_Name (Text)
+   - Column: Fleet (Text)
+
+3. LIST: "IOE_Tracking" (The Destination)
+   - Column: Staff_ID (Text)
+   - Column: Total_Sectors (Number)
+   - Column: Progression_Stage (Choice)
+   - Column: Instructor_Name (Text)
+   - Column: Date_Updated (Date/Time)
+
+---------------------------------------------------------
+
+## 3. POWER AUTOMATE FLOWS (Build These First)
+
+### FLOW A: "Helper - Check ID"
+*Goal: Validates ID and returns Name/Fleet.*
+- Trigger: HTTP Request
+- Method: POST
+- JSON Schema:
+  { "staff_id": "12345" }
+- Action: Get Items (SharePoint "Trainees")
+  Filter Query: Staff_ID eq 'triggerBody()?['staff_id']'
+- Condition: length(body('Get_items')?['value']) > 0
+  - IF YES: Response Body -> { "valid": true, "name": "[Name]", "fleet": "[Fleet]" }
+  - IF NO:  Response Body -> { "valid": false }
+*SAVE and copy the HTTP URL (Call this URL_A).*
+
+### FLOW B: "Worker - Save Data"
+*Goal: Saves final data and sends email.*
+- Trigger: HTTP Request
+- Method: POST
+- JSON Schema:
+  {
+    "staff_id": "12345",
+    "total_sectors": "10",
+    "progression_stage": "Stage 2",
+    "instructor_phone": "+6012..."
+  }
+- Action: Get Items (SharePoint "Authorized_Instructors")
+  Filter Query: Phone_Number eq 'triggerBody()?['instructor_phone']'
+- Condition: length(...) > 0 (Is Instructor Authorized?)
+  - IF YES:
+    1. Create Item (SharePoint "IOE_Tracking")
+    2. Run Child Flow (Your existing Email Logic)
+*SAVE and copy the HTTP URL (Call this URL_B).*
+
+---------------------------------------------------------
+
+## 4. TWILIO STUDIO FLOW (The Chatbot)
+*Build this at twilio.com/console/studio*
+
+1. TRIGGER: Incoming Message
+2. WIDGET: Send & Wait for Reply -> "Enter Staff ID"
+3. WIDGET: HTTP Request -> URL_A
+   - Parameters: staff_id = {{widgets.message_1.Body}}
+4. WIDGET: Split Based On -> {{widgets.http_request_1.parsed.valid}}
+   - If False: Reply "ID not found" -> Go to Step 2
+   - If True:  Reply "Found {{parsed.name}}. Confirm?"
+5. WIDGET: Send & Wait -> "Enter Sectors"
+6. WIDGET: Send & Wait -> "Select Stage" (Buttons)
+7. WIDGET: HTTP Request -> URL_B
+   - Parameters: staff_id, sectors, stage, phone
+8. WIDGET: Send Message -> "✅ Success."
+
+---------------------------------------------------------
+
+## 5. COST ESTIMATE (Monthly)
+- Twilio Number Rental: ~$1.15
+- Usage Fees (20 updates): ~$0.85
+- TOTAL: ~$2.00 USD/month

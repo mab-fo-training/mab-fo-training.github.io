@@ -41,7 +41,14 @@
       "Bash(git fetch:*)",
       "WebFetch(domain:azure.microsoft.com)",
       "Bash(git status:*)",
-      "WebFetch(domain:forms.office.com)"
+      "WebFetch(domain:forms.office.com)",
+      "Bash(kill:*)",
+      "Bash(ls:*)",
+      "Bash(pgrep:*)",
+      "Bash(lsof:*)",
+      "Bash(python test-sharepoint.py:*)",
+      "Bash(python3:*)",
+      "Bash(/data/data/com.termux/files/usr/bin/python:*)"
     ],
     "deny": [],
     "ask": []

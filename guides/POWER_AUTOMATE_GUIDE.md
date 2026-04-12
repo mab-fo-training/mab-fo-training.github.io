@@ -162,6 +162,53 @@ Action: **Update item** (SharePoint)
   - `Sectors_Flown`: `@{outputs('Get_response_details')?['body/r4']}`
   - `Last_Updated`: `@{utcNow()}`
 
+> **Note (2026-04):** The tracker's User Portal now auto-detects the SIP flag via the `[REFERRED TO SIP - DD/MM/YYYY]` token in `Remarks`. If you prefer the token-based format (so the Trainee Alert modal displays the date), replace the Remarks expression above with:
+> ```
+> concat(if(empty(first(outputs('Get_items')?['body/value'])?['Remarks']), '', concat(first(outputs('Get_items')?['body/value'])?['Remarks'], ' ')), '[REFERRED TO SIP - ', formatDateTime(utcNow(), 'dd/MM/yyyy'), ']')
+> ```
+
+### Trainee Alert & Planner Task (2026-04)
+
+The REFERRED TO SIP case is extended with a Planner task so the APCT team has a trackable to-do list. Add these two actions **immediately after** the Update item action in the `REFERRED TO SIP` switch case (same order shown below).
+
+**Action: Create a task (Planner)**
+- **Group Id:** Select the M365 group that owns the existing SIP Planner plan (dropdown)
+- **Plan Id:** Select the existing SIP plan by name (dropdown)
+- **Bucket Id:** Select the appropriate bucket (e.g., "New Referrals")
+- **Title:**
+  ```
+  SIP Referral: @{outputs('Get_response_details')?['body/r13aa5d088a6d46748fbbd853740d279c']} (@{outputs('Get_response_details')?['body/<STAFF_ID_FIELD_ID>']})
+  ```
+  - Replace `<STAFF_ID_FIELD_ID>` with the STAFF NUMBER form field ID.
+- **Assigned User Ids:** *(leave empty — unassigned, anyone on the team can pick it up)*
+- **Due Date:** *(leave empty — no due date per requirement)*
+
+**Action: Update task details (Planner)**
+Runs on the task ID returned by the previous action.
+- **Task Id:** `@{outputs('Create_a_task')?['body/id']}`
+- **Description:**
+  ```
+  Trainee: @{outputs('Get_response_details')?['body/r13aa5d088a6d46748fbbd853740d279c']}
+  Staff ID: @{outputs('Get_response_details')?['body/<STAFF_ID_FIELD_ID>']}
+  Fleet: @{outputs('Get_response_details')?['body/<FLEET_FIELD_ID>']}
+  Date submitted: @{outputs('Get_response_details')?['body/<DATE_FIELD_ID>']}
+  Submitted by: @{triggerOutputs()?['body/responder']}
+  Referral Reason(s):
+  @{outputs('Get_response_details')?['body/r02e9c5a816524d259d5703b5e1e05f36']}
+  ```
+  All placeholders `<..._FIELD_ID>` are filled from the form field ID table below (or via dynamic content picker in the Power Automate UI).
+- **Checklist:** Add four checklist items (title + isChecked = false each):
+  1. `Contact trainee`
+  2. `Schedule SIP session`
+  3. `Conduct SIP review`
+  4. `Document outcome in Training Tracker`
+
+**Notes:**
+- No due date is set.
+- The title is kept human-readable so the Planner board is scannable at a glance.
+- The Planner task is not linked back to SharePoint. Admins clear referrals by editing the trainee in the Admin panel (setting `Manual Highlight` → `None`) and marking the Planner task complete separately.
+- When the admin clears `Manual_Highlight`, the User Portal modal will no longer appear for that trainee on their next sign-in.
+
 ---
 
 ### Step 6: If No — Send Notification

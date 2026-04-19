@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Navy square with rounded corners -->
+  <rect width="32" height="32" rx="6" fill="#0a2240"/>
+  <!-- Simplified airplane silhouette in gold -->
+  <path d="M16 6 L19 14 L28 14 L22 18 L24 26 L16 22 L8 26 L10 18 L4 14 L13 14 Z"
+        fill="none" stroke="#c9a84c" stroke-width="1.2"/>
+  <!-- Airplane body -->
+  <path d="M10 19 Q16 9 22 19" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
+  <line x1="16" y1="9" x2="16" y2="24" stroke="#c9a84c" stroke-width="1.5"/>
+  <line x1="9" y1="18" x2="23" y2="18" stroke="#c9a84c" stroke-width="1.2"/>
+  <line x1="11" y1="21.5" x2="21" y2="21.5" stroke="#c9a84c" stroke-width="1"/>
+</svg>

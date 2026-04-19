@@ -7,6 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Training Progress Tracker v3.0 Enhanced - SharePoint Edition</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230a2240'/%3E%3Cellipse cx='16' cy='16' rx='2' ry='9' fill='%23c9a84c'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='2.2' fill='%23c9a84c'/%3E%3Cellipse cx='16' cy='23' rx='5' ry='1.2' fill='%23c9a84c'/%3E%3Cellipse cx='16' cy='8' rx='1.2' ry='1.5' fill='%23e8c96a'/%3E%3C/svg%3E">
 
     <!-- Content Security Policy - Restricts connections to approved domains only -->
     <meta http-equiv="Content-Security-Policy" content="
@@ -1152,6 +1153,16 @@
                                 DIF Dates
                             </button>
                             <span class="text-xs text-gray-400 ml-2">BATCH · STAFF ID · RANK · FLEET · NAME · LAST UPDATED always visible</span>
+                        </div>
+
+                        <!-- Copy Selection Bar -->
+                        <div id="copySelectionBar" class="hidden flex items-center gap-3 mb-3 px-4 py-2.5 bg-amber-50 border border-amber-300 rounded-lg">
+                            <svg class="w-4 h-4 text-amber-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            <span class="text-sm font-semibold text-amber-800"><span id="copySelectionCount">0</span> trainee(s) selected</span>
+                            <button id="copySelectedBtn" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">
+                                Copy to Clipboard
+                            </button>
+                            <button id="clearSelectionBtn" class="text-xs text-amber-700 hover:text-amber-900 underline">Clear selection</button>
                         </div>
 
                         <!-- Data Table -->
@@ -3136,12 +3147,13 @@
             const tbody = document.getElementById('dataTableBody');
             const thead = document.getElementById('dataTableHead');
             const isDIF = activeColumnSet === 'dif';
-            const colCount = isDIF ? 10 : 14;
+            const colCount = isDIF ? 11 : 15;
 
             // Render thead dynamically
             if (thead) {
                 if (isDIF) {
                     thead.innerHTML = `<tr>
+                        <th class="px-3 py-3 text-center w-10 sticky left-0 bg-[#00205B]"><input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded cursor-pointer accent-amber-400" title="Select all"></th>
                         <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="batch">BATCH</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="staffId">STAFF ID</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="rank">RANK</th>
@@ -3155,6 +3167,7 @@
                     </tr>`;
                 } else {
                     thead.innerHTML = `<tr>
+                        <th class="px-3 py-3 text-center w-10 sticky left-0 bg-[#00205B]"><input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded cursor-pointer accent-amber-400" title="Select all"></th>
                         <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="batch">BATCH</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="staffId">STAFF ID</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="rank">RANK</th>
@@ -3207,6 +3220,9 @@
             }
 
             let lastBatch = null;
+            // Clear selection state when table re-renders
+            updateCopySelectionBar(true);
+
             tbody.innerHTML = filteredCadets.map((cadet, index) => {
                 const status = getTraineeStatus(cadet);
                 let rowClass = '';
@@ -3222,7 +3238,7 @@
                     const batchFunctional = batchCadets.filter(c => getTraineeStatus(c) === 'functional').length;
                     const batchSpecial = batchCadets.filter(c => getTraineeStatus(c) === 'special').length;
                     const batchInProgress = batchTotal - batchCompleted - batchFunctional - batchSpecial;
-                    separator = `<tr class="bg-gray-700"><td colspan="${colCount}" class="px-4 py-2 text-sm font-bold text-white">${escapeHtml(cadet.batch)} &mdash; <span class="font-normal">${batchTotal} total</span> <span class="mx-2">|</span> <span class="font-normal text-green-300">${batchCompleted} completed</span> <span class="mx-2">|</span> <span class="font-normal text-blue-300">${batchFunctional} functional</span> <span class="mx-2">|</span> <span class="font-normal text-yellow-300">${batchInProgress} not functional</span>${batchSpecial ? ` <span class="mx-2">|</span> <span class="font-normal text-red-300">${batchSpecial} special</span>` : ''}</td></tr>`;
+                    separator = `<tr class="bg-gray-700"><td colspan="${colCount}" class="px-4 py-2"><div class="flex items-center justify-between"><span class="text-sm font-bold text-white">${escapeHtml(cadet.batch)} &mdash; <span class="font-normal">${batchTotal} total</span> <span class="mx-2">|</span> <span class="font-normal text-green-300">${batchCompleted} completed</span> <span class="mx-2">|</span> <span class="font-normal text-blue-300">${batchFunctional} functional</span> <span class="mx-2">|</span> <span class="font-normal text-yellow-300">${batchInProgress} not functional</span>${batchSpecial ? ` <span class="mx-2">|</span> <span class="font-normal text-red-300">${batchSpecial} special</span>` : ''}</span><button class="copy-batch-btn ml-3 p-1.5 rounded hover:bg-white/20 text-gray-300 hover:text-white transition-colors flex-shrink-0" data-batch="${escapeHtml(cadet.batch)}" title="Copy names &amp; staff IDs for this batch"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button></div></td></tr>`;
                     lastBatch = cadet.batch;
                 }
 
@@ -3240,6 +3256,7 @@
                 `;
                 return separator + `
                     <tr class="${rowClass}">
+                        <td class="px-2 py-3 text-center sticky left-0 ${rowClass || 'bg-white'}"><input type="checkbox" class="row-select-cb w-4 h-4 rounded cursor-pointer accent-[#00205B]" data-name="${escapeHtml(cadet.name)}" data-staffid="${escapeHtml(cadet.staffId)}"></td>
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.batch)}</td>
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.staffId)}</td>
                         <td class="px-4 py-3 text-sm">${escapeHtml(cadet.rank || '-')}</td>
@@ -3259,6 +3276,8 @@
                     </tr>
                 `;
             }).join('');
+
+            attachRowCheckboxListeners();
         }
 
         function updateStatistics() {
@@ -4667,6 +4686,13 @@
             document.getElementById('backToAdminBtn2').addEventListener('click', backToAdmin);
             document.getElementById('addTraineeBtn').addEventListener('click', openAddModal);
             document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('copySelectedBtn').addEventListener('click', copySelectedToClipboard);
+            document.getElementById('clearSelectionBtn').addEventListener('click', () => {
+                document.querySelectorAll('.row-select-cb').forEach(cb => cb.checked = false);
+                const sa = document.getElementById('selectAllCheckbox');
+                if (sa) { sa.checked = false; sa.indeterminate = false; }
+                updateCopySelectionBar();
+            });
             document.getElementById('exportPowerBIBtn').addEventListener('click', exportToExcel);
 
             // Modal batch field change - show/hide command check date for CUC batches, DIF fields for DIF batches
@@ -4827,6 +4853,75 @@
         // Make functions globally accessible
         window.editTrainee = editTrainee;
         window.deleteTrainee = deleteTrainee;
+
+        // ── Copy to Clipboard ──────────────────────────────────────────
+        function updateCopySelectionBar(clear = false) {
+            const bar = document.getElementById('copySelectionBar');
+            const countEl = document.getElementById('copySelectionCount');
+            if (!bar || !countEl) return;
+            if (clear) {
+                bar.classList.add('hidden');
+                countEl.textContent = '0';
+                return;
+            }
+            const checked = document.querySelectorAll('.row-select-cb:checked');
+            if (checked.length > 0) {
+                bar.classList.remove('hidden');
+                countEl.textContent = checked.length;
+            } else {
+                bar.classList.add('hidden');
+            }
+        }
+
+        function copySelectedToClipboard() {
+            const checked = document.querySelectorAll('.row-select-cb:checked');
+            if (!checked.length) return;
+            const lines = Array.from(checked).map(cb => `${cb.dataset.name}\t${cb.dataset.staffid}`);
+            navigator.clipboard.writeText(lines.join('\n')).then(() => {
+                showToast(`Copied ${lines.length} trainee(s) to clipboard`, 'success');
+            }).catch(() => {
+                showToast('Clipboard copy failed — try again', 'error');
+            });
+        }
+
+        function copyBatchToClipboard(batchName) {
+            const batchCadets = filterCadets().filter(c => c.batch === batchName);
+            if (!batchCadets.length) return;
+            const lines = batchCadets.map(c => `${c.name}\t${c.staffId}`);
+            navigator.clipboard.writeText(lines.join('\n')).then(() => {
+                showToast(`Copied ${lines.length} trainee(s) from ${batchName}`, 'success');
+            }).catch(() => {
+                showToast('Clipboard copy failed — try again', 'error');
+            });
+        }
+
+        function attachRowCheckboxListeners() {
+            const selectAll = document.getElementById('selectAllCheckbox');
+            if (selectAll) {
+                selectAll.addEventListener('change', () => {
+                    document.querySelectorAll('.row-select-cb').forEach(cb => {
+                        cb.checked = selectAll.checked;
+                    });
+                    updateCopySelectionBar();
+                });
+            }
+            document.querySelectorAll('.row-select-cb').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    updateCopySelectionBar();
+                    const allCbs = document.querySelectorAll('.row-select-cb');
+                    const allChecked = Array.from(allCbs).every(c => c.checked);
+                    const anyChecked = Array.from(allCbs).some(c => c.checked);
+                    const sa = document.getElementById('selectAllCheckbox');
+                    if (sa) {
+                        sa.checked = allChecked;
+                        sa.indeterminate = anyChecked && !allChecked;
+                    }
+                });
+            });
+            document.querySelectorAll('.copy-batch-btn').forEach(btn => {
+                btn.addEventListener('click', () => copyBatchToClipboard(btn.dataset.batch));
+            });
+        }
     </script>
 
 </body>

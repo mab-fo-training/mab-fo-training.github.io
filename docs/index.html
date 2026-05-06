@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Training Progress Tracker v3.0 Enhanced - SharePoint Edition</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230a2240'/%3E%3Cellipse cx='16' cy='16' rx='2' ry='9' fill='%23c9a84c'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='2.2' fill='%23c9a84c'/%3E%3Cellipse cx='16' cy='23' rx='5' ry='1.2' fill='%23c9a84c'/%3E%3Cellipse cx='16' cy='8' rx='1.2' ry='1.5' fill='%23e8c96a'/%3E%3C/svg%3E">
 
     <!-- Content Security Policy - Restricts connections to approved domains only -->
     <meta http-equiv="Content-Security-Policy" content="
@@ -1010,15 +1010,22 @@
                                 <button id="addTraineeBtn" class="btn-primary bg-[#00205B] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#001540] shadow-md transition-all">
                                     + Add Trainee
                                 </button>
-                                <button id="bulkImportBtn" class="btn-primary bg-[#0D9488] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#0F766E] shadow-md transition-all" title="Import multiple trainees from Excel">
-                                    Bulk Import
-                                </button>
                                 <button id="pdfImportBtn" class="btn-primary bg-[#E11D48] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#BE123C] shadow-md transition-all" title="Import trainees from Training Joining Instructions PDF">
                                     Import PDF
                                 </button>
-                                <button id="testHighlightsBtn" class="btn-primary bg-[#D97706] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#B45309] shadow-md transition-all" title="Test highlight visibility">
-                                    Test Colors
-                                </button>
+                                <div class="relative" id="moreActionsContainer">
+                                    <button id="moreActionsBtn" class="btn-primary bg-gray-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-700 shadow-md transition-all">
+                                        ⋯ More
+                                    </button>
+                                    <div id="moreActionsDropdown" class="hidden absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 z-30 min-w-[160px]">
+                                        <button id="renameBatchBtn" class="w-full text-left px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-700 rounded-t-lg transition-colors">
+                                            Rename Batch
+                                        </button>
+                                        <button id="bulkImportBtn" class="w-full text-left px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-teal-50 hover:text-teal-700 border-t border-gray-100 rounded-b-lg transition-colors">
+                                            Bulk Import
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1080,51 +1087,63 @@
                                 <input type="text" id="searchInput" placeholder="Search by name or staff ID..." class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all">
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <select id="yearFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
-                                        <option value="all">All Years</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <select id="batchFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
-                                        <option value="all">All Batches</option>
-                                    </select>
-                                </div>
-                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">① Training Type</label>
                                     <select id="trainingTypeFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
-                                        <option value="all">All Types</option>
-                                        <option value="cuc">CUC</option>
+                                        <option value="all">Select Type…</option>
                                         <option value="cadet">CADET / CPC</option>
+                                        <option value="cuc">CUC</option>
+                                        <option value="occ">OCC (Operator's Conversion)</option>
+                                        <option value="ctr">CTR (Common Type Rating)</option>
+                                        <option value="stc">STC (Standard Transition)</option>
                                         <option value="dif">DIF (B737-8 MAX)</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <select id="fleetFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
-                                        <option value="all">All Fleets</option>
-                                        <option value="B738">B738</option>
-                                        <option value="B738M">B738M</option>
-                                        <option value="A330">A330</option>
-                                        <option value="A350">A350</option>
+                                    <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">② Year</label>
+                                    <select id="yearFilter" disabled class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold opacity-40 cursor-not-allowed bg-gray-100">
+                                        <option value="all">All Years</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <select id="rankFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
-                                        <option value="all">All Ranks</option>
-                                        <option value="CADET">CADET</option>
-                                        <option value="SO">SO</option>
-                                        <option value="FO">FO</option>
-                                        <option value="CAPTAIN">CAPTAIN</option>
+                                    <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">③ Batch</label>
+                                    <select id="batchFilter" disabled class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold opacity-40 cursor-not-allowed bg-gray-100">
+                                        <option value="all">All Batches</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <select id="statusFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
-                                        <option value="all">All Status</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="functional">Functional</option>
-                                        <option value="special">Special</option>
-                                        <option value="inprogress">⏳ In Progress</option>
-                                    </select>
+                            </div>
+
+                            <!-- Advanced Filters (collapsible) -->
+                            <div id="advancedFilters" class="hidden mt-4 pt-4 border-t border-gray-200">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Advanced Filters</p>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Fleet</label>
+                                        <select id="fleetFilter" disabled class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold opacity-40 cursor-not-allowed bg-gray-100">
+                                            <option value="all">All Fleets</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Rank</label>
+                                        <select id="rankFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
+                                            <option value="all">All Ranks</option>
+                                            <option value="CADET">CADET</option>
+                                            <option value="SO">SO</option>
+                                            <option value="FO">FO</option>
+                                            <option value="CAPTAIN">CAPTAIN</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Status</label>
+                                        <select id="statusFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00205B] font-semibold">
+                                            <option value="all">All Status</option>
+                                            <option value="completed">Completed</option>
+                                            <option value="functional">Functional</option>
+                                            <option value="special">Special</option>
+                                            <option value="inprogress">⏳ In Progress</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1132,6 +1151,12 @@
                                 <div id="exportFilterNotice" class="hidden text-xs text-orange-700 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200">
                                     Exports include only filtered trainees
                                 </div>
+                                <button id="advancedFiltersToggle" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold shadow-sm transition-all border-2 border-transparent" title="Fleet, Rank and Status filters">
+                                    ⚙ Advanced
+                                </button>
+                                <button id="fullOverviewBtn" class="px-4 py-2 bg-[#00205B] text-white rounded-lg hover:bg-[#001a4a] font-semibold shadow-sm hover:shadow transition-all" title="Show all trainees across all training types">
+                                    Full Overview
+                                </button>
                                 <button id="clearFiltersBtn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold shadow-sm hover:shadow transition-all">
                                     Clear All
                                 </button>
@@ -1139,20 +1164,6 @@
                                     Hide Completed
                                 </button>
                             </div>
-                        </div>
-
-                        <!-- Column View Toggle -->
-                        <div class="flex items-center gap-2 mb-3 px-1">
-                            <span class="text-sm font-semibold text-gray-600 mr-1">Date columns:</span>
-                            <button id="showIOEColumnsBtn" onclick="setColumnView('ioe')"
-                                class="px-4 py-1.5 rounded-lg text-sm font-semibold bg-[#00205B] text-white shadow-sm transition-all">
-                                IOE Dates
-                            </button>
-                            <button id="showDIFColumnsBtn" onclick="setColumnView('dif')"
-                                class="px-4 py-1.5 rounded-lg text-sm font-semibold bg-white text-[#00205B] border border-[#00205B] hover:bg-gray-50 transition-all">
-                                DIF Dates
-                            </button>
-                            <span class="text-xs text-gray-400 ml-2">BATCH · STAFF ID · RANK · FLEET · NAME · LAST UPDATED always visible</span>
                         </div>
 
                         <!-- Copy Selection Bar -->
@@ -1572,6 +1583,49 @@
         </div>
     </div>
 
+    <!-- Rename Batch Modal -->
+    <div id="renameBatchModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold text-gray-800 mb-1">Rename Batch</h3>
+            <p class="text-sm text-gray-500 mb-5">Updates the batch name for matching trainees in SharePoint. Both batch and fleet must be selected.</p>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Current Batch</label>
+                    <select id="renameBatchFrom" class="w-full px-3 py-3 border-2 border-gray-300 rounded-lg font-semibold text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="">Select…</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Fleet</label>
+                    <select id="renameBatchFleet" class="w-full px-3 py-3 border-2 border-gray-300 rounded-lg font-semibold text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="">Select…</option>
+                        <option value="B738">B738</option>
+                        <option value="B738M">B738M</option>
+                        <option value="A330">A330</option>
+                        <option value="A350">A350</option>
+                    </select>
+                </div>
+            </div>
+            <div id="renameBatchPreview" class="hidden mb-4 rounded-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                    <p id="renameBatchCount" class="text-xs font-semibold text-gray-600"></p>
+                </div>
+                <ul id="renameBatchList" class="divide-y divide-gray-100 overflow-y-auto max-h-36 text-xs text-gray-700"></ul>
+            </div>
+            <div class="mb-6">
+                <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">New Batch Name</label>
+                <input type="text" id="renameBatchTo" placeholder="e.g. 25/07 STC"
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg font-semibold focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button id="renameBatchCancelBtn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors">Cancel</button>
+                <button id="renameBatchConfirmBtn" disabled class="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    Rename All
+                </button>
+            </div>
+        </div>
+    </div>
+
     </div><!-- /appShell -->
 
     <script>
@@ -1713,6 +1767,10 @@
         let difColumnsChecked = false;
         let activeColumnSet = 'ioe'; // 'ioe' | 'dif'
         let batches = [];
+        let fleetFilterEnabled = false;
+        let yearFilterEnabled = false;
+        let batchFilterEnabled = false;
+        let showAllOverride = false;
 
         // Initialize PDF.js worker
         if (typeof pdfjsLib !== 'undefined') {
@@ -3032,47 +3090,142 @@
         }
 
         // ==================== ADMIN PANEL ====================
-        function populateFilters() {
-            const years = new Set();
-            const batchSet = new Set();
 
+        function setDropdownEnabled(id, enabled) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.disabled = !enabled;
+            el.classList.toggle('opacity-40', !enabled);
+            el.classList.toggle('cursor-not-allowed', !enabled);
+            el.classList.toggle('bg-gray-100', !enabled);
+            el.classList.toggle('bg-white', enabled);
+        }
+
+        function updateAdvancedBtnState() {
+            const btn = document.getElementById('advancedFiltersToggle');
+            if (!btn) return;
+            const hasActive = selectedFleetFilter !== 'all' || selectedRankFilter !== 'all' || selectedStatusFilter !== 'all';
+            btn.classList.toggle('border-[#00205B]', hasActive);
+            btn.classList.toggle('text-[#00205B]', hasActive);
+            btn.classList.toggle('bg-blue-50', hasActive);
+            btn.classList.toggle('bg-gray-100', !hasActive);
+            btn.classList.toggle('text-gray-700', !hasActive);
+            btn.classList.toggle('border-transparent', !hasActive);
+        }
+
+        function matchesTrainingType(cadet) {
+            if (selectedTrainingTypeFilter === 'all') return true;
+            const isCUC = isCUCBatch(cadet.batch);
+            const isDIF = isDIFBatch(cadet.batch);
+            const isOCC = isOCCBatch(cadet.batch);
+            const isCTR = isCTRBatch(cadet.batch);
+            const isSTC = isSTCBatch(cadet.batch);
+            if (selectedTrainingTypeFilter === 'cuc') return isCUC;
+            if (selectedTrainingTypeFilter === 'dif') return isDIF;
+            if (selectedTrainingTypeFilter === 'occ') return isOCC;
+            if (selectedTrainingTypeFilter === 'ctr') return isCTR;
+            if (selectedTrainingTypeFilter === 'stc') return isSTC;
+            if (selectedTrainingTypeFilter === 'cadet') return !isCUC && !isDIF && !isOCC && !isCTR && !isSTC;
+            return true;
+        }
+
+        function populateFleetFilter() {
+            const fleetSet = new Set();
             cadets.forEach(cadet => {
+                if (!matchesTrainingType(cadet)) return;
+                if (cadet.fleet) fleetSet.add(cadet.fleet.toUpperCase());
+            });
+            const fleetFilter = document.getElementById('fleetFilter');
+            fleetFilter.innerHTML = '<option value="all">All Fleets</option>' +
+                Array.from(fleetSet).sort().map(f => `<option value="${f}">${f}</option>`).join('');
+            fleetFilter.value = 'all';
+            fleetFilterEnabled = selectedTrainingTypeFilter !== 'all';
+            setDropdownEnabled('fleetFilter', fleetFilterEnabled);
+        }
+
+        function populateYearFilter() {
+            const yearSet = new Set();
+            cadets.forEach(cadet => {
+                if (!matchesTrainingType(cadet)) return;
+                if (selectedFleetFilter !== 'all' && (cadet.fleet || '').toUpperCase() !== selectedFleetFilter) return;
                 const year = getYearFromBatch(cadet.batch);
-                if (year) years.add(year);
+                if (year) yearSet.add(year);
+            });
+            const yearFilter = document.getElementById('yearFilter');
+            yearFilter.innerHTML = '<option value="all">All Years</option>' +
+                Array.from(yearSet).sort((a, b) => b - a).map(y => `<option value="${y}">${y}</option>`).join('');
+            yearFilter.value = 'all';
+            yearFilterEnabled = selectedTrainingTypeFilter !== 'all';
+            setDropdownEnabled('yearFilter', yearFilterEnabled);
+        }
+
+        function populateBatchFilter() {
+            const batchSet = new Set();
+            cadets.forEach(cadet => {
+                if (!matchesTrainingType(cadet)) return;
+                if (selectedFleetFilter !== 'all' && (cadet.fleet || '').toUpperCase() !== selectedFleetFilter) return;
+                if (selectedYearFilter !== 'all') {
+                    const year = getYearFromBatch(cadet.batch);
+                    if (year !== parseInt(selectedYearFilter)) return;
+                }
                 if (cadet.batch) batchSet.add(cadet.batch);
             });
-
-            // Store batches globally
-            batches = Array.from(batchSet).sort();
-
-            // Year filter
-            const yearFilter = document.getElementById('yearFilter');
-            const currentYear = yearFilter.value;
-            yearFilter.innerHTML = '<option value="all">All Years</option>';
-            Array.from(years).sort((a, b) => b - a).forEach(year => {
-                yearFilter.innerHTML += `<option value="${year}">${year}</option>`;
-            });
-            if (currentYear) yearFilter.value = currentYear;
-
-            // Batch filter
             const batchFilter = document.getElementById('batchFilter');
-            const analyticsBatchFilter = document.getElementById('analyticsBatchFilter');
-            const currentBatch = batchFilter.value;
-            batchFilter.innerHTML = '<option value="all">All Batches</option>';
-            analyticsBatchFilter.innerHTML = '<option value="all">All Batches</option>';
-            batches.forEach(batch => {
-                batchFilter.innerHTML += `<option value="${batch}">${batch}</option>`;
-                analyticsBatchFilter.innerHTML += `<option value="${batch}">${batch}</option>`;
-            });
-            if (currentBatch) batchFilter.value = currentBatch;
+            batchFilter.innerHTML = '<option value="all">All Batches</option>' +
+                Array.from(batchSet).sort(compareBatchNames).map(b => `<option value="${b}">${b}</option>`).join('');
+            batchFilter.value = 'all';
+            batchFilterEnabled = selectedYearFilter !== 'all';
+            setDropdownEnabled('batchFilter', batchFilterEnabled);
+        }
 
-            // Update batch filter based on selected year
-            updateBatchFilterByYear();
+        function resetDownstream(level) {
+            if (level === 'type') {
+                selectedFleetFilter = 'all';
+                selectedYearFilter = 'all';
+                selectedBatchFilter = 'all';
+                populateFleetFilter();
+                populateYearFilter(); // enables year if training type is selected
+                updateAdvancedBtnState(); // fleet was reset, clear any active indicator
+                const batchFilter = document.getElementById('batchFilter');
+                batchFilter.innerHTML = '<option value="all">All Batches</option>';
+                batchFilter.value = 'all';
+                batchFilterEnabled = false;
+                setDropdownEnabled('batchFilter', false);
+            } else if (level === 'fleet') {
+                selectedYearFilter = 'all';
+                selectedBatchFilter = 'all';
+                populateYearFilter();
+                const batchFilter = document.getElementById('batchFilter');
+                batchFilter.innerHTML = '<option value="all">All Batches</option>';
+                batchFilter.value = 'all';
+                batchFilterEnabled = false;
+                setDropdownEnabled('batchFilter', false);
+            } else if (level === 'year') {
+                selectedBatchFilter = 'all';
+                populateBatchFilter();
+            }
+        }
+
+        function populateFilters() {
+            // Populate analytics batch filter with all batches
+            const batchSet = new Set();
+            cadets.forEach(cadet => { if (cadet.batch) batchSet.add(cadet.batch); });
+            batches = Array.from(batchSet).sort(compareBatchNames);
+
+            const analyticsBatchFilter = document.getElementById('analyticsBatchFilter');
+            if (analyticsBatchFilter) {
+                analyticsBatchFilter.innerHTML = '<option value="all">All Batches</option>' +
+                    batches.map(b => `<option value="${b}">${b}</option>`).join('');
+            }
+
+            // Cascade filters start in disabled state; Training Type is always ready
+            resetDownstream('type');
         }
 
         // Note: getYearFromBatch is defined above in the year filter section
 
         function filterCadets() {
+            if (selectedTrainingTypeFilter === 'all' && !showAllOverride) return [];
             return cadets.filter(cadet => {
                 // Hide completed trainees if toggle is active
                 if (hideCompleted) {
@@ -3086,13 +3239,19 @@
                 }
                 if (selectedBatchFilter !== 'all' && cadet.batch.trim().toLowerCase() !== selectedBatchFilter.trim().toLowerCase()) return false;
 
-                // Training type filter (CUC vs CADET/CPC vs DIF)
+                // Training type filter
                 if (selectedTrainingTypeFilter !== 'all') {
                     const isCUC = isCUCBatch(cadet.batch);
                     const isDIF = isDIFBatch(cadet.batch);
+                    const isOCC = isOCCBatch(cadet.batch);
+                    const isCTR = isCTRBatch(cadet.batch);
+                    const isSTC = isSTCBatch(cadet.batch);
                     if (selectedTrainingTypeFilter === 'cuc' && !isCUC) return false;
                     if (selectedTrainingTypeFilter === 'dif' && !isDIF) return false;
-                    if (selectedTrainingTypeFilter === 'cadet' && (isCUC || isDIF)) return false;
+                    if (selectedTrainingTypeFilter === 'occ' && !isOCC) return false;
+                    if (selectedTrainingTypeFilter === 'ctr' && !isCTR) return false;
+                    if (selectedTrainingTypeFilter === 'stc' && !isSTC) return false;
+                    if (selectedTrainingTypeFilter === 'cadet' && (isCUC || isDIF || isOCC || isCTR || isSTC)) return false;
                 }
 
                 // Fleet filter
@@ -3209,13 +3368,25 @@
             }
 
             if (filteredCadets.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="${colCount}" class="px-4 py-8 text-center text-gray-500">
-                            <p class="text-lg">No trainees found matching your filters</p>
-                        </td>
-                    </tr>
-                `;
+                if (selectedTrainingTypeFilter === 'all' && !showAllOverride) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="${colCount}" class="px-4 py-16 text-center">
+                                <div class="text-5xl mb-4">🎯</div>
+                                <p class="text-lg font-semibold text-gray-600">Select a Training Type to view trainees</p>
+                                <p class="text-sm text-gray-400 mt-1">Use the <strong>① Training Type</strong> filter above, or click <strong>Full Overview</strong> to see everyone</p>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="${colCount}" class="px-4 py-8 text-center text-gray-500">
+                                <p class="text-lg">No trainees found matching your filters</p>
+                            </td>
+                        </tr>
+                    `;
+                }
                 return;
             }
 
@@ -3242,10 +3413,18 @@
                     lastBatch = cadet.batch;
                 }
 
+                const isDIFCadet = isDIFBatch(cadet.batch);
                 const dateCells = isDIF ? `
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.cbtDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.simDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lifusDate)}</td>
+                ` : isDIFCadet && showAllOverride ? `
+                        <td class="px-4 py-3 text-sm"><span class="px-2 py-0.5 text-xs font-bold rounded bg-amber-100 text-amber-800 border border-amber-300">DIF</span></td>
+                        <td class="px-4 py-3 text-sm text-gray-300">—</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">—</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">—</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">—</td>
+                        <td class="px-4 py-3 text-sm text-center text-gray-300">—</td>
                 ` : `
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.firstIOEDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.functionalDate)}</td>
@@ -3264,7 +3443,7 @@
                         <td class="px-4 py-3 text-sm font-medium">${escapeHtml(cadet.name)}</td>
                         ${dateCells}
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lastUpdated)}</td>
-                        <td class="px-4 py-3 text-sm">${escapeHtml(cadet.remarks || '-')}</td>
+                        ${isDIF ? '' : `<td class="px-4 py-3 text-sm">${isDIFCadet && showAllOverride ? '<span class="text-gray-300">—</span>' : escapeHtml(cadet.remarks || '-')}</td>`}
                         <td class="px-4 py-3 text-center sticky right-0 ${rowClass || 'bg-white'} shadow-md">
                             <button onclick="editTrainee(${cadet.id})" class="text-blue-600 hover:text-blue-800 mx-1 font-bold" title="Edit">
                                 Edit
@@ -3339,7 +3518,7 @@
                 return 'inprogress';
             }
 
-            // CPC batches: completed when all 4 dates are entered
+            // CPC and OCC batches (B738/B738M fleet): completed when all 4 dates are entered
             if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) return 'completed';
             if (hasFirstIOE && hasFunctional) return 'functional';
             return 'inprogress';
@@ -3909,6 +4088,12 @@
         }
 
         // ==================== YEAR & TRAINING TYPE FILTERS ====================
+        function compareBatchNames(a, b) {
+            const ym = s => { const m = s.match(/(\d{2})\/(\d{2})/); return m ? parseInt(m[1]) * 100 + parseInt(m[2]) : 9999; };
+            const diff = ym(b) - ym(a);
+            return diff !== 0 ? diff : a.localeCompare(b);
+        }
+
         function getYearFromBatch(batchName) {
             if (!batchName) return null;
             // Match "24/05", "25/03 CUC", or "A330-25/07" format (2-digit year followed by /)
@@ -3933,6 +4118,21 @@
         function isDIFBatch(batchName) {
             if (!batchName) return false;
             return batchName.toUpperCase().includes('DIF');
+        }
+
+        function isOCCBatch(batchName) {
+            if (!batchName) return false;
+            return batchName.toUpperCase().includes('OCC');
+        }
+
+        function isCTRBatch(batchName) {
+            if (!batchName) return false;
+            return batchName.toUpperCase().includes('CTR');
+        }
+
+        function isSTCBatch(batchName) {
+            if (!batchName) return false;
+            return batchName.toUpperCase().includes('STC');
         }
 
         function isConversionFleet(fleet) {
@@ -3978,29 +4178,109 @@
         }
 
         function updateBatchFilterByYear() {
-            const batchFilter = document.getElementById('batchFilter');
-            const currentBatchValue = batchFilter.value;
-
-            let filteredBatches = batches;
-
-            if (selectedYearFilter !== 'all') {
-                filteredBatches = batches.filter(batch => {
-                    const batchYear = getYearFromBatch(batch);
-                    return batchYear === parseInt(selectedYearFilter);
-                });
-            }
-
-            batchFilter.innerHTML = '<option value="all">All Batches</option>' +
-                filteredBatches.map(b => `<option value="${b}">${b}</option>`).join('');
-
-            if (currentBatchValue !== 'all' && filteredBatches.includes(currentBatchValue)) {
-                batchFilter.value = currentBatchValue;
-            } else if (currentBatchValue !== 'all') {
-                selectedBatchFilter = 'all';
-                batchFilter.value = 'all';
-            }
-
+            // Superseded by cascade: populateBatchFilter() handles this
             updateExportFilterNotice();
+        }
+
+        // ==================== BATCH RENAME TOOL ====================
+        function openRenameBatchModal() {
+            const sel = document.getElementById('renameBatchFrom');
+            sel.innerHTML = '<option value="">Select…</option>' +
+                batches.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+            document.getElementById('renameBatchFleet').value = '';
+            document.getElementById('renameBatchTo').value = '';
+            document.getElementById('renameBatchPreview').classList.add('hidden');
+            document.getElementById('renameBatchConfirmBtn').disabled = true;
+            document.getElementById('renameBatchModal').classList.remove('hidden');
+        }
+
+        function closeRenameBatchModal() {
+            document.getElementById('renameBatchModal').classList.add('hidden');
+        }
+
+        function updateRenameBatchPreview() {
+            const batch = document.getElementById('renameBatchFrom').value.trim();
+            const fleet = document.getElementById('renameBatchFleet').value.trim();
+            const preview = document.getElementById('renameBatchPreview');
+            const countEl = document.getElementById('renameBatchCount');
+            const listEl = document.getElementById('renameBatchList');
+            const confirmBtn = document.getElementById('renameBatchConfirmBtn');
+
+            if (!batch || !fleet) {
+                preview.classList.add('hidden');
+                confirmBtn.disabled = true;
+                return;
+            }
+
+            const matches = cadets.filter(c =>
+                c.batch.trim() === batch && (c.fleet || '').toUpperCase() === fleet.toUpperCase()
+            );
+
+            countEl.textContent = `Affects ${matches.length} trainee${matches.length !== 1 ? 's' : ''} (${fleet})`;
+            listEl.innerHTML = matches.length === 0
+                ? '<li class="px-3 py-2 text-gray-400 italic">No trainees match this batch + fleet combination</li>'
+                : matches.map(c => `<li class="px-3 py-2 flex gap-3"><span class="text-gray-400 font-mono">${escapeHtml(c.staffId)}</span><span>${escapeHtml(c.name)}</span></li>`).join('');
+
+            preview.classList.remove('hidden');
+            confirmBtn.disabled = matches.length === 0;
+        }
+
+        async function executeRenameBatch(oldBatch, fleet, newBatch) {
+            const toUpdate = cadets.filter(c =>
+                c.batch.trim() === oldBatch.trim() && (c.fleet || '').toUpperCase() === fleet.toUpperCase()
+            );
+            if (toUpdate.length === 0) {
+                showToast('No trainees found matching that batch and fleet', 'warning');
+                return;
+            }
+
+            closeRenameBatchModal();
+            showLoading(`Renaming ${toUpdate.length} trainees…`);
+
+            let errors = 0;
+            const succeededIds = new Set();
+            try {
+                const entityType = await getListItemEntityType();
+                for (const cadet of toUpdate) {
+                    const res = await authFetch(
+                        `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items(${cadet.id})`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json;odata=verbose',
+                                'Content-Type': 'application/json;odata=verbose',
+                                'X-HTTP-Method': 'MERGE',
+                                'If-Match': '*'
+                            },
+                            body: JSON.stringify({ '__metadata': { 'type': entityType }, 'Batch': newBatch })
+                        }
+                    );
+                    if (res.ok) {
+                        succeededIds.add(cadet.id);
+                    } else {
+                        errors++;
+                        console.error(`[ERROR] Rename failed for ID ${cadet.id}:`, res.status);
+                    }
+                }
+            } catch (err) {
+                console.error('[ERROR] Batch rename error:', err);
+                errors = toUpdate.length;
+            }
+
+            // Update in-memory only for cadets confirmed saved in SharePoint
+            for (const cadet of toUpdate) {
+                if (succeededIds.has(cadet.id)) cadet.batch = newBatch;
+            }
+
+            hideLoading();
+            populateFilters();
+            renderTable();
+
+            if (errors === 0) {
+                showToast(`Renamed ${toUpdate.length} trainees (${fleet}): "${oldBatch}" → "${newBatch}"`, 'success', 5000);
+            } else {
+                showToast(`Rename completed with ${errors} error(s). Refresh to verify.`, 'warning', 6000);
+            }
         }
 
         function updateExportFilterNotice() {
@@ -4549,76 +4829,6 @@
         }
 
         // ==================== TEST HIGHLIGHTS ====================
-        function testHighlights() {
-            let report = 'HIGHLIGHT DEBUG REPORT\n\n';
-
-            let blueCount = 0, greenCount = 0, redCount = 0, autoBlue = 0, autoGreen = 0, noHighlight = 0;
-            let blueExamples = [];
-            let notBlueExamples = [];
-
-            cadets.forEach(cadet => {
-                const hasFirstIOE = cadet.firstIOEDate && cadet.firstIOEDate.trim() !== '';
-                const hasFunctional = cadet.functionalDate && cadet.functionalDate.trim() !== '';
-                const hasLRC = cadet.lrcDate && cadet.lrcDate.trim() !== '';
-                const hasInterview = cadet.interviewDate && cadet.interviewDate.trim() !== '';
-
-                if (cadet.manualHighlight === 'blue') {
-                    blueCount++;
-                } else if (cadet.manualHighlight === 'green') {
-                    greenCount++;
-                } else if (cadet.manualHighlight === 'red') {
-                    redCount++;
-                } else {
-                    if (hasFirstIOE && hasFunctional && hasLRC && hasInterview) {
-                        autoGreen++;
-                    } else if (hasFirstIOE && hasFunctional && !hasLRC && !hasInterview) {
-                        autoBlue++;
-                        if (blueExamples.length < 3) {
-                            blueExamples.push(`${cadet.name} (IOE:${formatDateDisplay(cadet.firstIOEDate)}, Func:${formatDateDisplay(cadet.functionalDate)})`);
-                        }
-                    } else {
-                        noHighlight++;
-                        if (notBlueExamples.length < 3 && (hasFirstIOE || hasFunctional)) {
-                            notBlueExamples.push(`${cadet.name} - IOE:${hasFirstIOE?'Y':'N'} Func:${hasFunctional?'Y':'N'} LRC:${hasLRC?'Y':'N'} Int:${hasInterview?'Y':'N'}`);
-                        }
-                    }
-                }
-            });
-
-            report += `MANUAL HIGHLIGHTS:\n`;
-            report += `  Blue (Manual): ${blueCount}\n`;
-            report += `  Green (Manual): ${greenCount}\n`;
-            report += `  Red (Manual): ${redCount}\n\n`;
-
-            report += `AUTO HIGHLIGHTS:\n`;
-            report += `  Blue (Auto): ${autoBlue}\n`;
-            report += `  Green (Auto): ${autoGreen}\n`;
-            report += `  No Highlight: ${noHighlight}\n\n`;
-
-            if (blueExamples.length > 0) {
-                report += `BLUE Examples (should be highlighted):\n`;
-                blueExamples.forEach(ex => report += `  - ${ex}\n`);
-                report += `\n`;
-            }
-
-            if (notBlueExamples.length > 0) {
-                report += `NOT Blue (check these):\n`;
-                notBlueExamples.forEach(ex => report += `  - ${ex}\n`);
-                report += `\n`;
-            }
-
-            report += `Total: ${cadets.length} trainees\n`;
-            report += `Highlighted: ${blueCount + greenCount + redCount + autoBlue + autoGreen}\n\n`;
-
-            report += `BLUE Highlight Criteria:\n`;
-            report += `  [Y] Has First IOE date\n`;
-            report += `  [Y] Has Functional date\n`;
-            report += `  [N] No LRC date\n`;
-            report += `  [N] No Interview date\n`;
-
-            showToast('Highlight debug report logged to console (F12)', 'info');
-            console.log(report);
-        }
 
         // ==================== EVENT LISTENERS ====================
         document.addEventListener('DOMContentLoaded', () => {
@@ -4685,6 +4895,20 @@
             document.getElementById('backToAdminBtn').addEventListener('click', backToAdmin);
             document.getElementById('backToAdminBtn2').addEventListener('click', backToAdmin);
             document.getElementById('addTraineeBtn').addEventListener('click', openAddModal);
+            document.getElementById('renameBatchBtn').addEventListener('click', openRenameBatchModal);
+            document.getElementById('renameBatchCancelBtn').addEventListener('click', closeRenameBatchModal);
+            document.getElementById('renameBatchFrom').addEventListener('change', updateRenameBatchPreview);
+            document.getElementById('renameBatchFleet').addEventListener('change', updateRenameBatchPreview);
+            document.getElementById('renameBatchConfirmBtn').addEventListener('click', () => {
+                const oldBatch = document.getElementById('renameBatchFrom').value.trim();
+                const fleet = document.getElementById('renameBatchFleet').value.trim();
+                const newBatch = document.getElementById('renameBatchTo').value.trim();
+                if (!oldBatch) { showToast('Please select a batch to rename', 'warning'); return; }
+                if (!fleet) { showToast('Please select a fleet', 'warning'); return; }
+                if (!newBatch) { showToast('Please enter the new batch name', 'warning'); return; }
+                if (oldBatch === newBatch) { showToast('New name is the same as the current name', 'warning'); return; }
+                executeRenameBatch(oldBatch, fleet, newBatch);
+            });
             document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
             document.getElementById('copySelectedBtn').addEventListener('click', copySelectedToClipboard);
             document.getElementById('clearSelectionBtn').addEventListener('click', () => {
@@ -4740,8 +4964,17 @@
                 document.getElementById('processPdfImportBtn').disabled = true;
             });
 
-            // Test Highlights
-            document.getElementById('testHighlightsBtn').addEventListener('click', testHighlights);
+            // More actions dropdown
+            document.getElementById('moreActionsBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('moreActionsDropdown').classList.toggle('hidden');
+            });
+            document.addEventListener('click', () => {
+                document.getElementById('moreActionsDropdown').classList.add('hidden');
+            });
+            document.getElementById('moreActionsDropdown').addEventListener('click', () => {
+                document.getElementById('moreActionsDropdown').classList.add('hidden');
+            });
 
             // Modal buttons
             document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
@@ -4763,9 +4996,34 @@
                 renderTable();
             });
 
+            document.getElementById('trainingTypeFilter').addEventListener('change', (e) => {
+                selectedTrainingTypeFilter = e.target.value;
+                activeColumnSet = (selectedTrainingTypeFilter === 'dif') ? 'dif' : 'ioe';
+                // Deactivate Full Overview when a specific type is chosen
+                if (selectedTrainingTypeFilter !== 'all' && showAllOverride) {
+                    showAllOverride = false;
+                    const btn = document.getElementById('fullOverviewBtn');
+                    btn.innerHTML = 'Full Overview';
+                    btn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                    btn.classList.add('bg-[#00205B]', 'hover:bg-[#001a4a]');
+                }
+                resetDownstream('type');
+                updateExportFilterNotice();
+                renderTable();
+            });
+
+            document.getElementById('fleetFilter').addEventListener('change', (e) => {
+                selectedFleetFilter = e.target.value;
+                resetDownstream('fleet');
+                updateExportFilterNotice();
+                updateAdvancedBtnState();
+                renderTable();
+            });
+
             document.getElementById('yearFilter').addEventListener('change', (e) => {
                 selectedYearFilter = e.target.value;
-                updateBatchFilterByYear();
+                resetDownstream('year');
+                updateExportFilterNotice();
                 renderTable();
             });
 
@@ -4775,28 +5033,22 @@
                 renderTable();
             });
 
-            document.getElementById('trainingTypeFilter').addEventListener('change', (e) => {
-                selectedTrainingTypeFilter = e.target.value;
-                updateExportFilterNotice();
-                renderTable();
-            });
-
-            document.getElementById('fleetFilter').addEventListener('change', (e) => {
-                selectedFleetFilter = e.target.value;
-                updateExportFilterNotice();
-                renderTable();
-            });
-
             document.getElementById('rankFilter').addEventListener('change', (e) => {
                 selectedRankFilter = e.target.value;
                 updateExportFilterNotice();
+                updateAdvancedBtnState();
                 renderTable();
             });
 
             document.getElementById('statusFilter').addEventListener('change', (e) => {
                 selectedStatusFilter = e.target.value;
                 updateExportFilterNotice();
+                updateAdvancedBtnState();
                 renderTable();
+            });
+
+            document.getElementById('advancedFiltersToggle').addEventListener('click', () => {
+                document.getElementById('advancedFilters').classList.toggle('hidden');
             });
 
             // Clear All Filters button
@@ -4808,23 +5060,49 @@
                 selectedTrainingTypeFilter = 'all';
                 selectedFleetFilter = 'all';
                 searchQuery = '';
+                activeColumnSet = 'ioe';
+                showAllOverride = false;
 
-                document.getElementById('yearFilter').value = 'all';
-                document.getElementById('batchFilter').value = 'all';
+                document.getElementById('trainingTypeFilter').value = 'all';
                 document.getElementById('rankFilter').value = 'all';
                 document.getElementById('statusFilter').value = 'all';
-                document.getElementById('trainingTypeFilter').value = 'all';
-                document.getElementById('fleetFilter').value = 'all';
                 document.getElementById('searchInput').value = '';
+                const overviewBtn = document.getElementById('fullOverviewBtn');
+                overviewBtn.innerHTML = 'Full Overview';
+                overviewBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                overviewBtn.classList.add('bg-[#00205B]', 'hover:bg-[#001a4a]');
 
-                updateBatchFilterByYear();
+                resetDownstream('type');
                 updateExportFilterNotice();
+                updateAdvancedBtnState();
                 renderTable();
 
                 // Reset hide completed toggle
                 if (hideCompleted) {
                     document.getElementById('toggleCompletedBtn').click();
                 }
+            });
+
+            // Full Overview button
+            document.getElementById('fullOverviewBtn').addEventListener('click', () => {
+                showAllOverride = !showAllOverride;
+                const btn = document.getElementById('fullOverviewBtn');
+                if (showAllOverride) {
+                    // Activate: disable cascade dropdowns, reset training type selection
+                    selectedTrainingTypeFilter = 'all';
+                    document.getElementById('trainingTypeFilter').value = 'all';
+                    activeColumnSet = 'ioe';
+                    resetDownstream('type');
+                    btn.innerHTML = 'Full Overview ✓';
+                    btn.classList.remove('bg-[#00205B]', 'hover:bg-[#001a4a]');
+                    btn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+                } else {
+                    btn.innerHTML = 'Full Overview';
+                    btn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                    btn.classList.add('bg-[#00205B]', 'hover:bg-[#001a4a]');
+                }
+                updateExportFilterNotice();
+                renderTable();
             });
 
             // Toggle completed trainees

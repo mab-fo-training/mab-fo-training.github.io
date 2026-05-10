@@ -3365,6 +3365,8 @@
                     if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
                     return 0;
                 });
+            } else {
+                filteredCadets.sort((a, b) => compareBatchNames(a.batch || '', b.batch || ''));
             }
 
             if (filteredCadets.length === 0) {
@@ -4089,8 +4091,11 @@
 
         // ==================== YEAR & TRAINING TYPE FILTERS ====================
         function compareBatchNames(a, b) {
+            const fleetGroup = s => s.startsWith('A350') ? 2 : s.startsWith('A330') ? 1 : 0;
+            const fg = fleetGroup(a) - fleetGroup(b);
+            if (fg !== 0) return fg;
             const ym = s => { const m = s.match(/(\d{2})\/(\d{2})/); return m ? parseInt(m[1]) * 100 + parseInt(m[2]) : 9999; };
-            const diff = ym(b) - ym(a);
+            const diff = ym(a) - ym(b);
             return diff !== 0 ? diff : a.localeCompare(b);
         }
 

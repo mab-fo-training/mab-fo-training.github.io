@@ -3225,7 +3225,7 @@
         // Note: getYearFromBatch is defined above in the year filter section
 
         function filterCadets() {
-            if (selectedTrainingTypeFilter === 'all' && !showAllOverride) return [];
+            if (selectedTrainingTypeFilter === 'all' && !showAllOverride && !searchQuery) return [];
             return cadets.filter(cadet => {
                 // Hide completed trainees if toggle is active
                 if (hideCompleted) {

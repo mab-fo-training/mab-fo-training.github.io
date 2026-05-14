@@ -258,7 +258,7 @@ const ALLOWED_LIST_NAME = 'Training_Progress';
 When updating the app:
 1. Edit `index-sharepoint-v3-enhanced.html` in the source repo
 2. Copy to `docs/index.html`
-3. Commit and push both remotes: `git push origin main && git push pages main`
+3. Commit and push both remotes: `git push origin master && git push pages master:main`
 
 ### Remotes
 - **origin** (HTTPS): `https://github.com/mr-shzrn/microsoft-training-tracker.git`

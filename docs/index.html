@@ -878,6 +878,28 @@
                                     </p>
                                 </div>
                             </div>
+
+                            <div id="flaps40Container" class="hidden">
+                                <label class="block text-gray-700 font-semibold mb-2">Flaps 40 Landings <span class="text-red-500">*</span></label>
+                                <input type="number" id="newFlaps40Count" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all text-lg font-bold" placeholder="Enter Flaps 40 landing count" min="0">
+                                <div id="currentFlaps40Display" class="hidden mt-2 p-3 bg-white border-l-4 border-[#00205B] rounded shadow-sm">
+                                    <p class="text-sm text-gray-800">
+                                        <span class="font-bold">Current Flaps 40 landings:</span>
+                                        <span id="currentFlaps40Value" class="text-lg font-black text-[#00205B]"></span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div id="discussionReportsContainer">
+                                <label class="block text-gray-700 font-semibold mb-2">Discussion Reports (Optional)</label>
+                                <input type="number" id="newDiscussionReportCount" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00205B] focus:border-[#00205B] transition-all text-lg font-bold" placeholder="Enter number of discussion reports received" min="0">
+                                <div id="currentDiscussionReportsDisplay" class="hidden mt-2 p-3 bg-white border-l-4 border-[#00205B] rounded shadow-sm">
+                                    <p class="text-sm text-gray-800">
+                                        <span class="font-bold">Current discussion reports:</span>
+                                        <span id="currentDiscussionReportsValue" class="text-lg font-black text-[#00205B]"></span>
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         <button id="updateCadetBtn" class="btn-primary w-full bg-[#00205B] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#001540] shadow-lg hover:shadow-xl transition-all">
@@ -994,6 +1016,9 @@
                             <div class="flex flex-wrap gap-3">
                                 <button id="refreshDataBtn" class="btn-primary bg-[#0891B2] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#0E7490] shadow-md transition-all">
                                     Refresh
+                                </button>
+                                <button id="retryColumnsBtn" class="hidden btn-primary bg-amber-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-amber-700 shadow-md transition-all" title="Retry creating missing SharePoint columns">
+                                    Setup Columns
                                 </button>
                                 <button id="viewAnalyticsBtn" class="btn-primary bg-[#7C3AED] text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-[#6D28D9] shadow-md transition-all">
                                     Analytics
@@ -1193,6 +1218,8 @@
                                             <th class="px-4 py-3 text-left text-sm font-semibold">LRC</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold">INTERVIEW</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="sectorsFlown">SECTORS</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="flaps40Landings">FLAPS 40</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="discussionReports">DISC. REPORTS</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold">LAST UPDATED</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold">REMARKS</th>
                                             <th class="px-4 py-3 text-center text-sm font-semibold sticky right-0 bg-[#00205B] shadow-md">ACTIONS</th>
@@ -1385,6 +1412,14 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Sectors Flown</label>
                             <input type="number" id="modalSectors" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" min="0">
+                        </div>
+                        <div id="modalFlaps40Container" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Flaps 40 Landings <span class="text-xs text-gray-500">(Cadet / OCC / CUC)</span></label>
+                            <input type="number" id="modalFlaps40" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" min="0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Discussion Reports</label>
+                            <input type="number" id="modalDiscussionReports" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00205B]" min="0" placeholder="0">
                         </div>
                     </div>
                     <div id="modalDIFContainer" class="hidden">
@@ -2301,8 +2336,25 @@
 
             showLoading('Loading trainees...');
             try {
+                await ensureFlaps40Column();
+                await ensureDiscussionColumns();
                 await ensureSectorHistoryColumn();
                 await ensureDIFColumns();
+
+                if (isAdminAuth) {
+                    const missingColumns = [];
+                    if (!flaps40ColumnEnsured) missingColumns.push('"Flaps40_Landings" (Number)');
+                    if (!discussionColumnsEnsured) missingColumns.push('"Discussion_Reports" (Number)', '"Discussion_Report_History" (Multiple lines of text)');
+                    const retryBtn = document.getElementById('retryColumnsBtn');
+                    if (missingColumns.length > 0) {
+                        console.warn('[WARN] Missing SharePoint columns:', missingColumns.join(', '));
+                        showToast(`Setup needed: Add ${missingColumns.join(', ')} to the Training_Progress list, then click "Setup Columns".`, 'warning', 10000);
+                        if (retryBtn) retryBtn.classList.remove('hidden');
+                    } else {
+                        if (retryBtn) retryBtn.classList.add('hidden');
+                    }
+                }
+
                 const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/items?$top=5000`;
 
                 const response = await authFetch(apiUrl, {
@@ -2335,6 +2387,9 @@
                     simDate: formatSharePointDate(item.Sim_Date),
                     lifusDate: formatSharePointDate(item.LIFUS_Date),
                     sectorsFlown: item.Sectors_Flown || 0,
+                    flaps40Landings: item.Flaps40_Landings || 0,
+                    discussionReports: item.Discussion_Reports || 0,
+                    discussionReportHistory: parseDiscussionReportHistory(item.Discussion_Report_History),
                     remarks: item.Remarks || '',
                     lastUpdated: item.Last_Updated || new Date().toISOString(),
                     manualHighlight: item.Manual_Highlight || '',
@@ -2360,6 +2415,127 @@
             if (!raw) return [];
             try { return JSON.parse(raw); }
             catch (e) { return []; }
+        }
+
+        function parseDiscussionReportHistory(raw) {
+            if (!raw) return [];
+            try { return JSON.parse(raw); }
+            catch (e) { return []; }
+        }
+
+        let discussionColumnsEnsured = false;
+        let discussionColumnsChecked = false;
+        async function ensureDiscussionColumns() {
+            if (discussionColumnsChecked || testMode || !sharePointConfig.accessToken) return;
+            discussionColumnsChecked = true;
+            let allOk = true;
+            try {
+                const cols = [
+                    { name: 'Discussion_Reports',        xml: "<Field Type='Number' DisplayName='Discussion_Reports' Name='Discussion_Reports' Required='FALSE'/>" },
+                    { name: 'Discussion_Report_History', xml: "<Field Type='Note' DisplayName='Discussion_Report_History' Name='Discussion_Report_History' Required='FALSE' NumLines='6' RichText='FALSE'/>" }
+                ];
+                for (const col of cols) {
+                    const checkUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/fields?$filter=InternalName eq '${col.name}'`;
+                    const checkResp = await authFetch(checkUrl, { method: 'GET', headers: { 'Accept': 'application/json;odata=verbose' } });
+                    if (checkResp.ok) {
+                        const checkData = await checkResp.json();
+                        if (checkData.d.results.length > 0) {
+                            console.log(`[OK] ${col.name} column exists`);
+                            continue;
+                        }
+                    }
+                    // Only attempt creation in an admin session (requires Manage Lists permission)
+                    if (!isAdminAuth) {
+                        allOk = false;
+                        continue;
+                    }
+                    const createUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/fields/addFieldAsXml`;
+                    const createResp = await authFetch(createUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json;odata=verbose',
+                            'Content-Type': 'application/json;odata=verbose'
+                        },
+                        body: JSON.stringify({
+                            __metadata: { type: 'SP.XmlSchemaFieldCreationInformation' },
+                            SchemaXml: col.xml,
+                            options: 0
+                        })
+                    });
+                    if (createResp.ok) {
+                        console.log(`[OK] Created ${col.name} column`);
+                    } else {
+                        const errText = await createResp.text().catch(() => '');
+                        console.warn(`[WARN] Could not create ${col.name} column: HTTP ${createResp.status}`, errText);
+                        allOk = false;
+                    }
+                }
+                if (allOk) discussionColumnsEnsured = true;
+            } catch (e) {
+                console.warn('[WARN] ensureDiscussionColumns failed:', e.message);
+            }
+        }
+
+        let flaps40ColumnEnsured = false;
+        let flaps40ColumnChecked = false;
+        async function ensureFlaps40Column() {
+            if (flaps40ColumnChecked || testMode || !sharePointConfig.accessToken) return;
+            flaps40ColumnChecked = true;
+            try {
+                const checkUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/fields?$filter=InternalName eq 'Flaps40_Landings'`;
+                const checkResp = await authFetch(checkUrl, { method: 'GET', headers: { 'Accept': 'application/json;odata=verbose' } });
+                if (checkResp.ok) {
+                    const checkData = await checkResp.json();
+                    if (checkData.d.results.length > 0) {
+                        flaps40ColumnEnsured = true;
+                        console.log('[OK] Flaps40_Landings column exists');
+                        return;
+                    }
+                }
+                // Only attempt creation in an admin session (requires Manage Lists permission)
+                if (!isAdminAuth) return;
+                const createUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.listName}')/fields/addFieldAsXml`;
+                const createResp = await authFetch(createUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json;odata=verbose',
+                        'Content-Type': 'application/json;odata=verbose'
+                    },
+                    body: JSON.stringify({
+                        __metadata: { type: 'SP.XmlSchemaFieldCreationInformation' },
+                        SchemaXml: "<Field Type='Number' DisplayName='Flaps40_Landings' Name='Flaps40_Landings' Required='FALSE'/>",
+                        options: 0
+                    })
+                });
+                if (createResp.ok) {
+                    flaps40ColumnEnsured = true;
+                    console.log('[OK] Created Flaps40_Landings column');
+                } else {
+                    const errText = await createResp.text().catch(() => '');
+                    console.warn('[WARN] Could not create Flaps40_Landings column: HTTP', createResp.status, errText);
+                }
+            } catch (e) {
+                console.warn('[WARN] ensureFlaps40Column failed:', e.message);
+            }
+        }
+
+        async function retryColumnSetup() {
+            if (!isAdminAuth) return;
+            // Reset check flags so the ensure functions will run again
+            flaps40ColumnChecked = false;
+            discussionColumnsChecked = false;
+            showLoading('Checking SharePoint columns...');
+            await ensureFlaps40Column();
+            await ensureDiscussionColumns();
+            hideLoading();
+            const allGood = flaps40ColumnEnsured && discussionColumnsEnsured;
+            const btn = document.getElementById('retryColumnsBtn');
+            if (allGood) {
+                if (btn) btn.classList.add('hidden');
+                showToast('All columns confirmed. Values will now save correctly.', 'success');
+            } else {
+                showToast('Columns still missing. Create them in the SharePoint list (see console for names), then click Setup Columns again.', 'warning', 8000);
+            }
         }
 
         let sectorHistoryColumnEnsured = false;
@@ -2478,6 +2654,17 @@
                 // Only include Sector_History if column exists
                 if (sectorHistoryColumnEnsured) {
                     itemData.Sector_History = JSON.stringify(traineeData.sectorHistory || []);
+                }
+
+                // Only include Flaps40_Landings if column exists
+                if (flaps40ColumnEnsured) {
+                    itemData.Flaps40_Landings = parseInt(traineeData.flaps40Landings) || 0;
+                }
+
+                // Only include Discussion Report columns if confirmed
+                if (discussionColumnsEnsured) {
+                    itemData.Discussion_Reports = parseInt(traineeData.discussionReports) || 0;
+                    itemData.Discussion_Report_History = JSON.stringify(traineeData.discussionReportHistory || []);
                 }
 
                 // Only include DIF columns if confirmed
@@ -2745,6 +2932,28 @@
                 document.getElementById('currentSectorsValue').textContent = cadet.sectorsFlown;
             }
 
+            // Show/hide Flaps 40 Landings field
+            const showFlaps40 = requiresFlaps40(cadet.rank, cadet.batch);
+            document.getElementById('flaps40Container').classList.toggle('hidden', !showFlaps40);
+            if (showFlaps40) {
+                document.getElementById('newFlaps40Count').value = cadet.flaps40Landings || 0;
+                if ((cadet.flaps40Landings || 0) > 0) {
+                    document.getElementById('currentFlaps40Display').classList.remove('hidden');
+                    document.getElementById('currentFlaps40Value').textContent = cadet.flaps40Landings;
+                } else {
+                    document.getElementById('currentFlaps40Display').classList.add('hidden');
+                }
+            }
+
+            // Discussion Reports (all trainees)
+            document.getElementById('newDiscussionReportCount').value = '';
+            if ((cadet.discussionReports || 0) > 0) {
+                document.getElementById('currentDiscussionReportsDisplay').classList.remove('hidden');
+                document.getElementById('currentDiscussionReportsValue').textContent = cadet.discussionReports;
+            } else {
+                document.getElementById('currentDiscussionReportsDisplay').classList.add('hidden');
+            }
+
             // Lock rank if already set
             if (cadet.rank) {
                 document.getElementById('cadetRank').disabled = true;
@@ -2875,6 +3084,20 @@
                 });
             }
 
+            // Discussion reports
+            const oldReports = currentUserRecord.discussionReports || 0;
+            const newReportsInput = document.getElementById('newDiscussionReportCount').value;
+            const newReports = newReportsInput !== '' ? parseInt(newReportsInput) : oldReports;
+            let discussionReportHistory = currentUserRecord.discussionReportHistory || [];
+            if (newReports !== oldReports) {
+                discussionReportHistory.push({
+                    date: new Date().toISOString(),
+                    count: newReports,
+                    change: newReports - oldReports,
+                    user: currentUser.name
+                });
+            }
+
             // Get command check date for CUC batches
             const commandCheckDate = isCUCBatch(currentUserRecord.batch) ?
                 document.getElementById('cadetCommandCheck').value : currentUserRecord.commandCheckDate;
@@ -2890,10 +3113,23 @@
                 commandCheckDate: isDIF ? '' : commandCheckDate,
                 sectorsFlown: isDIF ? currentUserRecord.sectorsFlown : newSectors,
                 sectorHistory: isDIF ? currentUserRecord.sectorHistory : sectorHistory,
+                discussionReports: newReports,
+                discussionReportHistory: discussionReportHistory,
                 cbtDate: isDIF ? (document.getElementById('cadetCBT') ? document.getElementById('cadetCBT').value : currentUserRecord.cbtDate) : currentUserRecord.cbtDate,
                 simDate: isDIF ? (document.getElementById('cadetSim') ? document.getElementById('cadetSim').value : currentUserRecord.simDate) : currentUserRecord.simDate,
                 lifusDate: isDIF ? (document.getElementById('cadetLIFUS') ? document.getElementById('cadetLIFUS').value : currentUserRecord.lifusDate) : currentUserRecord.lifusDate
             };
+
+            // Read Flaps 40 Landings if field is applicable
+            if (requiresFlaps40(currentUserRecord.rank, currentUserRecord.batch)) {
+                const flaps40Input = document.getElementById('newFlaps40Count').value;
+                const flaps40Val = flaps40Input !== '' ? parseInt(flaps40Input) : NaN;
+                if (isNaN(flaps40Val) || flaps40Val < 0) {
+                    showToast('Please enter a valid Flaps 40 Landings count.', 'error');
+                    return;
+                }
+                updatedData.flaps40Landings = flaps40Val;
+            }
 
             // User Portal: Block future dates for completion milestones
             // First IOE is excluded — trainees may schedule it ahead of the actual date
@@ -2907,6 +3143,14 @@
                     : 'Only First IOE date can be set in the future. Other dates must be actual completion dates.';
                 showToast(msg, 'error');
                 return;
+            }
+
+            // Warn if new values will be silently dropped due to missing SharePoint columns
+            if (!discussionColumnsEnsured && newReports !== oldReports) {
+                showToast('Discussion Reports column not yet available in SharePoint — your count was not saved. Please contact your admin.', 'warning', 7000);
+            }
+            if (!flaps40ColumnEnsured && requiresFlaps40(currentUserRecord.rank, currentUserRecord.batch)) {
+                showToast('Flaps 40 column not yet available in SharePoint — your count was not saved. Please contact your admin.', 'warning', 7000);
             }
 
             const success = await saveTraineeToSharePoint(updatedData, true);
@@ -3306,7 +3550,7 @@
             const tbody = document.getElementById('dataTableBody');
             const thead = document.getElementById('dataTableHead');
             const isDIF = activeColumnSet === 'dif';
-            const colCount = isDIF ? 11 : 15;
+            const colCount = isDIF ? 11 : 17;
 
             // Render thead dynamically
             if (thead) {
@@ -3338,6 +3582,8 @@
                         <th class="px-4 py-3 text-left text-sm font-semibold">LRC</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold">INTERVIEW</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="sectorsFlown">SECTORS</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="flaps40Landings">FLAPS 40</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold sortable-header" data-column="discussionReports">DISC. REPORTS</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold">LAST UPDATED</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold">REMARKS</th>
                         <th class="px-4 py-3 text-center text-sm font-semibold sticky right-0 bg-[#00205B] shadow-md">ACTIONS</th>
@@ -3434,6 +3680,8 @@
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.lrcDate)}</td>
                         <td class="px-4 py-3 text-sm">${formatDateDisplay(cadet.interviewDate)}</td>
                         <td class="px-4 py-3 text-sm text-center">${parseInt(cadet.sectorsFlown) || 0}</td>
+                        <td class="px-4 py-3 text-sm text-center">${requiresFlaps40(cadet.rank, cadet.batch) ? (parseInt(cadet.flaps40Landings) || 0) : '—'}</td>
+                        <td class="px-4 py-3 text-sm text-center">${parseInt(cadet.discussionReports) || 0}</td>
                 `;
                 return separator + `
                     <tr class="${rowClass}">
@@ -3728,6 +3976,9 @@
             document.getElementById('modalCommandCheck').value = '';
             document.getElementById('modalCommandCheckContainer').classList.add('hidden');
             document.getElementById('modalSectors').value = '';
+            document.getElementById('modalFlaps40').value = '';
+            document.getElementById('modalFlaps40Container').classList.add('hidden');
+            document.getElementById('modalDiscussionReports').value = '';
             document.getElementById('modalCBT').value = '';
             document.getElementById('modalSim').value = '';
             document.getElementById('modalLIFUS').value = '';
@@ -3754,6 +4005,10 @@
             document.getElementById('modalLRC').value = cadet.lrcDate;
             document.getElementById('modalInterview').value = cadet.interviewDate;
             document.getElementById('modalSectors').value = cadet.sectorsFlown;
+            const showFlaps40Modal = requiresFlaps40(cadet.rank, cadet.batch);
+            document.getElementById('modalFlaps40Container').classList.toggle('hidden', !showFlaps40Modal);
+            document.getElementById('modalFlaps40').value = showFlaps40Modal ? (cadet.flaps40Landings || 0) : '';
+            document.getElementById('modalDiscussionReports').value = cadet.discussionReports || 0;
             document.getElementById('modalHighlight').value = cadet.manualHighlight || '';
             document.getElementById('modalRemarks').value = cadet.remarks;
 
@@ -3813,6 +4068,9 @@
                 interviewDate: isDIF ? '' : document.getElementById('modalInterview').value,
                 commandCheckDate: (!isDIF && isCUCBatch(batch)) ? document.getElementById('modalCommandCheck').value : '',
                 sectorsFlown: isDIF ? 0 : (parseInt(document.getElementById('modalSectors').value) || 0),
+                flaps40Landings: 0,
+                discussionReports: parseInt(document.getElementById('modalDiscussionReports').value) || 0,
+                discussionReportHistory: [],
                 remarks: document.getElementById('modalRemarks').value.toUpperCase().trim(),
                 manualHighlight: document.getElementById('modalHighlight').value,
                 cbtDate: isDIF ? document.getElementById('modalCBT').value : '',
@@ -3837,6 +4095,27 @@
             if (isEdit) {
                 traineeData.id = cadets[editingIndex].id;
                 traineeData.sectorHistory = cadets[editingIndex].sectorHistory || [];
+            }
+
+            // Resolve Flaps 40 value
+            if (requiresFlaps40(traineeData.rank, traineeData.batch)) {
+                traineeData.flaps40Landings = parseInt(document.getElementById('modalFlaps40').value) || 0;
+            } else if (isEdit) {
+                traineeData.flaps40Landings = cadets[editingIndex].flaps40Landings || 0;
+            }
+
+            // Resolve Discussion Reports history
+            if (isEdit) {
+                traineeData.discussionReportHistory = cadets[editingIndex].discussionReportHistory || [];
+                const oldReports = cadets[editingIndex].discussionReports || 0;
+                if (traineeData.discussionReports !== oldReports) {
+                    traineeData.discussionReportHistory.push({
+                        date: new Date().toISOString(),
+                        count: traineeData.discussionReports,
+                        change: traineeData.discussionReports - oldReports,
+                        user: currentUser ? currentUser.name : 'Admin'
+                    });
+                }
             }
 
             const success = await saveTraineeToSharePoint(traineeData, isEdit);
@@ -4128,6 +4407,10 @@
         function isOCCBatch(batchName) {
             if (!batchName) return false;
             return batchName.toUpperCase().includes('OCC');
+        }
+
+        function requiresFlaps40(rank, batchName) {
+            return (rank || '').toUpperCase() === 'CADET' || isOCCBatch(batchName) || isCUCBatch(batchName);
         }
 
         function isCTRBatch(batchName) {
@@ -4895,6 +5178,7 @@
             // Admin Panel
             document.getElementById('adminLoginBtn').addEventListener('click', handleAdminLogin);
             document.getElementById('refreshDataBtn').addEventListener('click', loadDataFromSharePoint);
+            document.getElementById('retryColumnsBtn').addEventListener('click', retryColumnSetup);
             document.getElementById('viewAnalyticsBtn').addEventListener('click', showAnalyticsDashboard);
             document.getElementById('viewHistoryBtn').addEventListener('click', showHistoryDashboard);
             document.getElementById('backToAdminBtn').addEventListener('click', backToAdmin);
@@ -4927,6 +5211,7 @@
             // Modal batch field change - show/hide command check date for CUC batches, DIF fields for DIF batches
             document.getElementById('modalBatch').addEventListener('input', (e) => {
                 const batch = e.target.value.toUpperCase().trim();
+                const rank = document.getElementById('modalRank').value.toUpperCase().trim();
                 showDIFFieldsIfDIF(batch);
                 if (!isDIFBatch(batch)) {
                     const container = document.getElementById('modalCommandCheckContainer');
@@ -4937,6 +5222,14 @@
                         document.getElementById('modalCommandCheck').value = '';
                     }
                 }
+                document.getElementById('modalFlaps40Container').classList.toggle('hidden', !requiresFlaps40(rank, batch));
+            });
+
+            // Modal rank change - show/hide Flaps 40 field
+            document.getElementById('modalRank').addEventListener('change', (e) => {
+                const rank = e.target.value.toUpperCase().trim();
+                const batch = document.getElementById('modalBatch').value.toUpperCase().trim();
+                document.getElementById('modalFlaps40Container').classList.toggle('hidden', !requiresFlaps40(rank, batch));
             });
 
             // Bulk Import

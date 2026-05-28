@@ -492,8 +492,27 @@
             animation: loginHeroFadeIn 0.7s ease forwards 0.3s;
         }
 
+        #loginPage {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
         .login-hero-icon {
             animation: loginFloatUp 4s ease-in-out infinite;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .login-hero-icon svg {
+            width: 40px;
+            height: 40px;
         }
 
         .login-feature-card {

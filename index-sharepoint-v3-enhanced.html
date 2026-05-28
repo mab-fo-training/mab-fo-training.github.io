@@ -416,6 +416,10 @@
             --mab-gold-light: #D4B96A;
         }
 
+        /* Fallback for when Tailwind CDN is blocked (e.g. corporate networks) */
+        .hidden { display: none !important; }
+        .login-feature-card svg { width: 20px; height: 20px; max-width: 20px; flex-shrink: 0; }
+
         .login-hero-bg {
             background: linear-gradient(160deg, var(--mab-navy) 0%, var(--mab-navy-dark) 60%, #000D2B 100%);
             position: relative;

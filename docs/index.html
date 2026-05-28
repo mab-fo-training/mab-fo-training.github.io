@@ -4635,7 +4635,7 @@
             let matches;
 
             if (isDIFCourse) {
-                const difPattern = /(\d{7})\s+(CAPT|SO|FO|CPT)\s+([A-Z][A-Z\s\/]+?)(?=\s*\d{7}\s+(?:CAPT|SO|FO|CPT)|FROM|$)/g;
+                const difPattern = /(\d{7})\s+(CAPT|SO|FO|CPT)\s+([A-Z][A-Z\s\/''']+?)(?=\s*\d{7}\s+(?:CAPT|SO|FO|CPT)|FROM|$)/g;
                 while ((matches = difPattern.exec(traineeSection)) !== null) {
                     const staffId = matches[1];
                     const rawRank = matches[2].toUpperCase();
@@ -4649,7 +4649,7 @@
                     }
                 }
             } else if (isCUC) {
-                const cucPattern = /(\d{7})\s+(FO|SO|CPT|SFO)\s+([A-Z][A-Z\s\/]+?)(?=\s*\d{7}\s+(?:FO|SO|CPT|SFO)|FROM|$)/g;
+                const cucPattern = /(\d{7})\s+(FO|SO|CPT|SFO)\s+([A-Z][A-Z\s\/''']+?)(?=\s*\d{7}\s+(?:FO|SO|CPT|SFO)|FROM|$)/g;
 
                 while ((matches = cucPattern.exec(traineeSection)) !== null) {
                     const staffId = matches[1];
@@ -4663,7 +4663,7 @@
                     }
                 }
             } else {
-                const cpcPattern = /(\d{7})\s+([A-Z][A-Z\s\/]+?)(?=\s*\d{7}|FROM|$)/g;
+                const cpcPattern = /(\d{7})\s+([A-Z][A-Z\s\/''']+?)(?=\s*\d{7}|FROM|$)/g;
                 const rankPrefixes = /^(CAPTAIN|CPT|SFO|FO|SO)\s+/i;
 
                 while ((matches = cpcPattern.exec(traineeSection)) !== null) {

@@ -2000,6 +2000,8 @@
             // Set max date to today for User Portal date inputs (block future dates)
             // First IOE is excluded — trainees may enter a scheduled future IOE date
             setDateInputMaxToday(['cadetFunctional', 'cadetLRC', 'cadetInterview', 'cadetCommandCheck', 'cadetCBT', 'cadetSim', 'cadetLIFUS']);
+
+            silentAdminCheck();
         }
 
         // ==================== TEST MODE FUNCTIONS ====================
@@ -2867,6 +2869,27 @@
                 console.error('[ERROR] Admin auth check failed:', error);
                 showToast('Failed to verify admin access. Please try again.', 'error');
                 return false;
+            }
+        }
+
+        async function silentAdminCheck() {
+            if (!sharePointConfig.accessToken || !currentUser?.email) return;
+            try {
+                const apiUrl = `${sharePointConfig.siteUrl}/_api/web/lists/getbytitle('${sharePointConfig.adminListName}')/items?$filter=Email eq '${currentUser.email}'&$top=1`;
+                const response = await authFetch(apiUrl, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json;odata=verbose' }
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                if (data?.d?.results?.length > 0) {
+                    console.log('[OK] Admin auto-detected:', currentUser.email);
+                    isAdminAuth = true;
+                    switchToAdminView();
+                    showToast('Admin access detected — redirecting to Admin Dashboard.', 'info', 3000);
+                }
+            } catch (e) {
+                // silent — non-admins should not see any error
             }
         }
 

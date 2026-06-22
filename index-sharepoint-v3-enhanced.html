@@ -2887,6 +2887,7 @@
                     isAdminAuth = true;
                     switchToAdminView();
                     showToast('Admin access detected — redirecting to Admin Dashboard.', 'info', 3000);
+                    await loadDataFromSharePoint();
                 }
             } catch (e) {
                 // silent — non-admins should not see any error
